@@ -1,0 +1,36 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Pet ID</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="app">
+        <div class="drawer" id="drawer">
+            <h2>PAGES</h2>
+            <button onclick="navigate('home')">Home</button>
+            <button onclick="navigate('contact')">Contact</button>
+            <button onclick="navigate('medical')">Medical</button>
+            <button onclick="navigate('about')">About Me</button>
+            <button onclick="navigate('socials')">Socials</button>
+            <button onclick="navigate('gallery')">Gallery</button>
+            <button onclick="navigate('report-lost')">Report Lost</button>
+            <button onclick="navigate('account')">Account</button>
+            <button onclick="navigate('login')">Login</button>
+            <button onclick="logout()">Logout</button>
+        </div>
+        <div class="main-content">
+            <header>
+                <button onclick="toggleDrawer()">☰</button>
+                <h1 id="page-title">Loading...</h1>
+                <div class="profile-pic" id="profile-pic"></div>
+            </header>
+            <div id="content">
+                <p>Loading pet data...</p>
+            </div>
+        </div>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>
