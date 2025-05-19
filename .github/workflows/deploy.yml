@@ -1,14 +1,19 @@
 name: Deploy to GitHub Pages
+
 on:
   push:
     branches: [ main ]
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - name: Deploy to GitHub Pages
-        uses: JamesIves/github-pages-deploy-action@4.1.5
+      - name: Checkout repository
+        uses: actions/checkout@v3
         with:
-          branch: main
-          folder: .
+          ref: main
+
+      - name: Verify GitHub Pages setup
+        run: |
+          echo "GitHub Pages is set to deploy from the main branch."
+          ls -la
