@@ -1,0 +1,73 @@
+name: Update Locations
+
+on:
+  schedule:
+    - cron: '0 * * * *' # Runs every hour
+  workflow_dispatch: # Allows manual trigger
+
+jobs:
+  update-locations:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          ref: main
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm install axios
+
+      - name: Fetch and update location data
+        run: |
+          node -e '
+            const axios = require("axios");
+            const fs = require("fs");
+
+            async function updateLocations() {
+              try {
+                const response = await axios.get("https://mypetid-map.herokuapp.com/api/locations/clyde-nfc-123");
+                const locations = response.data;
+                const recentLocations = locations.filter(loc => {
+                  const locTime = new Date(loc.timestamp);
+                  const now = new Date();
+                  const twoHoursAgo = new Date(now.getTime() - 2 * 60 * 60 * 1000);
+                  return loc.active && locTime >= twoHoursAgo;
+                });
+
+                let mapUrl = "https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d2865.2493525638047!2d-79.3832!3d43.6532!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e0!3m2!1sen!2sus!4v1747449999425!5m2!1sen!2sus";
+                if (recentLocations.length > 0) {
+                  const latestLoc = recentLocations[0];
+                  mapUrl = `https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d2865.2493525638047!2d${latestLoc.longitude}!3d${latestLoc.latitude}!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e0!3m2!1sen!2sus!4v1747449999425!5m2!1sen!2sus`;
+                }
+
+                const indexContent = fs.readFileSync("index.html", "utf8");
+                const updatedContent = indexContent.replace(
+                  /<iframe src="https:\/\/www\.google\.com\/maps\/embed\?.*?"/,
+                  `<iframe src="${mapUrl}"`
+                );
+                fs.writeFileSync("index.html", updatedContent);
+
+                console.log("Location data updated successfully.");
+              } catch (error) {
+                console.error("Error updating locations:", error.message);
+                process.exit(1);
+              }
+            }
+
+            updateLocations();
+          '
+
+      - name: Commit and push changes
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -m "Update location data [skip ci]" || echo "No changes to commit"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
