@@ -29,18 +29,16 @@ async function fetchData() {
     }
 
     // Fetch dog data if not logged in or user fetch fails
+    let dataLoaded = false;
     if (!dogData) {
         try {
             const dogResponse = await fetch(`https://mypetid-map.herokuapp.com/api/dog/${tagId}`);
             if (dogResponse.ok) {
                 dogData = await dogResponse.json();
-            } else {
-                document.getElementById('content').innerHTML = '<p>Dog not found.</p>';
-                return;
+                dataLoaded = true;
             }
         } catch (error) {
-            document.getElementById('content').innerHTML = `<p>Error fetching dog data: ${error.message}</p>`;
-            return;
+            console.error('Error fetching dog data:', error);
         }
     }
 
@@ -54,6 +52,23 @@ async function fetchData() {
         console.error('Error fetching location data:', error);
     }
 
+    // Fallback to READMEFIRST.md if backend data fails
+    if (!dataLoaded) {
+        try {
+            const readmeResponse = await fetch('READMEFIRST.md');
+            if (readmeResponse.ok) {
+                const readmeText = await readmeResponse.text();
+                document.getElementById('content').innerHTML = `<div>${readmeText.replace(/^\s*#+\s*/gm, '<h2>').replace(/\n/g, '<br>')}</div>`;
+                document.getElementById('page-title').textContent = 'My Pet ID Static Info';
+                return;
+            }
+        } catch (error) {
+            console.error('Error fetching READMEFIRST.md:', error);
+            document.getElementById('content').innerHTML = '<p>Failed to load data or static content. Please try again later.</p>';
+            return;
+        }
+    }
+
     navigate(window.location.hash.replace('#', '') || 'home');
 }
 
@@ -61,12 +76,14 @@ function showLoggedInState() {
     document.getElementById('loginBtn').style.display = 'none';
     document.getElementById('logoutBtn').style.display = 'block';
     document.getElementById('registerBtn').style.display = 'none';
+    document.getElementById('accountBtn').style.display = 'block';
 }
 
 function showLoggedOutState() {
     document.getElementById('loginBtn').style.display = 'block';
     document.getElementById('logoutBtn').style.display = 'none';
     document.getElementById('registerBtn').style.display = 'block';
+    document.getElementById('accountBtn').style.display = 'none';
 }
 
 function toggleDrawer() {
@@ -75,8 +92,8 @@ function toggleDrawer() {
 }
 
 function navigate(page) {
-    if (!dogData) {
-        document.getElementById('content').innerHTML = '<p>Dog data not loaded yet. Please wait.</p>';
+    if (!dogData && page !== 'login' && page !== 'register' && page !== 'reset-password' && page !== 'logout') {
+        document.getElementById('content').innerHTML = '<p>Dog data not loaded yet. Please wait or check static info.</p>';
         return;
     }
 
@@ -88,7 +105,7 @@ function navigate(page) {
     window.location.hash = page;
     pageTitle.textContent = page.charAt(0).toUpperCase() + page.split('-').join(' ').slice(1);
 
-    if (page === 'account' || page === 'login' || page === 'register' || page === 'logout') {
+    if (page === 'account' || page === 'login' || page === 'register' || page === 'reset-password' || page === 'logout') {
         profilePic.style.backgroundColor = 'gray';
         profilePic.style.backgroundImage = 'none';
     } else {
