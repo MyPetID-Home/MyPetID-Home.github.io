@@ -104,6 +104,15 @@ input {
     box-sizing: border-box;
 }
 
+iframe {
+    width: 100%;
+    max-width: 400px;
+    height: 300px;
+    border: 0;
+    margin: 1rem auto;
+    display: block;
+}
+
 /* Media Queries for Mobile */
 @media (max-width: 768px) {
     .drawer {
@@ -129,5 +138,9 @@ input {
 
     button, input {
         max-width: 100%;
+    }
+
+    iframe {
+        height: 200px;
     }
 }
