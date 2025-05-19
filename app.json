@@ -1,0 +1,11 @@
+{
+  "name": "mypetid-map",
+  "description": "Backend for My Pet ID app",
+  "stack": "heroku-24",
+  "buildpacks": [
+    {
+      "url": "heroku/nodejs"
+    }
+  ],
+  "root": "backend"
+}
