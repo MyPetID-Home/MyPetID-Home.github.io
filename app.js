@@ -1,11 +1,11 @@
 let isLoggedIn = false;
 let userData = null;
 let dogData = null;
+let locationsData = [];
 
 async function fetchData() {
     const urlParams = new URLSearchParams(window.location.search);
-    const tagId = urlParams.get('tag');
-    const userId = urlParams.get('userId');
+    const tagId = urlParams.get('tag') || 'clyde-nfc-123';
 
     if (!tagId) {
         document.getElementById('content').innerHTML = '<p>No dog tag ID provided. Please scan a valid QR code or NFC tag.</p>';
@@ -13,28 +13,27 @@ async function fetchData() {
     }
 
     // Fetch user data if logged in
-    if (userId) {
-        try {
-            const response = await fetch('https://mypetid-backend.herokuapp.com/api/user-data', {
-                credentials: 'include' // Include cookies for authentication
-            });
-            if (response.ok) {
-                const data = await response.json();
-                userData = data.user;
-                dogData = data.dog;
-                isLoggedIn = true;
-            }
-        } catch (error) {
-            console.error('Error fetching user data:', error);
+    try {
+        const userResponse = await fetch('https://mypetid-map.herokuapp.com/api/user-data', {
+            credentials: 'include'
+        });
+        if (userResponse.ok) {
+            const data = await userResponse.json();
+            userData = data.user;
+            dogData = data.dog;
+            isLoggedIn = true;
+            showLoggedInState();
         }
+    } catch (error) {
+        console.error('Error fetching user data:', error);
     }
 
     // Fetch dog data if not logged in or user fetch fails
     if (!dogData) {
         try {
-            const response = await fetch(`https://mypetid-backend.herokuapp.com/api/dog/${tagId}`);
-            if (response.ok) {
-                dogData = await response.json();
+            const dogResponse = await fetch(`https://mypetid-map.herokuapp.com/api/dog/${tagId}`);
+            if (dogResponse.ok) {
+                dogData = await dogResponse.json();
             } else {
                 document.getElementById('content').innerHTML = '<p>Dog not found.</p>';
                 return;
@@ -45,7 +44,29 @@ async function fetchData() {
         }
     }
 
+    // Fetch location data
+    try {
+        const locationResponse = await fetch(`https://mypetid-map.herokuapp.com/api/locations/${tagId}`);
+        if (locationResponse.ok) {
+            locationsData = await locationResponse.json();
+        }
+    } catch (error) {
+        console.error('Error fetching location data:', error);
+    }
+
     navigate(window.location.hash.replace('#', '') || 'home');
+}
+
+function showLoggedInState() {
+    document.getElementById('loginBtn').style.display = 'none';
+    document.getElementById('logoutBtn').style.display = 'block';
+    document.getElementById('registerBtn').style.display = 'none';
+}
+
+function showLoggedOutState() {
+    document.getElementById('loginBtn').style.display = 'block';
+    document.getElementById('logoutBtn').style.display = 'none';
+    document.getElementById('registerBtn').style.display = 'block';
 }
 
 function toggleDrawer() {
@@ -67,16 +88,25 @@ function navigate(page) {
     window.location.hash = page;
     pageTitle.textContent = page.charAt(0).toUpperCase() + page.split('-').join(' ').slice(1);
 
-    if (page === 'account') {
+    if (page === 'account' || page === 'login' || page === 'register' || page === 'logout') {
         profilePic.style.backgroundColor = 'gray';
         profilePic.style.backgroundImage = 'none';
     } else {
-        profilePic.style.backgroundImage = `url(${dogData.photoUrl})`;
+        profilePic.style.backgroundImage = `url("${dogData.photoUrl}")`;
         profilePic.style.backgroundSize = 'cover';
     }
 
     switch (page) {
         case 'home':
+            const recentLocations = locationsData.filter(loc => {
+                const locTime = new Date(loc.timestamp);
+                const now = new Date();
+                const twoHoursAgo = new Date(now.getTime() - 2 * 60 * 60 * 1000);
+                return loc.active && locTime >= twoHoursAgo;
+            });
+            const mapUrl = recentLocations.length > 0
+                ? `https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d2865.2493525638047!2d${recentLocations[0].longitude}!3d${recentLocations[0].latitude}!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e0!3m2!1sen!2sus!4v1747449999425!5m2!1sen!2sus`
+                : `https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d2865.2493525638047!2d-79.3832!3d43.6532!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e0!3m2!1sen!2sus!4v1747449999425!5m2!1sen!2sus`;
             content.innerHTML = `
                 <h2>${dogData.name}</h2>
                 <p>${dogData.description}</p>
@@ -86,6 +116,15 @@ function navigate(page) {
                 <p>Sex: ${dogData.sex}</p>
                 <p>Eye Color: ${dogData.eyeColor}</p>
                 <p>Neutered: ${dogData.neutered}</p>
+                <h3>Last Scanned Locations (Last 2 Hours)</h3>
+                ${recentLocations.length > 0
+                    ? recentLocations.map(loc => `
+                        <p>Device: ${loc.deviceName}</p>
+                        <p>Time: ${new Date(loc.timestamp).toLocaleString()}</p>
+                        <p>Latitude: ${loc.latitude}, Longitude: ${loc.longitude}</p>
+                    `).join('')
+                    : '<p>No recent locations available.</p>'}
+                <iframe src="${mapUrl}" width="400" height="300" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
                 <button onclick="navigate('report-lost')">Report Lost</button>
                 <button onclick="navigate('medical')">Medical Info</button>
                 <button onclick="navigate('about')">About Me</button>
@@ -96,7 +135,7 @@ function navigate(page) {
         case 'contact':
             content.innerHTML = `
                 <h2>Contact Information</h2>
-                <p>Email: ${userData ? userData.email : 'clydedog416@gmail.com'}</p>
+                <p>Email: ${userData ? userData.email : 'mypetid@yahoo.com'}</p>
                 <p>Phone: ${userData ? userData.phone : '(416) 555-1234'}</p>
                 <p>Address: ${userData ? userData.address : '123 Bone Street, Toronto, Ontario, M5V 2T4, Canada'}</p>
                 <button onclick="navigate('report-lost')">Report Lost</button>
@@ -112,7 +151,7 @@ function navigate(page) {
                 <p>Vaccinations: ${dogData.medicalInfo.vaccinations}</p>
                 <p>Checkups: ${dogData.medicalInfo.checkups}</p>
                 <p>Allergies: ${dogData.medicalInfo.allergies}</p>
-                <button class="text-button" onclick="navigate('about')">View</button>
+                <button class="text-button" onclick="navigate('about')">View About Me</button>
             `;
             break;
         case 'about':
@@ -129,7 +168,7 @@ function navigate(page) {
                     <span style="margin-left: 8px;">☰</span>
                 </div>
                 <p style="text-align: center;">Take a look at my Socials to see all my crazy journeys my owners have posted!</p>
-                <button class="text-button" onclick="navigate('socials')">View</button>
+                <button class="text-button" onclick="navigate('socials')">View Socials</button>
             `;
             break;
         case 'socials':
@@ -192,10 +231,10 @@ function navigate(page) {
                 content.innerHTML = `
                     <h2>Account View</h2>
                     <strong>User Information</strong>
-                    <p>Name: ${userData.name}</p>
+                    <p>Name: ${userData.name || 'Not set'}</p>
                     <p>Email: ${userData.email}</p>
-                    <p>Phone: ${userData.phone}</p>
-                    <p>Address: ${userData.address}</p>
+                    <p>Phone: ${userData.phone || 'Not set'}</p>
+                    <p>Address: ${userData.address || 'Not set'}</p>
                     <strong>Dog Information</strong>
                     <input type="text" id="dog-name" value="${dogData.name}">
                     <input type="text" id="dog-description" value="${dogData.description}">
@@ -216,13 +255,22 @@ function navigate(page) {
             }
             break;
         case 'login':
-            content.innerHTML = `
-                <h2>Login</h2>
-                <input type="text" id="email" placeholder="Email">
-                <input type="password" id="password" placeholder="Password">
-                <button onclick="login()">Login</button>
-                <button class="text-button" onclick="navigate('register')">Register</button>
-            `;
+            if (isLoggedIn) {
+                content.innerHTML = `
+                    <h2>Welcome, ${userData.email}</h2>
+                    <button onclick="navigate('account')">Go to Account</button>
+                    <button onclick="navigate('home')">View Pet Profile</button>
+                `;
+            } else {
+                content.innerHTML = `
+                    <h2>Login</h2>
+                    <input type="text" id="email" placeholder="Email">
+                    <input type="password" id="password" placeholder="Password">
+                    <button onclick="login()">Login</button>
+                    <button class="text-button" onclick="navigate('register')">Register</button>
+                    <button class="text-button" onclick="navigate('reset-password')">Forgot Password?</button>
+                `;
+            }
             break;
         case 'register':
             content.innerHTML = `
@@ -232,8 +280,19 @@ function navigate(page) {
                 <input type="text" id="reg-name" placeholder="Name">
                 <input type="text" id="reg-phone" placeholder="Phone">
                 <input type="text" id="reg-address" placeholder="Address">
+                <input type="text" id="reg-device" placeholder="Device Name (e.g., Dad's Phone)">
                 <button onclick="register()">Register</button>
             `;
+            break;
+        case 'reset-password':
+            content.innerHTML = `
+                <h2>Reset Password</h2>
+                <input type="text" id="reset-email" placeholder="Enter your email">
+                <button onclick="resetPassword()">Send Reset Link</button>
+            `;
+            break;
+        case 'logout':
+            logout();
             break;
     }
 }
@@ -243,7 +302,7 @@ async function submitReportLost() {
     const finderContact = document.getElementById('finder-contact').value;
     const location = document.getElementById('location').value;
     try {
-        const response = await fetch('https://mypetid-backend.herokuapp.com/api/report-lost', {
+        const response = await fetch('https://mypetid-map.herokuapp.com/api/report-lost', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -265,6 +324,11 @@ async function submitReportLost() {
 }
 
 async function saveChanges() {
+    if (!isLoggedIn || !userData || userData._id !== dogData.ownerId) {
+        alert('You do not have permission to edit this profile.');
+        return;
+    }
+
     const updatedDog = {
         name: document.getElementById('dog-name').value,
         description: document.getElementById('dog-description').value,
@@ -284,15 +348,15 @@ async function saveChanges() {
         socials: dogData.socials,
         testimonials: dogData.testimonials,
         gallery: dogData.gallery,
-        photoUrl: dogData.photoUrl
+        photoUrl: dogData.photoUrl,
+        ownerId: dogData.ownerId,
+        nfcTagId: dogData.nfcTagId
     };
 
     try {
-        const response = await fetch(`https://mypetid-backend.herokuapp.com/api/dog/${dogData._id}`, {
+        const response = await fetch(`https://mypetid-map.herokuapp.com/api/dog/${dogData._id}`, {
             method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(updatedDog),
             credentials: 'include'
         });
@@ -301,7 +365,7 @@ async function saveChanges() {
             alert('Changes saved successfully!');
             navigate('home');
         } else {
-            alert('Failed to save changes. Please log in.');
+            alert('Failed to save changes.');
         }
     } catch (error) {
         alert('Error saving changes: ' + error.message);
@@ -312,7 +376,7 @@ async function login() {
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
     try {
-        const response = await fetch('https://mypetid-backend.herokuapp.com/api/login', {
+        const response = await fetch('https://mypetid-map.herokuapp.com/api/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password }),
@@ -321,7 +385,9 @@ async function login() {
         const data = await response.json();
         if (response.ok) {
             isLoggedIn = true;
-            await fetchData(); // Refresh data after login
+            userData = data.user;
+            dogData = data.dog;
+            showLoggedInState();
             navigate('home');
         } else {
             alert(data.error);
@@ -337,36 +403,57 @@ async function register() {
     const name = document.getElementById('reg-name').value;
     const phone = document.getElementById('reg-phone').value;
     const address = document.getElementById('reg-address').value;
+    const device = document.getElementById('reg-device').value;
     try {
-        const response = await fetch('https://mypetid-backend.herokuapp.com/api/register', {
+        const response = await fetch('https://mypetid-map.herokuapp.com/api/register', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, password, name, phone, address })
+            body: JSON.stringify({ email, password, name, phone, address, device })
         });
         if (response.ok) {
-            alert('Registration successful');
+            alert('Registration successful! Please log in.');
             navigate('login');
         } else {
-            alert('Failed to register');
+            alert('Failed to register.');
         }
     } catch (error) {
         alert('Error registering: ' + error.message);
     }
 }
 
+async function resetPassword() {
+    const email = document.getElementById('reset-email').value;
+    try {
+        const response = await fetch('https://mypetid-map.herokuapp.com/api/reset-password', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email })
+        });
+        if (response.ok) {
+            alert('Password reset link sent to your email (implementation pending).');
+            navigate('login');
+        } else {
+            alert('Failed to send reset link.');
+        }
+    } catch (error) {
+        alert('Error sending reset link: ' + error.message);
+    }
+}
+
 async function logout() {
     try {
-        const response = await fetch('https://mypetid-backend.herokuapp.com/api/logout', {
+        const response = await fetch('https://mypetid-map.herokuapp.com/api/logout', {
             method: 'POST',
             credentials: 'include'
         });
         if (response.ok) {
             isLoggedIn = false;
             userData = null;
-            await fetchData(); // Refresh data to show default dog profile
+            showLoggedOutState();
+            await fetchData();
             navigate('home');
         } else {
-            alert('Failed to log out');
+            alert('Failed to log out.');
         }
     } catch (error) {
         alert('Error logging out: ' + error.message);
