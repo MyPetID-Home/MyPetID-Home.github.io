@@ -1,6 +1,4 @@
 build:
-  docker:
-    web: backend
-  config:
-    buildpacks:
-      - heroku/nodejs
+  root: backend
+  buildpacks:
+    - heroku/nodejs
