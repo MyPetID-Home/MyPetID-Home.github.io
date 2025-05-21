@@ -202,4 +202,25 @@ app.post('/api/locations', async (req, res) => {
   }
 });
 
+// GET endpoint to fetch locations by tagId
+app.get('/api/locations/:tagId', async (req, res) => {
+  try {
+    const { tagId } = req.params;
+    // First, find the dog by tagId to get the dogId
+    const dog = await Dog.findOne({ nfcTagId: tagId });
+    if (!dog) {
+      return res.status(404).json({ message: 'Dog not found' });
+    }
+    // Fetch locations for this dog
+    const locations = await Location.find({ dogId: dog._id });
+    if (!locations || locations.length === 0) {
+      return res.status(404).json({ message: 'No locations found for this dog' });
+    }
+    res.status(200).json(locations);
+  } catch (error) {
+    console.error('Error fetching locations:', error);
+    res.status(500).json({ error: 'Failed to fetch locations' });
+  }
+});
+
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
