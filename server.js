@@ -182,4 +182,24 @@ app.put('/api/dog/:id', authenticateToken, async (req, res) => {
   }
 });
 
+app.post('/api/locations', async (req, res) => {
+  try {
+    const { dogId, deviceName, latitude, longitude, timestamp, active } = req.body;
+    const location = new Location({
+      _id: new mongoose.Types.ObjectId().toString(),
+      dogId,
+      deviceName,
+      latitude: parseFloat(latitude.split(',')[0]), // Tasker sends lat,lon as a string
+      longitude: parseFloat(longitude.split(',')[1]),
+      timestamp: new Date(timestamp * 1000), // Tasker sends timestamp in seconds
+      active
+    });
+    await location.save();
+    res.status(201).json({ message: 'Location saved successfully' });
+  } catch (error) {
+    console.error('Error saving location:', error);
+    res.status(500).json({ error: 'Failed to save location' });
+  }
+});
+
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
