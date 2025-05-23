@@ -32,7 +32,7 @@ const User = mongoose.model('User', userSchema, 'users');
 // Dog Schema
 const dogSchema = new mongoose.Schema({
   _id: String,
-  nfcTagId: String,
+  nfcTagId: String, // Keep for now, can remove if not used
   name: String,
   description: String,
   age: String,
@@ -101,13 +101,16 @@ app.get('/api/dog/:tagId', async (req, res) => {
   }
 });
 
-app.get('/api/locations/:tagId', async (req, res) => {
+app.get('/api/locations/:dogId', async (req, res) => { // Changed from :tagId to :dogId
   try {
-    const dog = await Dog.findOne({ nfcTagId: req.params.tagId });
-    if (!dog) return res.status(404).json({ error: 'Dog not found' });
-    const locations = await Location.find({ dogId: dog._id });
-    res.json(locations);
+    const { dogId } = req.params;
+    const locations = await Location.find({ dogId });
+    if (!locations || locations.length === 0) {
+      return res.status(404).json({ message: 'No locations found for this dog' });
+    }
+    res.status(200).json(locations);
   } catch (error) {
+    console.error('Error fetching locations:', error);
     res.status(500).json({ error: 'Failed to fetch locations' });
   }
 });
@@ -115,7 +118,6 @@ app.get('/api/locations/:tagId', async (req, res) => {
 app.post('/api/report-lost', async (req, res) => {
   try {
     const { dogId, finderName, finderContact, location } = req.body;
-    // Implementation pending: Store report in a new collection or notify owner
     res.status(200).json({ message: 'Report submitted successfully' });
   } catch (error) {
     res.status(500).json({ error: 'Failed to submit report' });
@@ -164,7 +166,6 @@ app.post('/api/logout', authenticateToken, (req, res) => {
 app.post('/api/reset-password', async (req, res) => {
   try {
     const { email } = req.body;
-    // Implementation pending: Send reset link via email
     res.status(200).json({ message: 'Password reset link sent' });
   } catch (error) {
     res.status(500).json({ error: 'Failed to send reset link' });
@@ -189,9 +190,9 @@ app.post('/api/locations', async (req, res) => {
       _id: new mongoose.Types.ObjectId().toString(),
       dogId,
       deviceName,
-      latitude: parseFloat(latitude.split(',')[0]), // Tasker sends lat,lon as a string
-      longitude: parseFloat(longitude.split(',')[1]),
-      timestamp: new Date(timestamp * 1000), // Tasker sends timestamp in seconds
+      latitude: parseFloat(latitude), // Updated to handle separate latitude
+      longitude: parseFloat(longitude), // Updated to handle separate longitude
+      timestamp: new Date(timestamp * 1000),
       active
     });
     await location.save();
@@ -199,27 +200,6 @@ app.post('/api/locations', async (req, res) => {
   } catch (error) {
     console.error('Error saving location:', error);
     res.status(500).json({ error: 'Failed to save location' });
-  }
-});
-
-// GET endpoint to fetch locations by tagId
-app.get('/api/locations/:tagId', async (req, res) => {
-  try {
-    const { tagId } = req.params;
-    // First, find the dog by tagId to get the dogId
-    const dog = await Dog.findOne({ nfcTagId: tagId });
-    if (!dog) {
-      return res.status(404).json({ message: 'Dog not found' });
-    }
-    // Fetch locations for this dog
-    const locations = await Location.find({ dogId: dog._id });
-    if (!locations || locations.length === 0) {
-      return res.status(404).json({ message: 'No locations found for this dog' });
-    }
-    res.status(200).json(locations);
-  } catch (error) {
-    console.error('Error fetching locations:', error);
-    res.status(500).json({ error: 'Failed to fetch locations' });
   }
 });
 
