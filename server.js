@@ -32,7 +32,7 @@ const User = mongoose.model('User', userSchema, 'users');
 // Dog Schema
 const dogSchema = new mongoose.Schema({
   _id: String,
-  nfcTagId: String, // Keep for now, can remove if not used
+  nfcTagId: String,
   name: String,
   description: String,
   age: String,
@@ -80,6 +80,22 @@ const authenticateToken = (req, res, next) => {
   });
 };
 
+// Temporary endpoint to hash the existing user's password
+app.post('/api/hash-password', async (req, res) => {
+  try {
+    const user = await User.findOne({ email: 'real_cak3d@yahoo.com' });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    const hashedPassword = await bcrypt.hash(user.password, 10);
+    user.password = hashedPassword;
+    await user.save();
+
+    res.status(200).json({ message: 'Password hashed successfully' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to hash password', details: error.message });
+  }
+});
+
 // API Endpoints
 app.get('/api/user-data', authenticateToken, async (req, res) => {
   try {
@@ -101,7 +117,7 @@ app.get('/api/dog/:tagId', async (req, res) => {
   }
 });
 
-app.get('/api/locations/:dogId', async (req, res) => { // Changed from :tagId to :dogId
+app.get('/api/locations/:dogId', async (req, res) => {
   try {
     const { dogId } = req.params;
     const locations = await Location.find({ dogId });
@@ -190,8 +206,8 @@ app.post('/api/locations', async (req, res) => {
       _id: new mongoose.Types.ObjectId().toString(),
       dogId,
       deviceName,
-      latitude: parseFloat(latitude), // Updated to handle separate latitude
-      longitude: parseFloat(longitude), // Updated to handle separate longitude
+      latitude: parseFloat(latitude),
+      longitude: parseFloat(longitude),
       timestamp: new Date(timestamp * 1000),
       active
     });
