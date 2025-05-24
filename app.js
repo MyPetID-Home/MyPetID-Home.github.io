@@ -5,7 +5,7 @@ let locationsData = [];
 
 async function fetchData() {
     const urlParams = new URLSearchParams(window.location.search);
-    const tagId = urlParams.get('tag') || '04:6C:E3:0F:BE:2A:81'; // Updated to correct NFC tag ID
+    const tagId = urlParams.get('tag') || '04:6C:E3:0F:BE:2A:81'; // Correct NFC tag ID
 
     if (!tagId) {
         document.getElementById('content').innerHTML = '<p>No dog tag ID provided. Please scan a valid QR code or NFC tag.</p>';
@@ -23,34 +23,42 @@ async function fetchData() {
             dogData = data.dog;
             isLoggedIn = true;
             showLoggedInState();
+        } else {
+            console.error('User data fetch failed:', userResponse.status, await userResponse.text());
         }
     } catch (error) {
-        console.error('Error fetching user data:', error);
+        console.error('Error fetching user data:', error.message);
     }
 
     // Fetch dog data if not logged in or user fetch fails
     let dataLoaded = false;
     if (!dogData) {
         try {
-            const dogResponse = await fetch(`https://mypetid-map-69b6f0c23e33.herokuapp.com/api/dog/${tagId}`); // Updated URL
+            const dogResponse = await fetch(`https://mypetid-map-69b6f0c23e33.herokuapp.com/api/dog/${tagId}`);
             if (dogResponse.ok) {
                 dogData = await dogResponse.json();
                 dataLoaded = true;
+                console.log('Dog data fetched successfully:', dogData);
+            } else {
+                console.error('Dog data fetch failed:', dogResponse.status, await dogResponse.text());
             }
         } catch (error) {
-            console.error('Error fetching dog data:', error);
+            console.error('Error fetching dog data:', error.message);
         }
     }
 
     // Fetch location data using dogId
     try {
         const dogId = dogData ? dogData._id : '682774024ca6684a976c5f8e'; // Use dogData._id if available, else hardcoded
-        const locationResponse = await fetch(`https://mypetid-map-69b6f0c23e33.herokuapp.com/api/locations/${dogId}`); // Updated URL and endpoint
+        const locationResponse = await fetch(`https://mypetid-map-69b6f0c23e33.herokuapp.com/api/locations/${dogId}`);
         if (locationResponse.ok) {
             locationsData = await locationResponse.json();
+            console.log('Location data fetched successfully:', locationsData);
+        } else {
+            console.error('Location data fetch failed:', locationResponse.status, await locationResponse.text());
         }
     } catch (error) {
-        console.error('Error fetching location data:', error);
+        console.error('Error fetching location data:', error.message);
     }
 
     // Fallback to READMEFIRST.md if backend data fails
