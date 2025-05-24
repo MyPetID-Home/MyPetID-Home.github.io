@@ -88,22 +88,6 @@ const authenticateToken = (req, res, next) => {
   });
 };
 
-// Temporary endpoint to hash the existing user's password
-app.post('/api/hash-password', async (req, res) => {
-  try {
-    const user = await User.findById('682772c14ca6684a976c5f8d');
-    if (!user) return res.status(404).json({ error: 'User not found' });
-
-    const hashedPassword = await bcrypt.hash(user.password, 10);
-    user.password = hashedPassword;
-    await user.save();
-
-    res.status(200).json({ message: 'Password hashed successfully' });
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to hash password', details: error.message });
-  }
-});
-
 // API Endpoints
 app.get('/api/user-data', authenticateToken, async (req, res) => {
   try {
