@@ -5,7 +5,7 @@ let locationsData = [];
 
 async function fetchData() {
     const urlParams = new URLSearchParams(window.location.search);
-    const tagId = urlParams.get('tag') || 'clyde-nfc-123';
+    const tagId = urlParams.get('tag') || '04:6C:E3:0F:BE:2A:81';
 
     if (!tagId) {
         document.getElementById('content').innerHTML = '<p>No dog tag ID provided. Please scan a valid QR code or NFC tag.</p>';
