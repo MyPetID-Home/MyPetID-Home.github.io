@@ -11,10 +11,17 @@ app.use(cors());
 
 const PORT = process.env.PORT || 5000;
 
-// MongoDB Connection
+// MongoDB Connection with detailed logging
 mongoose.connect(process.env.MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true })
-  .then(() => console.log('Connected to MongoDB'))
-  .catch(err => console.error('MongoDB connection error:', err));
+  .then(() => {
+    console.log('Successfully connected to MongoDB');
+    console.log('Database name:', mongoose.connection.db.databaseName);
+    console.log('Collections:', mongoose.connection.db.listCollections().toArray().then(cols => cols.map(col => col.name)));
+  })
+  .catch(err => {
+    console.error('MongoDB connection error:', err.message);
+    console.error('MongoDB URI (masked):', process.env.MONGODB_URI ? 'Set' : 'Not set');
+  });
 
 // User Schema
 const userSchema = new mongoose.Schema({
@@ -83,7 +90,7 @@ const authenticateToken = (req, res, next) => {
 // Temporary endpoint to hash the existing user's password
 app.post('/api/hash-password', async (req, res) => {
   try {
-    const user = await User.findById('6831b4859b547d84be21db53');
+    const user = await User.findById('682772c14ca6684a976c5f8d');
     if (!user) return res.status(404).json({ error: 'User not found' });
 
     const hashedPassword = await bcrypt.hash(user.password, 10);
