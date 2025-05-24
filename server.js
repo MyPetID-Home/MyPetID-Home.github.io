@@ -13,10 +13,11 @@ const PORT = process.env.PORT || 5000;
 
 // MongoDB Connection with detailed logging
 mongoose.connect(process.env.MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true })
-  .then(() => {
+  .then(async () => {
     console.log('Successfully connected to MongoDB');
     console.log('Database name:', mongoose.connection.db.databaseName);
-    console.log('Collections:', mongoose.connection.db.listCollections().toArray().then(cols => cols.map(col => col.name)));
+    const collections = await mongoose.connection.db.listCollections().toArray();
+    console.log('Collections:', collections.map(col => col.name));
   })
   .catch(err => {
     console.error('MongoDB connection error:', err.message);
