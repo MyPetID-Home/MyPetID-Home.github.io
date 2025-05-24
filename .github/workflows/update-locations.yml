@@ -10,12 +10,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4 # Updated to v4
+        uses: actions/checkout@v4
         with:
           ref: main
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4 # Updated to v4
+        uses: actions/setup-node@v4
         with:
           node-version: '18'
 
@@ -30,7 +30,7 @@ jobs:
 
             async function updateLocations() {
               try {
-                const response = await axios.get("https://mypetid-map.herokuapp.com/api/locations/clyde-nfc-123");
+                const response = await axios.get("https://mypetid-map-69b6f0c23e33.herokuapp.com/api/locations/682774024ca6684a976c5f8e"); // Updated to correct dogId
                 const locations = response.data;
                 const recentLocations = locations.filter(loc => {
                   const locTime = new Date(loc.timestamp);
