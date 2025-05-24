@@ -33,10 +33,13 @@ async function fetchData() {
     if (!dogData) {
         try {
             const dogResponse = await fetch(`https://mypetid-map-69b6f0c23e33.herokuapp.com/api/dog/${tagId}`);
+            console.log('Dog Response Status:', dogResponse.status); // Debug log
             if (dogResponse.ok) {
                 dogData = await dogResponse.json();
                 dataLoaded = true;
+                console.log('Dog Data Loaded:', dogData); // Debug log
             } else {
+                console.log('Dog Response Error:', await dogResponse.text()); // Debug log
                 document.getElementById('content').innerHTML = '<p>Dog not found. Check the tag ID or try again.</p>';
             }
         } catch (error) {
@@ -48,12 +51,16 @@ async function fetchData() {
     // Fetch location data using dogId if available, otherwise tagId as fallback
     try {
         const locationDogId = dogData ? dogData._id : tagId; // Use dogId if available, else tagId
+        console.log('Fetching locations for:', locationDogId); // Debug log
         const locationResponse = await fetch(`https://mypetid-map-69b6f0c23e33.herokuapp.com/api/locations/${locationDogId}`);
+        console.log('Location Response Status:', locationResponse.status); // Debug log
         if (locationResponse.ok) {
             locationsData = await locationResponse.json();
+            console.log('Locations Data Loaded:', locationsData); // Debug log
         } else {
             locationsData = [];
             document.getElementById('content').innerHTML += '<p>No locations found for this dog.</p>';
+            console.log('Location Response Error:', await locationResponse.text()); // Debug log
         }
     } catch (error) {
         console.error('Error fetching location data:', error);
@@ -62,6 +69,7 @@ async function fetchData() {
     }
 
     // Fallback to READMEFIRST.md if backend data fails
+    console.log('Data Loaded:', dataLoaded, 'Dog Data:', dogData); // Debug log
     if (!dataLoaded && !dogData) {
         try {
             const readmeResponse = await fetch('READMEFIRST.md');
@@ -78,11 +86,8 @@ async function fetchData() {
         }
     }
 
-    navigate(window.location.hash.replace('#', '') || 'home');
+    navigate(window.location.hash.replace('#', ') || 'home');
 }
-
-// Rest of the functions (showLoggedInState, showLoggedOutState, toggleDrawer, navigate, etc.) remain unchanged
-// Only updating the functions that need modification
 
 function showLoggedInState() {
     document.getElementById('loginBtn').style.display = 'none';
@@ -161,7 +166,6 @@ function navigate(page) {
                 <button class="text-button" onclick="navigate('contact')">Contact Information</button>
             `;
             break;
-        // Other cases (contact, medical, about, etc.) remain unchanged
         case 'contact':
             content.innerHTML = `
                 <h2>Contact Information</h2>
