@@ -194,10 +194,6 @@ function navigate(page) {
                 <p>YouTube: ${dogData.socials.youtube}</p>
                 <p>Instagram: ${dogData.socials.instagram}</p>
                 <p>Facebook: ${dogData.socials.facebook}</p>
-                <p>TikTok: ${dogData.socials.tiktok}</p>
-                <p>Twitter: ${dogData.socials.twitter}</p>
-                <p>Custom Link 1: ${dogData.socials.customLink1}</p>
-                <p>Custom Link 2: ${dogData.socials.customLink2}</p>
                 <button class="text-button" onclick="navigate('donation')">Donation: ${dogData.socials.donationLink}</button>
                 <p>Testimonials: See what others have to say about me!</p>
                 ${dogData.testimonials.map(t => `<p>${t.text} - ${t.author}</p>`).join('')}
