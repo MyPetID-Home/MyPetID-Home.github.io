@@ -5,7 +5,7 @@ let locationsData = [];
 
 async function fetchData() {
     const urlParams = new URLSearchParams(window.location.search);
-    const tagId = urlParams.get('tag') || 'clyde-nfc-123';
+    const tagId = urlParams.get('tag') || '04:6C:E3:0F:BE:2A:81'; // Updated to match Clyde's NFC tag
 
     if (!tagId) {
         document.getElementById('content').innerHTML = '<p>No dog tag ID provided. Please scan a valid QR code or NFC tag.</p>';
@@ -14,7 +14,7 @@ async function fetchData() {
 
     // Fetch user data if logged in
     try {
-        const userResponse = await fetch('https://mypetid-map.herokuapp.com/api/user-data', {
+        const userResponse = await fetch('https://mypetid-map-69b6f0c23e33.herokuapp.com/api/user-data', {
             credentials: 'include'
         });
         if (userResponse.ok) {
@@ -32,28 +32,37 @@ async function fetchData() {
     let dataLoaded = false;
     if (!dogData) {
         try {
-            const dogResponse = await fetch(`https://mypetid-map.herokuapp.com/api/dog/${tagId}`);
+            const dogResponse = await fetch(`https://mypetid-map-69b6f0c23e33.herokuapp.com/api/dog/${tagId}`);
             if (dogResponse.ok) {
                 dogData = await dogResponse.json();
                 dataLoaded = true;
+            } else {
+                document.getElementById('content').innerHTML = '<p>Dog not found. Check the tag ID or try again.</p>';
             }
         } catch (error) {
             console.error('Error fetching dog data:', error);
+            document.getElementById('content').innerHTML = '<p>Error fetching dog data. Please try again later.</p>';
         }
     }
 
-    // Fetch location data
+    // Fetch location data using dogId if available, otherwise tagId as fallback
     try {
-        const locationResponse = await fetch(`https://mypetid-map.herokuapp.com/api/locations/${tagId}`);
+        const locationDogId = dogData ? dogData._id : tagId; // Use dogId if available, else tagId
+        const locationResponse = await fetch(`https://mypetid-map-69b6f0c23e33.herokuapp.com/api/locations/${locationDogId}`);
         if (locationResponse.ok) {
             locationsData = await locationResponse.json();
+        } else {
+            locationsData = [];
+            document.getElementById('content').innerHTML += '<p>No locations found for this dog.</p>';
         }
     } catch (error) {
         console.error('Error fetching location data:', error);
+        locationsData = [];
+        document.getElementById('content').innerHTML += '<p>Error fetching location data. Please try again later.</p>';
     }
 
     // Fallback to READMEFIRST.md if backend data fails
-    if (!dataLoaded) {
+    if (!dataLoaded && !dogData) {
         try {
             const readmeResponse = await fetch('READMEFIRST.md');
             if (readmeResponse.ok) {
@@ -71,6 +80,9 @@ async function fetchData() {
 
     navigate(window.location.hash.replace('#', '') || 'home');
 }
+
+// Rest of the functions (showLoggedInState, showLoggedOutState, toggleDrawer, navigate, etc.) remain unchanged
+// Only updating the functions that need modification
 
 function showLoggedInState() {
     document.getElementById('loginBtn').style.display = 'none';
@@ -149,6 +161,7 @@ function navigate(page) {
                 <button class="text-button" onclick="navigate('contact')">Contact Information</button>
             `;
             break;
+        // Other cases (contact, medical, about, etc.) remain unchanged
         case 'contact':
             content.innerHTML = `
                 <h2>Contact Information</h2>
@@ -315,7 +328,7 @@ async function submitReportLost() {
     const finderContact = document.getElementById('finder-contact').value;
     const location = document.getElementById('location').value;
     try {
-        const response = await fetch('https://mypetid-map.herokuapp.com/api/report-lost', {
+        const response = await fetch('https://mypetid-map-69b6f0c23e33.herokuapp.com/api/report-lost', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -367,7 +380,7 @@ async function saveChanges() {
     };
 
     try {
-        const response = await fetch(`https://mypetid-map.herokuapp.com/api/dog/${dogData._id}`, {
+        const response = await fetch(`https://mypetid-map-69b6f0c23e33.herokuapp.com/api/dog/${dogData._id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(updatedDog),
@@ -389,7 +402,7 @@ async function login() {
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
     try {
-        const response = await fetch('https://mypetid-map.herokuapp.com/api/login', {
+        const response = await fetch('https://mypetid-map-69b6f0c23e33.herokuapp.com/api/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password }),
@@ -418,7 +431,7 @@ async function register() {
     const address = document.getElementById('reg-address').value;
     const device = document.getElementById('reg-device').value;
     try {
-        const response = await fetch('https://mypetid-map.herokuapp.com/api/register', {
+        const response = await fetch('https://mypetid-map-69b6f0c23e33.herokuapp.com/api/register', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password, name, phone, address, device })
@@ -437,7 +450,7 @@ async function register() {
 async function resetPassword() {
     const email = document.getElementById('reset-email').value;
     try {
-        const response = await fetch('https://mypetid-map.herokuapp.com/api/reset-password', {
+        const response = await fetch('https://mypetid-map-69b6f0c23e33.herokuapp.com/api/reset-password', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email })
@@ -455,7 +468,7 @@ async function resetPassword() {
 
 async function logout() {
     try {
-        const response = await fetch('https://mypetid-map.herokuapp.com/api/logout', {
+        const response = await fetch('https://mypetid-map-69b6f0c23e33.herokuapp.com/api/logout', {
             method: 'POST',
             credentials: 'include'
         });
