@@ -86,7 +86,7 @@ async function fetchData() {
         }
     }
 
-    navigate(window.location.hash.replace('#', ') || 'home');
+    navigate(window.location.hash.replace('#', '') || 'home'); // Fixed syntax error
 }
 
 function showLoggedInState() {
