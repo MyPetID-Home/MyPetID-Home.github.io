@@ -83,7 +83,7 @@ const authenticateToken = (req, res, next) => {
 // Temporary endpoint to hash the existing user's password
 app.post('/api/hash-password', async (req, res) => {
   try {
-    const user = await User.findById('682772c14ca6684a976c5f8d');
+    const user = await User.findById('6831b4859b547d84be21db53');
     if (!user) return res.status(404).json({ error: 'User not found' });
 
     const hashedPassword = await bcrypt.hash(user.password, 10);
