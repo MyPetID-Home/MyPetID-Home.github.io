@@ -46,6 +46,7 @@ const dogSchema = new mongoose.Schema({
   age: String,
   weight: String,
   coat: String,
+  coatColor: String,
   sex: String,
   eyeColor: String,
   neutered: String,
