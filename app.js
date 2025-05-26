@@ -114,7 +114,7 @@ function navigate(page) {
         profilePic.style.backgroundColor = 'gray';
         profilePic.style.backgroundImage = 'none';
     } else {
-        profilePic.style.backgroundImage = `url("${dogData.photoUrl || 'images/dog/Clyde.png'}")`;
+        profilePic.style.backgroundImage = `url("${dogData.photoUrl}")`;
         profilePic.style.backgroundSize = 'cover';
     }
 
@@ -130,7 +130,7 @@ function navigate(page) {
                 <p>Age: ${dogData.age}</p>
                 <p>Weight: ${dogData.weight}</p>
                 <p>Coat: ${dogData.coat}</p>
-                <p>Coat Color: ${dogData.coatColor || 'Tan'}</p>
+                <p>Coat Color: ${dogData.coatColor}</p>
                 <p>Sex: ${dogData.sex}</p>
                 <p>Eye Color: ${dogData.eyeColor}</p>
                 <p>Neutered: ${dogData.neutered}</p>
@@ -145,8 +145,8 @@ function navigate(page) {
         case 'contact':
             content.innerHTML = `
                 <h2>Contact Information</h2>
-                <div class="contact-item"><img src="images/Boy.png" alt="Boy"><span>Boy<br>(${userData ? userData.phone || '(207) 440-7812' : '(207) 440-7812'})</span></div>
-                <div class="contact-item"><img src="images/Dad.jpg" alt="Dad"><span>Dad<br>(${userData ? userData.phone || '(518) 610-3096' : '(518) 610-3096'})</span></div>
+                <div class="contact-item"><img src="https://mypetid-home.github.io/images/owners/Boy.png" alt="Boy"><span>Boy<br>(${userData ? userData.phone || '(207) 440-7812' : '(207) 440-7812'})</span></div>
+                <div class="contact-item"><img src="https://mypetid-home.github.io/images/owners/Dad.jpg" alt="Dad"><span>Dad<br>(${userData ? userData.phone || '(518) 610-3096' : '(518) 610-3096'})</span></div>
                 <p>Email: ${userData ? userData.email : 'real_cak3d@yahoo.com'}</p>
                 <p>Address: ${userData ? userData.address || 'Not set' : 'Not set'}</p>
                 <div class="section">
@@ -183,10 +183,10 @@ function navigate(page) {
                 <p>Note: Please cover any personal information before uploading any documents</p>
                 <div class="section">
                     <img src="https://img.icons8.com/ios-filled/50/000000/document.png" alt="Medical Document">
-                    <p>${dogData.medicalInfo.documents ? dogData.medicalInfo.documents[0] : 'No document available'}</p>
+                    <p>${dogData.medicalInfo.documents ? dogData.medicalInfo.documents[0].split('/').pop() : 'No document available'}</p>
                     <button class="text-button" onclick="document.getElementById('medicalImage').style.display='block'">View</button>
                 </div>
-                <img id="medicalImage" src="${dogData.medicalInfo.documents ? dogData.medicalInfo.documents[0].replace('images/medical/', 'images/medical/') : ''}" style="display:none; max-width:100%; height:auto;" onclick="this.style.display='none'">
+                <img id="medicalImage" src="${dogData.medicalInfo.documents ? dogData.medicalInfo.documents[0] : ''}" style="display:none; max-width:100%; height:auto;" onclick="this.style.display='none'">
                 <p>Recent Shots: ${dogData.medicalInfo.shots}</p>
                 <p>Medications: ${dogData.medicalInfo.medications}</p>
                 <p>Vaccinations: ${dogData.medicalInfo.vaccinations}</p>
@@ -220,10 +220,10 @@ function navigate(page) {
                     <strong>Throw me a Bone!</strong>
                     <p>All proceeds cover food, supplies, and medical costs as needed to ensure ${dogData.name} receives proper nutrition and care.</p>
                     <input type="text" id="donation-amount" placeholder="$ Custom Amount">
-                    <button onclick="alert('Redirect to PayPal (not implemented)')">Woof!</button>
+                    <button onclick="window.location.href='${dogData.socials.donationLink}'">Woof!</button>
                 </div>
                 <div class="testimonial">
-                    <img src="images/Dad.jpg" alt="Dad">
+                    <img src="https://mypetid-home.github.io/images/owners/Dad.jpg" alt="Dad">
                     <p>${dogData.testimonials[0].text} -${dogData.testimonials[0].author}</p>
                 </div>
                 <button class="text-button" onclick="navigate('gallery')">View Gallery</button>
@@ -267,7 +267,7 @@ function navigate(page) {
                     <input type="text" id="dog-age" value="${dogData.age}">
                     <input type="text" id="dog-weight" value="${dogData.weight}">
                     <input type="text" id="dog-coat" value="${dogData.coat}">
-                    <input type="text" id="dog-coatColor" value="${dogData.coatColor || 'Tan'}">
+                    <input type="text" id="dog-coatColor" value="${dogData.coatColor}">
                     <input type="text" id="dog-sex" value="${dogData.sex}">
                     <input type="text" id="dog-eyeColor" value="${dogData.eyeColor}">
                     <input type="text" id="dog-neutered" value="${dogData.neutered}">
@@ -277,6 +277,9 @@ function navigate(page) {
                     <input type="text" id="dog-routine" value="${dogData.routine}">
                     <input type="text" id="dog-training" value="${dogData.training}">
                     <input type="text" id="dog-quirks" value="${dogData.quirks}">
+                    <input type="text" id="dog-photoUrl" value="${dogData.photoUrl}">
+                    <input type="text" id="dog-medical-documents" value="${dogData.medicalInfo.documents ? dogData.medicalInfo.documents[0] : ''}">
+                    <input type="text" id="dog-gallery" value="${dogData.gallery.map(item => item.url).join(', ')}">
                     <button onclick="saveChanges()">Save Changes</button>
                 `;
             }
@@ -356,6 +359,11 @@ async function saveChanges() {
         return;
     }
 
+    const galleryInput = document.getElementById('dog-gallery').value.split(',').map(url => ({
+        url: url.trim(),
+        description: url.split('/').pop().split('.')[0].replace(/[-_]/g, ' ')
+    }));
+
     const updatedDog = {
         name: document.getElementById('dog-name').value,
         description: document.getElementById('dog-description').value,
@@ -372,11 +380,18 @@ async function saveChanges() {
         routine: document.getElementById('dog-routine').value,
         training: document.getElementById('dog-training').value,
         quirks: document.getElementById('dog-quirks').value,
-        medicalInfo: dogData.medicalInfo,
+        medicalInfo: {
+            documents: [document.getElementById('dog-medical-documents').value],
+            shots: dogData.medicalInfo.shots,
+            medications: dogData.medicalInfo.medications,
+            vaccinations: dogData.medicalInfo.vaccinations,
+            checkups: dogData.medicalInfo.checkups,
+            allergies: dogData.medicalInfo.allergies
+        },
         socials: dogData.socials,
         testimonials: dogData.testimonials,
-        gallery: dogData.gallery,
-        photoUrl: dogData.photoUrl,
+        gallery: galleryInput,
+        photoUrl: document.getElementById('dog-photoUrl').value,
         ownerId: dogData.ownerId,
         nfcTagId: dogData.nfcTagId
     };
