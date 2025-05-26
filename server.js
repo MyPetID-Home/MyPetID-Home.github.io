@@ -56,10 +56,28 @@ const dogSchema = new mongoose.Schema({
   routine: String,
   training: String,
   quirks: String,
-  medicalInfo: Object,
-  socials: Object,
-  testimonials: Array,
-  gallery: Array,
+  medicalInfo: {
+    documents: [String],
+    shots: String,
+    medications: String,
+    vaccinations: String,
+    checkups: String,
+    allergies: String
+  },
+  socials: {
+    youtube: String,
+    facebook: String,
+    instagram: String,
+    donationLink: String
+  },
+  testimonials: [{
+    text: String,
+    author: String
+  }],
+  gallery: [{
+    url: String,
+    description: String
+  }],
   photoUrl: String,
   ownerId: String
 });
