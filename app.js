@@ -160,10 +160,10 @@ function navigate(page) {
             break;
         case 'contact':
             content.innerHTML = `
-                <h2>Contact Information</h2>
-                <p>Email: ${userData ? userData.email : 'mypetid@yahoo.com'}</p>
-                <p>Phone: ${userData ? userData.phone : '(416) 555-1234'}</p>
-                <p>Address: ${userData ? userData.address : '123 Bone Street, Toronto, Ontario, M5V 2T4, Canada'}</p>
+                <h2>Contact My Owners</h2>
+                <p>Email: ${userData ? userData.email : 'real_CAK3D@yahoo.com'}</p>
+                <p>Phone: ${userData ? userData.phone : '(518) 610-3096'}</p>
+                <p>Address: ${userData ? userData.address : '37 Fisher Ave, Lewiston, Maine, 04240'}</p>
                 <button onclick="navigate('report-lost')">Report Lost</button>
                 <button onclick="navigate('medical')">Medical Info</button>
             `;
