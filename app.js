@@ -5,14 +5,13 @@ let locationsData = [];
 
 async function fetchData() {
     const urlParams = new URLSearchParams(window.location.search);
-    const tagId = urlParams.get('tag') || '04:6C:E3:0F:BE:2A:81'; // Updated to match Clyde's NFC tag
+    const tagId = urlParams.get('tag') || '04:6C:E3:0F:BE:2A:81';
 
     if (!tagId) {
         document.getElementById('content').innerHTML = '<p>No dog tag ID provided. Please scan a valid QR code or NFC tag.</p>';
         return;
     }
 
-    // Fetch user data if logged in
     try {
         const userResponse = await fetch('https://mypetid-map-69b6f0c23e33.herokuapp.com/api/user-data', {
             credentials: 'include'
@@ -28,7 +27,6 @@ async function fetchData() {
         console.error('Error fetching user data:', error);
     }
 
-    // Fetch dog data if not logged in or user fetch fails
     let dataLoaded = false;
     if (!dogData) {
         try {
@@ -45,9 +43,8 @@ async function fetchData() {
         }
     }
 
-    // Fetch location data using dogId if available, otherwise tagId as fallback
     try {
-        const locationDogId = dogData ? dogData._id : tagId; // Use dogId if available, else tagId
+        const locationDogId = dogData ? dogData._id : tagId;
         const locationResponse = await fetch(`https://mypetid-map-69b6f0c23e33.herokuapp.com/api/locations/${locationDogId}`);
         if (locationResponse.ok) {
             locationsData = await locationResponse.json();
@@ -61,7 +58,6 @@ async function fetchData() {
         document.getElementById('content').innerHTML += '<p>Error fetching location data. Please try again later.</p>';
     }
 
-    // Fallback to READMEFIRST.md if backend data fails
     if (!dataLoaded && !dogData) {
         try {
             const readmeResponse = await fetch('READMEFIRST.md');
@@ -118,20 +114,15 @@ function navigate(page) {
         profilePic.style.backgroundColor = 'gray';
         profilePic.style.backgroundImage = 'none';
     } else {
-        profilePic.style.backgroundImage = `url("${dogData.photoUrl}")`;
+        profilePic.style.backgroundImage = `url("${dogData.photoUrl || 'images/dog/Clyde.png'}")`;
         profilePic.style.backgroundSize = 'cover';
     }
 
     switch (page) {
         case 'home':
-            const recentLocations = locationsData.filter(loc => {
-                const locTime = new Date(loc.timestamp);
-                const now = new Date();
-                const twoHoursAgo = new Date(now.getTime() - 2 * 60 * 60 * 1000);
-                return loc.active && locTime >= twoHoursAgo;
-            });
-            const mapUrl = recentLocations.length > 0
-                ? `https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d2865.2493525638047!2d${recentLocations[0].longitude}!3d${recentLocations[0].latitude}!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e0!3m2!1sen!2sus!4v1747449999425!5m2!1sen!2sus`
+            const recentLocation = locationsData.find(loc => loc.active);
+            const mapUrl = recentLocation
+                ? `https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d2865.2493525638047!2d${recentLocation.longitude}!3d${recentLocation.latitude}!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e0!3m2!1sen!2sus!4v1747449999425!5m2!1sen!2sus`
                 : `https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d2865.2493525638047!2d-79.3832!3d43.6532!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e0!3m2!1sen!2sus!4v1747449999425!5m2!1sen!2sus`;
             content.innerHTML = `
                 <h2>${dogData.name}</h2>
@@ -139,39 +130,63 @@ function navigate(page) {
                 <p>Age: ${dogData.age}</p>
                 <p>Weight: ${dogData.weight}</p>
                 <p>Coat: ${dogData.coat}</p>
+                <p>Coat Color: ${dogData.coatColor || 'Tan'}</p>
                 <p>Sex: ${dogData.sex}</p>
                 <p>Eye Color: ${dogData.eyeColor}</p>
                 <p>Neutered: ${dogData.neutered}</p>
-                <h3>Last Scanned Locations (Last 2 Hours)</h3>
-                ${recentLocations.length > 0
-                    ? recentLocations.map(loc => `
-                        <p>Device: ${loc.deviceName}</p>
-                        <p>Time: ${new Date(loc.timestamp).toLocaleString()}</p>
-                        <p>Latitude: ${loc.latitude}, Longitude: ${loc.longitude}</p>
-                    `).join('')
-                    : '<p>No recent locations available.</p>'}
-                <iframe src="${mapUrl}" width="400" height="300" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
-                <button onclick="navigate('report-lost')">Report Lost</button>
-                <button onclick="navigate('medical')">Medical Info</button>
-                <button onclick="navigate('about')">About Me</button>
-                <button onclick="navigate('socials')">Socials</button>
-                <button class="text-button" onclick="navigate('contact')">Contact Information</button>
+                <div class="section">
+                    <button onclick="navigate('medical')">Medical Info</button>
+                    <button onclick="navigate('contact')">Contact Info</button>
+                    <button onclick="navigate('report-lost')">Report Lost</button>
+                    <button onclick="navigate('location')">Last Scanned Location</button>
+                </div>
             `;
             break;
         case 'contact':
             content.innerHTML = `
-                <h2>Contact My Owners</h2>
-                <p>Email: ${userData ? userData.email : 'real_CAK3D@yahoo.com'}</p>
-                <p>Phone: ${userData ? userData.phone : '(518) 610-3096'}</p>
-                <p>Address: ${userData ? userData.address : '37 Fisher Ave, Lewiston, Maine, 04240'}</p>
-                <button onclick="navigate('report-lost')">Report Lost</button>
-                <button onclick="navigate('medical')">Medical Info</button>
+                <h2>Contact Information</h2>
+                <div class="contact-item"><img src="images/Boy.png" alt="Boy"><span>Boy<br>(${userData ? userData.phone || '(207) 440-7812' : '(207) 440-7812'})</span></div>
+                <div class="contact-item"><img src="images/Dad.jpg" alt="Dad"><span>Dad<br>(${userData ? userData.phone || '(518) 610-3096' : '(518) 610-3096'})</span></div>
+                <p>Email: ${userData ? userData.email : 'real_cak3d@yahoo.com'}</p>
+                <p>Address: ${userData ? userData.address || 'Not set' : 'Not set'}</p>
+                <div class="section">
+                    <img src="https://img.icons8.com/ios-filled/50/000000/clipboard.png" alt="Report Lost">
+                    <p>Report Lost<br>Fill out this quick form so my owners can have all the information needed.</p>
+                    <button class="text-button" onclick="navigate('report-lost')">View</button>
+                </div>
+                <div class="section">
+                    <img src="https://img.icons8.com/ios-filled/50/000000/document.png" alt="Medical Info">
+                    <p>Medical Information<br>All my up to date shots and checks with my Vet</p>
+                    <button class="text-button" onclick="navigate('medical')">View</button>
+                </div>
+            `;
+            break;
+        case 'location':
+            const recentLocation = locationsData.find(loc => loc.active);
+            const locationMapUrl = recentLocation
+                ? `https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d2865.2493525638047!2d${recentLocation.longitude}!3d${recentLocation.latitude}!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e0!3m2!1sen!2sus!4v1747449999425!5m2!1sen!2sus`
+                : `https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d2865.2493525638047!2d-79.3832!3d43.6532!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e0!3m2!1sen!2sus!4v1747449999425!5m2!1sen!2sus`;
+            content.innerHTML = `
+                <h2>Last Scanned Location</h2>
+                <p>Device: ${recentLocation ? recentLocation.deviceName : 'Unknown'}</p>
+                <p>Time: ${recentLocation ? new Date(recentLocation.timestamp).toLocaleString() : 'Not available'}</p>
+                <p>Latitude: ${recentLocation ? recentLocation.latitude : '43.6532'}</p>
+                <p>Longitude: ${recentLocation ? recentLocation.longitude : '-79.3832'}</p>
+                <div class="location-map">
+                    <iframe src="${locationMapUrl}" width="400" height="300" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+                </div>
             `;
             break;
         case 'medical':
             content.innerHTML = `
                 <h2>Medical Information</h2>
                 <p>Note: Please cover any personal information before uploading any documents</p>
+                <div class="section">
+                    <img src="https://img.icons8.com/ios-filled/50/000000/document.png" alt="Medical Document">
+                    <p>${dogData.medicalInfo.documents ? dogData.medicalInfo.documents[0] : 'No document available'}</p>
+                    <button class="text-button" onclick="document.getElementById('medicalImage').style.display='block'">View</button>
+                </div>
+                <img id="medicalImage" src="${dogData.medicalInfo.documents ? dogData.medicalInfo.documents[0].replace('images/medical/', 'images/medical/') : ''}" style="display:none; max-width:100%; height:auto;" onclick="this.style.display='none'">
                 <p>Recent Shots: ${dogData.medicalInfo.shots}</p>
                 <p>Medications: ${dogData.medicalInfo.medications}</p>
                 <p>Vaccinations: ${dogData.medicalInfo.vaccinations}</p>
@@ -189,61 +204,50 @@ function navigate(page) {
                 <p>Routine: ${dogData.routine}</p>
                 <p>Training: ${dogData.training}</p>
                 <p>Quirks: ${dogData.quirks}</p>
-                <div style="display: flex; align-items: center; justify-content: center;">
-                    <strong>My Socials</strong>
-                    <span style="margin-left: 8px;">☰</span>
-                </div>
-                <p style="text-align: center;">Take a look at my Socials to see all my crazy journeys my owners have posted!</p>
                 <button class="text-button" onclick="navigate('socials')">View Socials</button>
             `;
             break;
         case 'socials':
             content.innerHTML = `
                 <h2>Socials</h2>
-                <p>YouTube: ${dogData.socials.youtube}</p>
-                <p>Instagram: ${dogData.socials.instagram}</p>
-                <p>Facebook: ${dogData.socials.facebook}</p>
-                <button class="text-button" onclick="navigate('donation')">Donation: ${dogData.socials.donationLink}</button>
-                <p>Testimonials: See what others have to say about me!</p>
-                ${dogData.testimonials.map(t => `<p>${t.text} - ${t.author}</p>`).join('')}
-                <button class="text-button" onclick="navigate('gallery')">View Gallery: Check out my photos and videos!</button>
-            `;
-            break;
-        case 'donation':
-            content.innerHTML = `
-                <h2>Socials</h2>
-                <strong>Throw me a Bone!</strong>
-                <p style="text-align: center;">All proceeds cover food, supplies, and medical costs as needed to ensure ${dogData.name} receives proper nutrition and care.</p>
-                <input type="text" id="donation-amount" placeholder="$ Custom Amount">
-                <button onclick="alert('Redirect to PayPal (not implemented)')">Woof!</button>
-                <div style="display: flex; justify-content: center; gap: 16px;">
-                    <div style="width: 50px; height: 50px; border-radius: 50%; background-color: gray;"></div>
-                    <div style="width: 50px; height: 50px; border-radius: 50%; background-color: gray;"></div>
+                <div style="display: flex; justify-content: center; gap: 1rem; margin: 1rem 0;">
+                    <a href="${dogData.socials.youtube}"><img src="https://img.icons8.com/ios-filled/50/000000/youtube-play.png" alt="YouTube"></a>
+                    <a href="${dogData.socials.facebook}"><img src="https://img.icons8.com/ios-filled/50/000000/facebook.png" alt="Facebook"></a>
+                    <a href="${dogData.socials.instagram}"><img src="https://img.icons8.com/ios-filled/50/000000/instagram.png" alt="Instagram"></a>
                 </div>
+                <iframe src="https://www.youtube.com/embed/${new URL(dogData.socials.youtube).searchParams.get('v')}" title="YouTube video" allowfullscreen></iframe>
+                <div class="section">
+                    <strong>Throw me a Bone!</strong>
+                    <p>All proceeds cover food, supplies, and medical costs as needed to ensure ${dogData.name} receives proper nutrition and care.</p>
+                    <input type="text" id="donation-amount" placeholder="$ Custom Amount">
+                    <button onclick="alert('Redirect to PayPal (not implemented)')">Woof!</button>
+                </div>
+                <div class="testimonial">
+                    <img src="images/Dad.jpg" alt="Dad">
+                    <p>${dogData.testimonials[0].text} -${dogData.testimonials[0].author}</p>
+                </div>
+                <button class="text-button" onclick="navigate('gallery')">View Gallery</button>
             `;
             break;
         case 'gallery':
             content.innerHTML = `
                 <h2>Gallery</h2>
                 ${dogData.gallery.map(item => `
-                    <p>${item.type}: ${item.description}</p>
-                    ${item.type === 'Photo' ? `<img src="${item.url}" style="max-width: 100%; height: auto;">` : `<video src="${item.url}" controls style="max-width: 100%; height: auto;"></video>`}
+                    <div class="gallery-item">
+                        <img src="${item.url}" alt="${item.description}">
+                    </div>
                 `).join('')}
-                <button class="text-button" onclick="navigate('home')">Back to Home: Return to the main page</button>
+                <button class="text-button" onclick="navigate('home')">Back to Home</button>
             `;
             break;
         case 'report-lost':
             content.innerHTML = `
                 <h2>Report Lost</h2>
-                <p style="text-align: center;">Found Me? Thank You! Please Fill Out This Form to Help Me Get Back Home!</p>
+                <p>Found Me? Thank You! Please Fill Out This Form to Help Me Get Back Home!</p>
                 <input type="text" id="finder-name" placeholder="Your Name">
                 <input type="text" id="finder-contact" placeholder="Your Contact Info">
                 <input type="text" id="location" placeholder="Where You Found Me">
                 <button onclick="submitReportLost()">Submit</button>
-                <div style="display: flex; justify-content: center; gap: 16px;">
-                    <div style="width: 50px; height: 50px; border-radius: 50%; background-color: gray;"></div>
-                    <div style="width: 50px; height: 50px; border-radius: 50%; background-color: gray;"></div>
-                </div>
             `;
             break;
         case 'account':
@@ -263,6 +267,7 @@ function navigate(page) {
                     <input type="text" id="dog-age" value="${dogData.age}">
                     <input type="text" id="dog-weight" value="${dogData.weight}">
                     <input type="text" id="dog-coat" value="${dogData.coat}">
+                    <input type="text" id="dog-coatColor" value="${dogData.coatColor || 'Tan'}">
                     <input type="text" id="dog-sex" value="${dogData.sex}">
                     <input type="text" id="dog-eyeColor" value="${dogData.eyeColor}">
                     <input type="text" id="dog-neutered" value="${dogData.neutered}">
@@ -357,6 +362,7 @@ async function saveChanges() {
         age: document.getElementById('dog-age').value,
         weight: document.getElementById('dog-weight').value,
         coat: document.getElementById('dog-coat').value,
+        coatColor: document.getElementById('dog-coatColor').value,
         sex: document.getElementById('dog-sex').value,
         eyeColor: document.getElementById('dog-eyeColor').value,
         neutered: document.getElementById('dog-neutered').value,
