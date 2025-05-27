@@ -161,13 +161,14 @@ break;
 case 'contact':
 content.innerHTML = `
                 <h2>Contact Information</h2>
-                <p>Email: ${userData ? userData.email : 'mypetid@yahoo.com'}</p>
-                <p>Phone: ${userData ? userData.phone : '(416) 555-1234'}</p>
-                <p>Address: ${userData ? userData.address : '123 Bone Street, Toronto, Ontario, M5V 2T4, Canada'}</p>
-                <h2>Contact My Owners</h2>
+            <h2>Dad</h2>
                 <p>Email: ${userData ? userData.email : 'real_CAK3D@yahoo.com'}</p>
                 <p>Phone: ${userData ? userData.phone : '(518) 610-3096'}</p>
                 <p>Address: ${userData ? userData.address : '37 Fisher Ave, Lewiston, Maine, 04240'}</p>
+            <h2>Boy</h2>
+                <p>Email: ${userData ? userData.email : 'therealzayne@yahoo.com'}</p>
+                <p>Phone: ${userData ? userData.phone : '(207) 440-7812'}</p>
+                <p>Address: ${userData ? userData.address : '3 Downey Ln, Poland, Maine, 04210'}</p>
                <button onclick="navigate('report-lost')">Report Lost</button>
                <button onclick="navigate('medical')">Medical Info</button>
            `;
@@ -205,7 +206,7 @@ case 'socials':
 content.innerHTML = `
                <h2>Socials</h2>
                <p>YouTube: ${dogData.socials.youtube}</p>
-               <p>Instagram: ${dogData.socials.instagram}</p>
+               [![My Skills](https://skillicons.dev/icons?i=instagram)](https://skillicons.dev)<p>Instagram: ${dogData.socials.instagram}</p>
                <p>Facebook: ${dogData.socials.facebook}</p>
                <button class="text-button" onclick="navigate('donation')">Donation: ${dogData.socials.donationLink}</button>
                <p>Testimonials: See what others have to say about me!</p>
