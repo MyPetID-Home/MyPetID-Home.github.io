@@ -213,20 +213,40 @@ app.put('/api/dog/:id', authenticateToken, async (req, res) => {
 app.post('/api/locations', async (req, res) => {
   try {
     const { dogId, deviceName, latitude, longitude, timestamp, active } = req.body;
+
+    // Validate inputs
+    const lat = parseFloat(latitude);
+    const lon = parseFloat(longitude);
+    let time;
+    if (typeof timestamp === 'string' && timestamp.includes('T')) {
+      // Handle ISO string
+      time = new Date(timestamp).toISOString();
+    } else {
+      // Handle epoch seconds
+      time = new Date(parseInt(timestamp) * 1000).toISOString();
+    }
+
+    if (isNaN(lat) || isNaN(lon)) {
+      throw new Error('Invalid latitude or longitude');
+    }
+    if (!time || new Date(time).toString() === 'Invalid Date') {
+      throw new Error('Invalid timestamp');
+    }
+
     const location = new Location({
       _id: new mongoose.Types.ObjectId().toString(),
       dogId,
-      deviceName,
-      latitude: parseFloat(latitude),
-      longitude: parseFloat(longitude),
-      timestamp: new Date(timestamp * 1000),
-      active
+      deviceName: deviceName || 'Unknown Device',
+      latitude: lat,
+      longitude: lon,
+      timestamp: time,
+      active: !!active
     });
     await location.save();
     res.status(201).json({ message: 'Location saved successfully' });
   } catch (error) {
-    console.error('Error saving location:', error);
-    res.status(500).json({ error: 'Failed to save location' });
+    console.error('Error saving location:', error.message);
+    res.status(400).json({ error: error.message || 'Failed to save location' });
   }
 });
 
