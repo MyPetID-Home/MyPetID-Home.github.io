@@ -18,6 +18,10 @@ mongoose.connect(process.env.MONGODB_URI, { useNewUrlParser: true, useUnifiedTop
     console.log('Database name:', mongoose.connection.db.databaseName);
     const collections = await mongoose.connection.db.listCollections().toArray();
     console.log('Collections:', collections.map(col => col.name));
+    // Additional MongoDB debugging: Count documents in the 'locations' collection
+    const Location = mongoose.model('Location', locationSchema, 'locations');
+    const locationCount = await Location.countDocuments();
+    console.log('Number of documents in locations collection:', locationCount);
   })
   .catch(err => {
     console.error('MongoDB connection error:', err.message);
@@ -214,38 +218,74 @@ app.post('/api/locations', async (req, res) => {
   try {
     const { dogId, deviceName, latitude, longitude, timestamp, active } = req.body;
 
+    // Log the incoming request body for debugging
+    console.log('Incoming request body:', req.body);
+
     // Validate inputs
     const lat = parseFloat(latitude);
     const lon = parseFloat(longitude);
     let time;
     if (typeof timestamp === 'string' && timestamp.includes('T')) {
       // Handle ISO string
-      time = new Date(timestamp).toISOString();
+      time = new Date(timestamp);
+      console.log('Using ISO timestamp:', timestamp, 'converted to:', time);
     } else {
       // Handle epoch seconds
-      time = new Date(parseInt(timestamp) * 1000).toISOString();
+      const epochTime = parseInt(timestamp);
+      time = new Date(epochTime * 1000);
+      console.log('Using epoch timestamp:', epochTime, 'converted to:', time);
+    }
+
+    // Validate the date
+    if (isNaN(time.getTime())) {
+      throw new Error('Invalid timestamp: Could not convert to a valid date');
     }
 
     if (isNaN(lat) || isNaN(lon)) {
       throw new Error('Invalid latitude or longitude');
     }
-    if (!time || new Date(time).toString() === 'Invalid Date') {
-      throw new Error('Invalid timestamp');
-    }
 
-    const location = new Location({
-      _id: new mongoose.Types.ObjectId().toString(),
-      dogId,
-      deviceName: deviceName || 'Unknown Device',
-      latitude: lat,
-      longitude: lon,
-      timestamp: time,
-      active: !!active
-    });
-    await location.save();
-    res.status(201).json({ message: 'Location saved successfully' });
+    // Retry logic for duplicate _id
+    let savedLocation = false;
+    let attempts = 0;
+    const maxAttempts = 3;
+
+    while (!savedLocation && attempts < maxAttempts) {
+      try {
+        // Log the location object before saving
+        const location = new Location({
+          _id: new mongoose.Types.ObjectId().toString(),
+          dogId,
+          deviceName: deviceName || 'Unknown Device',
+          latitude: lat,
+          longitude: lon,
+          timestamp: time, // Use the Date object directly
+          active: !!active
+        });
+        console.log('Attempting to save location:', JSON.stringify(location, null, 2));
+
+        await location.save();
+        savedLocation = true;
+        console.log('Location saved successfully, _id:', location._id);
+        res.status(201).json({ message: 'Location saved successfully' });
+      } catch (error) {
+        if (error.code === 11000 && error.keyPattern && error.keyPattern._id) {
+          // Duplicate key error for _id, retry with a new _id
+          console.log('Duplicate _id detected, retrying... Attempt:', attempts + 1);
+          attempts++;
+          if (attempts === maxAttempts) {
+            throw new Error('Failed to save location after multiple attempts due to duplicate _id');
+          }
+        } else {
+          throw error; // Rethrow other errors
+        }
+      }
+    }
   } catch (error) {
     console.error('Error saving location:', error.message);
+    if (error.name === 'ValidationError') {
+      console.error('Validation details:', error.errors);
+    }
     res.status(400).json({ error: error.message || 'Failed to save location' });
   }
 });
