@@ -30,14 +30,11 @@ jobs:
 
             async function updateLocations() {
               try {
-                const response = await axios.get("https://mypetid-map-69b6f0c23e33.herokuapp.com/api/locations/682774024ca6684a976c5f8e"); // Updated to correct dogId
+                const response = await axios.get("https://mypetid-map-69b6f0c23e33.herokuapp.com/api/locations/682774024ca6684a976c5f8e");
                 const locations = response.data;
-                const recentLocations = locations.filter(loc => {
-                  const locTime = new Date(loc.timestamp);
-                  const now = new Date();
-                  const twoHoursAgo = new Date(now.getTime() - 2 * 60 * 60 * 1000);
-                  return loc.active && locTime >= twoHoursAgo;
-                });
+                const now = new Date();
+                const twoHoursAgo = new Date(now.getTime() - 2 * 60 * 60 * 1000);
+                const recentLocations = locations.filter(loc => loc.active && new Date(loc.timestamp) >= twoHoursAgo);
 
                 let mapUrl = "https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d2865.2493525638047!2d-79.3832!3d43.6532!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e0!3m2!1sen!2sus!4v1747449999425!5m2!1sen!2sus";
                 if (recentLocations.length > 0) {
@@ -47,8 +44,8 @@ jobs:
 
                 const indexContent = fs.readFileSync("index.html", "utf8");
                 const updatedContent = indexContent.replace(
-                  /<iframe src="https:\/\/www\.google\.com\/maps\/embed\?.*?"/,
-                  `<iframe src="${mapUrl}"`
+                  /<iframe id="location-map" src="https:\/\/www\.google\.com\/maps\/embed\?.*?"/,
+                  `<iframe id="location-map" src="${mapUrl}"`
                 );
                 fs.writeFileSync("index.html", updatedContent);
 
