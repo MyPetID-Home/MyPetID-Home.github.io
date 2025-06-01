@@ -321,20 +321,17 @@ function navigate(page) {
                 const twoHoursAgo = new Date(now.getTime() - 2 * 60 * 60 * 1000);
                 return loc.active && locTime >= twoHoursAgo;
             });
+            const locationMap = document.getElementById('location-map');
             const mapUrl = recentLocations.length > 0
                 ? `https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d2865.2493525638047!2d${recentLocations[0].longitude}!3d${recentLocations[0].latitude}!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e0!3m2!1sen!2sus!4v1747449999425!5m2!1sen!2sus`
                 : `https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d2865.2493525638047!2d-79.3832!3d43.6532!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e0!3m2!1sen!2sus!4v1747449999425!5m2!1sen!2sus`;
-            content.innerHTML = `
-                <h2>Location History</h2>
-                <h3>Last Scanned Locations (Last 2 Hours)</h3>
-                ${recentLocations.length > 0
-                    ? recentLocations.map(loc => `
-                        <p>Device: ${loc.deviceName}</p>
-                        <p>Time: ${new Date(loc.timestamp).toLocaleString()}</p>
-                        <p>Latitude: ${loc.latitude}, Longitude: ${loc.longitude}</p>
-                    `).join('')
-                    : '<p>No recent locations available.</p>'}
-            `;
+            content.innerHTML = `<h2>Location History</h2><h3>Last Scanned Locations (Last 2 Hours)</h3>${recentLocations.length > 0
+                ? recentLocations.map(loc => `
+                    <p>Device: ${loc.deviceName}</p>
+                    <p>Time: ${new Date(loc.timestamp).toLocaleString()}</p>
+                    <p>Latitude: ${loc.latitude}, Longitude: ${loc.longitude}</p>
+                `).join('')
+                : '<p>No recent locations available.</p>'}`;
             locationMap.src = mapUrl;
             locationMap.style.display = 'block';
             break;
