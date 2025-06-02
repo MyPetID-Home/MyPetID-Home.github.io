@@ -32,7 +32,12 @@ jobs:
             (async () => {
               try {
                 const response = await axios.get("https://mypetid-map-69b6f0c23e33.herokuapp.com/api/locations/682774024ca6684a976c5f8e");
-                const locations = response.data;
+                console.log("API Response Data:", JSON.stringify(response.data, null, 2));
+                const locations = Array.isArray(response.data) ? response.data : response.data.data || [];
+                if (!Array.isArray(locations)) {
+                  console.error("Error: locations is not an array, received:", typeof locations, locations);
+                  process.exit(1);
+                }
                 const now = new Date();
                 const twoHoursAgo = new Date(now.getTime() - 2 * 60 * 60 * 1000);
                 const recentLocations = locations.filter(loc => loc.active && new Date(loc.timestamp) >= twoHoursAgo);
