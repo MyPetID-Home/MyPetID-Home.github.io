@@ -37,10 +37,10 @@ jobs:
                 const twoHoursAgo = new Date(now.getTime() - 2 * 60 * 60 * 1000);
                 const recentLocations = locations.filter(loc => loc.active && new Date(loc.timestamp) >= twoHoursAgo);
 
-                let mapUrl = "https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d2865.2493525638047!2d-79.3832!3d43.6532!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e0!3m2!1sen!2sus!4v1747449999425!5m2!1sen!2sus";
+                let mapUrl = "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2865.320840040887!2d-70.16535158888728!3d44.097371370963934!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x4cb26c6c7f43bbdf%3A0xdb822f84329516f9!2s37%20Fisher%20Ave%2C%20Lewiston%2C%20ME%2004240!5e0!3m2!1sen!2sus!4v1748825673378!5m2!1sen!2sus";
                 if (recentLocations.length > 0) {
                   const latestLoc = recentLocations[0];
-                  mapUrl = `https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d2865.2493525638047!2d${latestLoc.longitude}!3d${latestLoc.latitude}!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e0!3m2!1sen!2sus!4v1747449999425!5m2!1sen!2sus`;
+                  mapUrl = `https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2865.320840040887!2d${latestLoc.longitude}!3d${latestLoc.latitude}!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e0!3m2!1sen!2sus!4v1748825673378!5m2!1sen!2sus`;
                 }
 
                 const indexContent = fs.readFileSync("index.html", "utf8");
