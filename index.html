@@ -1,78 +1,41 @@
-name: Update Locations
-
-on:
-  schedule:
-    - cron: '0 * * * *' # Runs every hour
-  workflow_dispatch: # Allows manual trigger
-
-jobs:
-  update-locations:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          ref: main
-          token: ${{ secrets.PERSONAL_ACCESS_TOKEN }} # Use PAT for checkout
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-
-      - name: Install dependencies
-        run: npm install axios
-
-      - name: Fetch and update location data
-        run: |
-          node -e '
-            const axios = require("axios");
-            const fs = require("fs");
-
-            async function updateLocations() {
-              try {
-                const response = await axios.get("https://mypetid-map-69b6f0c23e33.herokuapp.com/api/locations/682774024ca6684a976c5f8e");
-                const locations = response.data;
-                const now = new Date();
-                const twoHoursAgo = new Date(now.getTime() - 2 * 60 * 60 * 1000);
-                const recentLocations = locations.filter(loc => loc.active && new Date(loc.timestamp) >= twoHoursAgo);
-
-                let mapUrl = "https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d2865.2493525638047!2d-79.3832!3d43.6532!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e0!3m2!1sen!2sus!4v1747449999425!5m2!1sen!2sus";
-                if (recentLocations.length > 0) {
-                  const latestLoc = recentLocations[0];
-                  mapUrl = `https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d2865.2493525638047!2d${latestLoc.longitude}!3d${latestLoc.latitude}!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e0!3m2!1sen!2sus!4v1747449999425!5m2!1sen!2sus`;
-                }
-
-                const indexContent = fs.readFileSync("index.html", "utf8");
-                const updatedContent = indexContent.replace(
-                  /<iframe id="location-map" src="https:\/\/www\.google\.com\/maps\/embed\?.*?"/,
-                  `<iframe id="location-map" src="${mapUrl}"`
-                );
-                fs.writeFileSync("index.html", updatedContent);
-
-                console.log("Location data updated successfully.");
-              } catch (error) {
-                console.error("Error updating locations:", error.message);
-                process.exit(1);
-              }
-            }
-
-            updateLocations();
-          '
-
-      - name: Commit and push changes
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add index.html
-          git commit -m "Update location data [skip ci]" || echo "No changes to commit"
-          git push
-        env:
-          GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }} # Use PAT for push
-
-      - name: Deploy to Heroku
-        uses: akhileshns/heroku-deploy@v3.12.12
-        with:
-          heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
-          heroku_app_name: "mypetid-map"
-          heroku_email: "real_CAK3D@yahoo.com"
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Pet ID</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="app">
+        <div class="drawer" id="drawer">
+            <h2>PAGES</h2>
+            <button onclick="navigate('home')">Home</button>
+            <button onclick="navigate('contact')">Contact</button>
+            <button onclick="navigate('location')">Location</button>
+            <button onclick="navigate('medical')">Medical</button>
+            <button onclick="navigate('about')">About Me</button>
+            <button onclick="navigate('socials')">Socials</button>
+            <button onclick="navigate('gallery')">Gallery</button>
+            <button onclick="navigate('report-lost')">Report Lost</button>
+            <button onclick="navigate('account')" id="accountBtn">Account</button>
+            <button onclick="navigate('login')" id="loginBtn">Login</button>
+            <button onclick="navigate('logout')" id="logoutBtn" style="display: none;">Logout</button>
+            <button onclick="navigate('register')" id="registerBtn">Register</button>
+        </div>
+        <div class="main-content">
+            <header>
+                <button onclick="toggleDrawer()">☰</button>
+                <h1 id="page-title">Loading...</h1>
+                <div class="profile-pic" id="profile-pic"></div>
+            </header>
+            <div id="content">
+                <p>Loading pet data...</p>
+                <!-- Placeholder iframe for 'locations' page, updated by workflow -->
+                <iframe id="location-map" src="https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d2865.2493525638047!2d-79.3832!3d43.6532!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e0!3m2!1sen!2sus!4v1747449999425!5m2!1sen!2sus" width="400" height="300" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+            </div>
+        </div>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>
