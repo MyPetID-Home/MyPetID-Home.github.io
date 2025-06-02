@@ -106,11 +106,15 @@ input {
 
 iframe {
     width: 100%;
-    max-width: 400px;
-    height: 300px;
+    max-width: 600px; /* Updated to match your new iframe's width */
+    height: 450px; /* Updated to match your new iframe's height */
     border: 0;
     margin: 1rem auto;
-    display: block;
+    display: none; /* Default to hidden, controlled by app.js */
+}
+
+#content.location #location-map {
+    display: block; /* Show iframe only on 'locations' page */
 }
 
 .contact-item {
@@ -172,6 +176,7 @@ iframe {
     height: auto;
 }
 
+/* Remove .location-map styles since they don’t apply */
 .location-map {
     margin: 1rem 0;
     text-align: center;
@@ -205,7 +210,7 @@ iframe {
     }
 
     iframe {
-        height: 200px;
+        height: 300px; /* Adjusted to scale with new height */
     }
 
     .contact-item img {
@@ -225,9 +230,5 @@ iframe {
 
     .gallery-item img {
         max-width: 90%;
-    }
-
-    .location-map iframe {
-        height: 200px;
     }
 }
