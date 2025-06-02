@@ -29,7 +29,7 @@ jobs:
             const axios = require("axios");
             const fs = require("fs");
 
-            async function updateLocations() {
+            (async () => {
               try {
                 const response = await axios.get("https://mypetid-map-69b6f0c23e33.herokuapp.com/api/locations/682774024ca6684a976c5f8e");
                 const locations = response.data;
@@ -43,21 +43,26 @@ jobs:
                   mapUrl = `https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2865.320840040887!2d${latestLoc.longitude}!3d${latestLoc.latitude}!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e0!3m2!1sen!2sus!4v1748825673378!5m2!1sen!2sus`;
                 }
 
+                if (!fs.existsSync("index.html")) {
+                  console.error("index.html not found");
+                  process.exit(1);
+                }
                 const indexContent = fs.readFileSync("index.html", "utf8");
                 const updatedContent = indexContent.replace(
-                  /<iframe id="location-map" src="https:\/\/www\.google\.com\/maps\/embed\?.*?"/,
+                  /<iframe id="location-map"[^>]*src="https:\/\/www\.google\.com\/maps\/embed\?[^"]*"/,
                   `<iframe id="location-map" src="${mapUrl}"`
                 );
-                fs.writeFileSync("index.html", updatedContent);
-
-                console.log("Location data updated successfully.");
+                if (indexContent === updatedContent) {
+                  console.log("No changes to iframe src in index.html");
+                } else {
+                  fs.writeFileSync("index.html", updatedContent);
+                  console.log("Location data updated successfully.");
+                }
               } catch (error) {
                 console.error("Error updating locations:", error.message);
                 process.exit(1);
               }
-            }
-
-            updateLocations();
+            })();
           '
 
       - name: Commit and push changes
