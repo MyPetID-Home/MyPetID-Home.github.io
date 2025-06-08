@@ -1,4 +1,0 @@
-build:
-  root: backend
-  buildpacks:
-    - heroku/nodejs
