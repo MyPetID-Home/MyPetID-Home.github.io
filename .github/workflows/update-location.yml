@@ -1,18 +1,18 @@
-name: Update Location in README
+name: Update Location Data
 
 on:
   issue_comment:
     types: [created]
 
 jobs:
-  update-readme:
+  update-location:
     runs-on: ubuntu-latest
     if: ${{ github.event.issue.pull_request == null }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Extract lat/lon from comment
+      - name: Extract lat/lon/timestamp from comment
         id: extract
         run: |
           echo '${{ github.event.comment.body }}' > comment.json
@@ -27,16 +27,26 @@ jobs:
           echo "LON=$LON" >> $GITHUB_ENV
           echo "TIMESTAMP=$TIMESTAMP" >> $GITHUB_ENV
 
-      - name: Update coordinates in README
+      - name: Update locations.json
         run: |
           TIMESTAMP_DATE=$(date -d @$((TIMESTAMP)) +%Y-%m-%dT%H:%M:%SZ)
-          MAP_URL="https://maps.google.com/maps?q=$LAT,$LON&z=15&output=embed&t=$TIMESTAMP_DATE"
-          perl -0777 -i -pe 's|<iframe[^>]*src="https:\/\/maps\.google\.com\/maps\?q=[0-9.-]+,[0-9.-]+[^"]*"|<iframe width="400" height="300" style="border:0" loading="lazy" allowfullscreen referrerpolicy="no-referrer-when-downgrade" src="$ENV{MAP_URL}">|g' README.md
+          NEW_LOCATION='{"_id": "'$(uuidgen)'", "dogId": "682774024ca6684a976c5f8e", "deviceName": "Tasker Device", "latitude": '$LAT', "longitude": '$LON', "timestamp": "'$TIMESTAMP_DATE'", "active": true}'
+          if [ -f "data/locations.json" ]; then
+            LOCATIONS=$(cat data/locations.json)
+            if [ -z "$LOCATIONS" ] || ! echo "$LOCATIONS" | jq -e . >/dev/null 2>&1; then
+              LOCATIONS='[]'
+            fi
+            UPDATED_LOCATIONS=$(echo "$LOCATIONS" | jq -c '. += ['"$NEW_LOCATION"']')
+          else
+            UPDATED_LOCATIONS='['"$NEW_LOCATION"']'
+          fi
+          echo "$UPDATED_LOCATIONS" > data/locations.json
+          echo "Location data updated successfully."
 
       - name: Commit and push changes
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
-          git add README.md
+          git add data/locations.json
           git diff --cached --quiet || git commit -m "Update location to lat: $LAT, lon: $LON, timestamp: $TIMESTAMP"
           git push
