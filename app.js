@@ -8,70 +8,54 @@ async function fetchData() {
     const tagId = urlParams.get('tag') || '04:6C:E3:0F:BE:2A:81';
 
     if (!tagId) {
-        document.getElementById('content').innerHTML = '<p>No dog tag ID provided. Please scan a valid QR code or NFC tag.</p>';
+        document.getElementById('content').innerHTML = '<p>No dog tag ID provided. Please scan a valid QR code or NFC task.</p>';
         return;
     }
 
+    // Load static data from GitHub Pages
     try {
-        const userResponse = await fetch('https://mypetid-map-69b6f0c23e33.herokuapp.com/api/user-data', {
-            credentials: 'include'
-        });
-        if (userResponse.ok) {
-            const data = await userResponse.json();
-            userData = data.user;
-            dogData = data.dog;
-            isLoggedIn = true;
-            showLoggedInState();
-        }
+        const dogsResponse = await fetch('/data/dogs.json');
+        const dogs = await dogsResponse.json();
+        dogData = dogs.find(dog => dog.nfcTagId === tagId) || {
+            _id: 'defaultDogId',
+            nfcTagId: tagId,
+            name: 'Unknown Dog',
+            description: 'No description available',
+            age: 'Unknown',
+            weight: 'Unknown',
+            coat: 'Unknown',
+            sex: 'Unknown',
+            eyeColor: 'Unknown',
+            neutered: 'Unknown',
+            breed: 'Unknown',
+            personality: 'Unknown',
+            loves: 'Unknown',
+            routine: 'Unknown',
+            training: 'Unknown',
+            quirks: 'Unknown',
+            medicalInfo: { shots: '', medications: '', vaccinations: '', checkups: '', allergies: '' },
+            socials: { youtube: '', facebook: '', instagram: '', donationLink: '' },
+            testimonials: [],
+            gallery: [],
+            photoUrl: '',
+            ownerId: ''
+        };
+
+        const usersResponse = await fetch('/data/users.json');
+        const users = await usersResponse.json();
+        userData = users.find(user => user._id === dogData.ownerId) || null;
+
+        const locationsResponse = await fetch('/data/locations.json');
+        locationsData = await locationsResponse.json();
     } catch (error) {
-        console.error('Error fetching user data:', error);
+        console.error('Error fetching static data:', error);
+        document.getElementById('content').innerHTML = '<p>Failed to load data. Please check back later.</p>';
+        return;
     }
 
-    let dataLoaded = false;
-    if (!dogData) {
-        try {
-            const dogResponse = await fetch(`https://mypetid-map-69b6f0c23e33.herokuapp.com/api/dog/${tagId}`);
-            if (dogResponse.ok) {
-                dogData = await dogResponse.json();
-                dataLoaded = true;
-            } else {
-                document.getElementById('content').innerHTML = '<p>Dog not found. Check the tag ID or try again.</p>';
-            }
-        } catch (error) {
-            console.error('Error fetching dog data:', error);
-            document.getElementById('content').innerHTML = '<p>Error fetching dog data. Please try again later.</p>';
-        }
-    }
-
-    try {
-        const locationDogId = dogData ? dogData._id : tagId;
-        const locationResponse = await fetch(`https://mypetid-map-69b6f0c23e33.herokuapp.com/api/locations/${locationDogId}`);
-        if (locationResponse.ok) {
-            locationsData = await locationResponse.json();
-        } else {
-            locationsData = [];
-            document.getElementById('content').innerHTML += '<p>No locations found for this dog.</p>';
-        }
-    } catch (error) {
-        console.error('Error fetching location data:', error);
-        locationsData = [];
-        document.getElementById('content').innerHTML += '<p>Error fetching location data. Please try again later.</p>';
-    }
-
-    if (!dataLoaded && !dogData) {
-        try {
-            const readmeResponse = await fetch('READMEFIRST.md');
-            if (readmeResponse.ok) {
-                const readmeText = await readmeResponse.text();
-                document.getElementById('content').innerHTML = `<div>${readmeText.replace(/^\s*#+\s*/gm, '<h2>').replace(/\n/g, '<br>')}</div>`;
-                document.getElementById('page-title').textContent = 'My Pet ID Static Info';
-                return;
-            }
-        } catch (error) {
-            console.error('Error fetching READMEFIRST.md:', error);
-            document.getElementById('content').innerHTML = '<p>Failed to load data or static content. Please try again later.</p>';
-            return;
-        }
+    if (userData) {
+        isLoggedIn = true;
+        showLoggedInState();
     }
 
     navigate(window.location.hash.replace('#', '') || 'home');
@@ -97,11 +81,6 @@ function toggleDrawer() {
 }
 
 function navigate(page) {
-    if (!dogData && page !== 'login' && page !== 'register' && page !== 'reset-password' && page !== 'logout') {
-        document.getElementById('content').innerHTML = '<p>Dog data not loaded yet. Please wait or check static info.</p>';
-        return;
-    }
-
     const content = document.getElementById('content');
     const pageTitle = document.getElementById('page-title');
     const profilePic = document.getElementById('profile-pic');
@@ -338,166 +317,36 @@ function navigate(page) {
 }
 
 async function submitReportLost() {
-    const finderName = document.getElementById('finder-name').value;
-    const finderContact = document.getElementById('finder-contact').value;
-    const location = document.getElementById('location').value;
-    try {
-        const response = await fetch('https://mypetid-map-69b6f0c23e33.herokuapp.com/api/report-lost', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                dogId: dogData._id,
-                finderName,
-                finderContact,
-                location
-            })
-        });
-        if (response.ok) {
-            alert('Report submitted successfully!');
-            navigate('home');
-        } else {
-            alert('Failed to submit report.');
-        }
-    } catch (error) {
-        alert('Error submitting report: ' + error.message);
-    }
+    alert('Report feature is not available without a backend. Please contact the owner manually.');
+    navigate('home');
 }
 
 async function saveChanges() {
-    if (!isLoggedIn || !userData || userData._id !== dogData.ownerId) {
-        alert('You do not have permission to edit this profile.');
-        return;
-    }
-
-    const updatedDog = {
-        name: document.getElementById('dog-name').value,
-        description: document.getElementById('dog-description').value,
-        age: document.getElementById('dog-age').value,
-        weight: document.getElementById('dog-weight').value,
-        coat: document.getElementById('dog-coat').value,
-        sex: document.getElementById('dog-sex').value,
-        eyeColor: document.getElementById('dog-eyeColor').value,
-        neutered: document.getElementById('dog-neutered').value,
-        breed: document.getElementById('dog-breed').value,
-        personality: document.getElementById('dog-personality').value,
-        loves: document.getElementById('dog-loves').value,
-        routine: document.getElementById('dog-routine').value,
-        training: document.getElementById('dog-training').value,
-        quirks: document.getElementById('dog-quirks').value,
-        medicalInfo: dogData.medicalInfo,
-        socials: dogData.socials,
-        testimonials: dogData.testimonials,
-        gallery: dogData.gallery,
-        photoUrl: dogData.photoUrl,
-        ownerId: dogData.ownerId,
-        nfcTagId: dogData.nfcTagId
-    };
-
-    try {
-        const response = await fetch(`https://mypetid-map-69b6f0c23e33.herokuapp.com/api/dog/${dogData._id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(updatedDog),
-            credentials: 'include'
-        });
-        if (response.ok) {
-            dogData = await response.json();
-            alert('Changes saved successfully!');
-            navigate('home');
-        } else {
-            alert('Failed to save changes.');
-        }
-    } catch (error) {
-        alert('Error saving changes: ' + error.message);
-    }
+    alert('Save feature is not available without a backend. Please update data manually via GitHub.');
+    navigate('home');
 }
 
 async function login() {
-    const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
-    try {
-        const response = await fetch('https://mypetid-map-69b6f0c23e33.herokuapp.com/api/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, password }),
-            credentials: 'include'
-        });
-        const data = await response.json();
-        if (response.ok) {
-            isLoggedIn = true;
-            userData = data.user;
-            dogData = data.dog;
-            showLoggedInState();
-            navigate('home');
-        } else {
-            alert(data.error);
-        }
-    } catch (error) {
-        alert('Error logging in: ' + error.message);
-    }
+    alert('Login feature is not available without a backend. Please use static data.');
+    navigate('home');
 }
 
 async function register() {
-    const email = document.getElementById('reg-email').value;
-    const password = document.getElementById('reg-password').value;
-    const name = document.getElementById('reg-name').value;
-    const phone = document.getElementById('reg-phone').value;
-    const address = document.getElementById('reg-address').value;
-    const device = document.getElementById('reg-device').value;
-    try {
-        const response = await fetch('https://mypetid-map-69b6f0c23e33.herokuapp.com/api/register', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, password, name, phone, address, device })
-        });
-        if (response.ok) {
-            alert('Registration successful! Please log in.');
-            navigate('login');
-        } else {
-            alert('Failed to register.');
-        }
-    } catch (error) {
-        alert('Error registering: ' + error.message);
-    }
+    alert('Registration is not available without a backend. Please contact the owner to add a user.');
+    navigate('login');
 }
 
 async function resetPassword() {
-    const email = document.getElementById('reset-email').value;
-    try {
-        const response = await fetch('https://mypetid-map-69b6f0c23e33.herokuapp.com/api/reset-password', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email })
-        });
-        if (response.ok) {
-            alert('Password reset link sent to your email (implementation pending).');
-            navigate('login');
-        } else {
-            alert('Failed to send reset link.');
-        }
-    } catch (error) {
-        alert('Error sending reset link: ' + error.message);
-    }
+    alert('Password reset is not available without a backend.');
+    navigate('login');
 }
 
 async function logout() {
-    try {
-        const response = await fetch('https://mypetid-map-69b6f0c23e33.herokuapp.com/api/logout', {
-            method: 'POST',
-            credentials: 'include'
-        });
-        if (response.ok) {
-            isLoggedIn = false;
-            userData = null;
-            showLoggedOutState();
-            await fetchData();
-            navigate('home');
-        } else {
-            alert('Failed to log out.');
-        }
-    } catch (error) {
-        alert('Error logging out: ' + error.message);
-    }
+    isLoggedIn = false;
+    userData = null;
+    showLoggedOutState();
+    await fetchData();
+    navigate('home');
 }
 
 window.addEventListener('hashchange', () => {
