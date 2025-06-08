@@ -12,13 +12,22 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq uuid-runtime
+
       - name: Extract lat/lon/timestamp from comment
         id: extract
         run: |
           echo '${{ github.event.comment.body }}' > comment.json
-          LAT=$(jq -r '.lat' comment.json)
-          LON=$(jq -r '.lon' comment.json)
-          TIMESTAMP=$(jq -r '.timestamp' comment.json)
+          if ! jq -e . >/dev/null 2>&1 < comment.json; then
+            echo "Invalid JSON in comment body."
+            exit 1
+          fi
+          LAT=$(jq -r '.lat' comment.json 2>/dev/null || echo "null")
+          LON=$(jq -r '.lon' comment.json 2>/dev/null || echo "null")
+          TIMESTAMP=$(jq -r '.timestamp' comment.json 2>/dev/null || echo "null")
           if [[ "$LAT" == "null" || "$LON" == "null" || "$TIMESTAMP" == "null" ]]; then
             echo "Latitude, Longitude, or Timestamp not found in the comment."
             exit 1
@@ -29,14 +38,18 @@ jobs:
 
       - name: Update locations.json
         run: |
-          TIMESTAMP_DATE=$(date -d @$((TIMESTAMP)) +%Y-%m-%dT%H:%M:%SZ)
-          NEW_LOCATION='{"_id": "'$(uuidgen)'", "dogId": "682774024ca6684a976c5f8e", "deviceName": "Tasker Device", "latitude": '$LAT', "longitude": '$LON', "timestamp": "'$TIMESTAMP_DATE'", "active": true}'
+          # Fallback for timestamp conversion if invalid
+          TIMESTAMP_DATE=$(date -d @$((TIMESTAMP)) +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date -u +%Y-%m-%dT%H:%M:%SZ)
+          # Fallback for uuidgen if it fails
+          UUID=$(uuidgen 2>/dev/null || echo "$(date +%s%N)")
+          NEW_LOCATION='{"_id": "'"$UUID"'", "dogId": "682774024ca6684a976c5f8e", "deviceName": "Tasker Device", "latitude": '$LAT', "longitude": '$LON', "timestamp": "'"$TIMESTAMP_DATE"'", "active": true}'
+          mkdir -p data
           if [ -f "data/locations.json" ]; then
-            LOCATIONS=$(cat data/locations.json)
+            LOCATIONS=$(cat data/locations.json 2>/dev/null || echo '[]')
             if [ -z "$LOCATIONS" ] || ! echo "$LOCATIONS" | jq -e . >/dev/null 2>&1; then
               LOCATIONS='[]'
             fi
-            UPDATED_LOCATIONS=$(echo "$LOCATIONS" | jq -c '. += ['"$NEW_LOCATION"']')
+            UPDATED_LOCATIONS=$(echo "$LOCATIONS" | jq -c '. += ['"$NEW_LOCATION"']' 2>/dev/null || echo '[]')
           else
             UPDATED_LOCATIONS='['"$NEW_LOCATION"']'
           fi
@@ -49,4 +62,6 @@ jobs:
           git config user.email "github-actions@github.com"
           git add data/locations.json
           git diff --cached --quiet || git commit -m "Update location to lat: $LAT, lon: $LON, timestamp: $TIMESTAMP"
-          git push
+          git push origin main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
