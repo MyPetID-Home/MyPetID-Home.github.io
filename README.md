@@ -1,5 +1,17 @@
 # My Pet ID
 
-This is the repository for the My Pet ID web app, which helps track pet locations and profiles using NFC tags. For detailed information, see [READMEFIRST.md](READMEFIRST.md).
+Welcome to **My Pet ID**, a web app designed to help keep track of your pet's location and information using NFC tags. This page serves as the main interface when scanning a pet's tag.
 
-[Visit the live app](https://mypetid-home.github.io/)
+## Pet Profile
+- **Name**: [Loaded dynamically]
+- **Last Known Location**: View on the [Location](#location) page.
+
+## How to Use
+- Scan the NFC tag with your phone to view this page.
+- For project details, visit the [Project Info](#project-info) page or see [READMEFIRST.md](READMEFIRST.md).
+
+## Features
+- View pet details and recent locations.
+- Report a lost pet (manual process without backend).
+
+[Visit Project Info](https://mypetid-home.github.io/#project-info)
