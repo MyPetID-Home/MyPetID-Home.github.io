@@ -300,6 +300,9 @@ function navigate(page) {
                 const twoHoursAgo = new Date(now.getTime() - 2 * 60 * 60 * 1000);
                 return loc.active && locTime >= twoHoursAgo;
             });
+            const mapUrl = recentLocations.length > 0
+                ? `https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2865.320840040887!2d${recentLocations[0].longitude}!3d${recentLocations[0].latitude}!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e0!3m2!1sen!2sus!4v1748825673378!5m2!1sen!2sus`
+                : `https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2865.320840040887!2d-70.16535158888728!3d44.097371370963934!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x4cb26c6c7f43bbdf%3A0xdb822f84329516f9!2s37%20Fisher%20Ave%2C%20Lewiston%2C%20ME%2004240!5e0!3m2!1sen!2sus!4v1748825673378!5m2!1sen!2sus`;
             content.innerHTML = `
                 <h2>Location History</h2>
                 <h3>Last Scanned Locations (Last 2 Hours)</h3>
@@ -311,7 +314,24 @@ function navigate(page) {
                     `).join('')
                     : '<p>No recent locations available.</p>'}
             `;
+            locationMap.src = mapUrl;
             locationMap.style.display = 'block';
+            break;
+        case 'project-info':
+            try {
+                const readmeResponse = await fetch('READMEFIRST.md');
+                if (readmeResponse.ok) {
+                    const readmeText = await readmeResponse.text();
+                    content.innerHTML = `<div>${readmeText.replace(/^\s*#+\s*/gm, '<h2>').replace(/\n/g, '<br>')}</div>`;
+                    pageTitle.textContent = 'Project Info';
+                } else {
+                    content.innerHTML = '<p>Failed to load project info.</p>';
+                }
+            } catch (error) {
+                console.error('Error fetching READMEFIRST.md:', error);
+                content.innerHTML = '<p>Error loading project info. Please try again later.</p>';
+            }
+            locationMap.style.display = 'none';
             break;
     }
 }
