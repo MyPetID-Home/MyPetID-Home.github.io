@@ -1,0 +1,137 @@
+name: Sync MongoDB Data
+
+on:
+  schedule:
+    - cron: '0 0 * * *' # Runs daily at midnight UTC
+  workflow_dispatch: # Allows manual trigger
+
+jobs:
+  sync-mongodb:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm install mongoose axios
+
+      - name: Sync data from MongoDB
+        run: |
+          node -e '
+            const mongoose = require("mongoose");
+            const fs = require("fs");
+
+            const uri = process.env.MONGODB_URI;
+            if (!uri) {
+              console.error("MongoDB URI not set in environment variables");
+              process.exit(1);
+            }
+
+            mongoose.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true })
+              .then(async () => {
+                console.log("Connected to MongoDB");
+
+                const dogSchema = new mongoose.Schema({
+                  _id: String,
+                  nfcTagId: String,
+                  name: String,
+                  description: String,
+                  age: String,
+                  weight: String,
+                  coat: String,
+                  coatColor: String,
+                  sex: String,
+                  eyeColor: String,
+                  neutered: String,
+                  breed: String,
+                  personality: String,
+                  loves: String,
+                  routine: String,
+                  training: String,
+                  quirks: String,
+                  medicalInfo: {
+                    documents: [String],
+                    shots: String,
+                    medications: String,
+                    vaccinations: String,
+                    checkups: String,
+                    allergies: String
+                  },
+                  socials: {
+                    youtube: String,
+                    facebook: String,
+                    instagram: String,
+                    donationLink: String
+                  },
+                  testimonials: [{ text: String, author: String }],
+                  gallery: [{ url: String, description: String }],
+                  photoUrl: String,
+                  ownerId: String
+                });
+                const Dog = mongoose.model("Dog", dogSchema, "dogs");
+
+                const locationSchema = new mongoose.Schema({
+                  _id: String,
+                  dogId: String,
+                  deviceName: String,
+                  latitude: Number,
+                  longitude: Number,
+                  timestamp: Date,
+                  active: Boolean
+                });
+                const Location = mongoose.model("Location", locationSchema, "locations");
+
+                const userSchema = new mongoose.Schema({
+                  _id: String,
+                  username: String,
+                  password: String,
+                  email: String,
+                  device: String,
+                  name: String,
+                  phone: String,
+                  address: String
+                });
+                const User = mongoose.model("User", userSchema, "users");
+
+                try {
+                  const dogs = await Dog.find();
+                  const locations = await Location.find();
+                  const users = await User.find();
+
+                  if (!fs.existsSync("data")) fs.mkdirSync("data");
+                  fs.writeFileSync("data/dogs.json", JSON.stringify(dogs, null, 2));
+                  fs.writeFileSync("data/locations.json", JSON.stringify(locations, null, 2));
+                  fs.writeFileSync("data/users.json", JSON.stringify(users, null, 2));
+                  console.log("Data synced successfully");
+                } catch (error) {
+                  console.error("Error syncing data:", error.message);
+                  process.exit(1);
+                } finally {
+                  mongoose.connection.close();
+                }
+              })
+              .catch(err => {
+                console.error("MongoDB connection error:", err.message);
+                process.exit(1);
+              });
+          '
+        env:
+          MONGODB_URI: ${{ secrets.MONGODB_URI }}
+
+      - name: Commit and push changes
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/dogs.json data/locations.json data/users.json
+          git commit -m "Sync MongoDB data [skip ci]" || echo "No changes to commit"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
