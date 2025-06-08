@@ -1,0 +1,42 @@
+name: Update Location in README
+
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  update-readme:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.issue.pull_request == null }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Extract lat/lon from comment
+        id: extract
+        run: |
+          echo '${{ github.event.comment.body }}' > comment.json
+          LAT=$(jq -r '.lat' comment.json)
+          LON=$(jq -r '.lon' comment.json)
+          TIMESTAMP=$(jq -r '.timestamp' comment.json)
+          if [[ "$LAT" == "null" || "$LON" == "null" || "$TIMESTAMP" == "null" ]]; then
+            echo "Latitude, Longitude, or Timestamp not found in the comment."
+            exit 1
+          fi
+          echo "LAT=$LAT" >> $GITHUB_ENV
+          echo "LON=$LON" >> $GITHUB_ENV
+          echo "TIMESTAMP=$TIMESTAMP" >> $GITHUB_ENV
+
+      - name: Update coordinates in README
+        run: |
+          TIMESTAMP_DATE=$(date -d @$((TIMESTAMP)) +%Y-%m-%dT%H:%M:%SZ)
+          MAP_URL="https://maps.google.com/maps?q=$LAT,$LON&z=15&output=embed&t=$TIMESTAMP_DATE"
+          perl -0777 -i -pe 's|<iframe[^>]*src="https:\/\/maps\.google\.com\/maps\?q=[0-9.-]+,[0-9.-]+[^"]*"|<iframe width="400" height="300" style="border:0" loading="lazy" allowfullscreen referrerpolicy="no-referrer-when-downgrade" src="$ENV{MAP_URL}">|g' README.md
+
+      - name: Commit and push changes
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add README.md
+          git diff --cached --quiet || git commit -m "Update location to lat: $LAT, lon: $LON, timestamp: $TIMESTAMP"
+          git push
