@@ -17,3 +17,9 @@ jobs:
         run: |
           echo "GitHub Pages is set to deploy from the main branch."
           ls -la
+
+      - name: Deploy to GitHub Pages
+        uses: jamesiarmes/gh-pages-deploy@v5
+        with:
+          branch: gh-pages
+          folder: .
