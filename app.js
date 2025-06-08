@@ -8,14 +8,15 @@ async function fetchData() {
     const tagId = urlParams.get('tag') || '04:6C:E3:0F:BE:2A:81';
 
     if (!tagId) {
-        document.getElementById('content').innerHTML = '<p>No dog tag ID provided. Please scan a valid QR code or NFC task.</p>';
+        const content = document.getElementById('content');
+        if (content) content.innerHTML = '<p>No dog tag ID provided. Please scan a valid QR code or NFC tag.</p>';
         return;
     }
 
-    // Load static data from GitHub Pages
+    // Load static data from GitHub Pages with fallback
     try {
         const dogsResponse = await fetch('/data/dogs.json');
-        const dogs = await dogsResponse.json();
+        const dogs = dogsResponse.ok ? await dogsResponse.json() : [];
         dogData = dogs.find(dog => dog.nfcTagId === tagId) || {
             _id: 'defaultDogId',
             nfcTagId: tagId,
@@ -42,14 +43,15 @@ async function fetchData() {
         };
 
         const usersResponse = await fetch('/data/users.json');
-        const users = await usersResponse.json();
+        const users = usersResponse.ok ? await usersResponse.json() : [];
         userData = users.find(user => user._id === dogData.ownerId) || null;
 
         const locationsResponse = await fetch('/data/locations.json');
-        locationsData = await locationsResponse.json();
+        locationsData = locationsResponse.ok ? await locationsResponse.json() : [];
     } catch (error) {
         console.error('Error fetching static data:', error);
-        document.getElementById('content').innerHTML = '<p>Failed to load data. Please check back later.</p>';
+        const content = document.getElementById('content');
+        if (content) content.innerHTML = '<p>Failed to load data. Please check back later.</p>';
         return;
     }
 
@@ -62,29 +64,41 @@ async function fetchData() {
 }
 
 function showLoggedInState() {
-    document.getElementById('loginBtn').style.display = 'none';
-    document.getElementById('logoutBtn').style.display = 'block';
-    document.getElementById('registerBtn').style.display = 'none';
-    document.getElementById('accountBtn').style.display = 'block';
+    const loginBtn = document.getElementById('loginBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const registerBtn = document.getElementById('registerBtn');
+    const accountBtn = document.getElementById('accountBtn');
+    if (loginBtn) loginBtn.style.display = 'none';
+    if (logoutBtn) logoutBtn.style.display = 'block';
+    if (registerBtn) registerBtn.style.display = 'none';
+    if (accountBtn) accountBtn.style.display = 'block';
 }
 
 function showLoggedOutState() {
-    document.getElementById('loginBtn').style.display = 'block';
-    document.getElementById('logoutBtn').style.display = 'none';
-    document.getElementById('registerBtn').style.display = 'block';
-    document.getElementById('accountBtn').style.display = 'none';
+    const loginBtn = document.getElementById('loginBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const registerBtn = document.getElementById('registerBtn');
+    const accountBtn = document.getElementById('accountBtn');
+    if (loginBtn) loginBtn.style.display = 'block';
+    if (logoutBtn) logoutBtn.style.display = 'none';
+    if (registerBtn) registerBtn.style.display = 'block';
+    if (accountBtn) accountBtn.style.display = 'none';
 }
 
 function toggleDrawer() {
     const drawer = document.getElementById('drawer');
-    drawer.style.display = drawer.style.display === 'flex' ? 'none' : 'flex';
+    if (drawer) drawer.style.display = drawer.style.display === 'flex' ? 'none' : 'flex';
 }
 
-function navigate(page) {
+async function navigate(page) {
     const content = document.getElementById('content');
     const pageTitle = document.getElementById('page-title');
     const profilePic = document.getElementById('profile-pic');
     const locationMap = document.getElementById('location-map');
+    if (!content || !pageTitle || !profilePic || !locationMap) {
+        console.error('Required DOM elements not found');
+        return;
+    }
     toggleDrawer();
 
     window.location.hash = page;
@@ -95,7 +109,7 @@ function navigate(page) {
         profilePic.style.backgroundImage = 'none';
         locationMap.style.display = 'none';
     } else {
-        profilePic.style.backgroundImage = `url("${dogData.photoUrl}")`;
+        profilePic.style.backgroundImage = `url("${dogData.photoUrl || ''}")`;
         profilePic.style.backgroundSize = 'cover';
     }
 
@@ -298,17 +312,17 @@ function navigate(page) {
                 const locTime = new Date(loc.timestamp);
                 const now = new Date();
                 const twoHoursAgo = new Date(now.getTime() - 2 * 60 * 60 * 1000);
-                return loc.active && locTime >= twoHoursAgo;
+                return loc.active && locTime >= twoHoursAgo && loc.latitude && loc.longitude && !isNaN(loc.latitude) && !isNaN(loc.longitude);
             });
             const mapUrl = recentLocations.length > 0
-                ? `https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2865.320840040887!2d${recentLocations[0].longitude}!3d${recentLocations[0].latitude}!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e0!3m2!1sen!2sus!4v1748825673378!5m2!1sen!2sus`
-                : `https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2865.320840040887!2d-70.16535158888728!3d44.097371370963934!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x4cb26c6c7f43bbdf%3A0xdb822f84329516f9!2s37%20Fisher%20Ave%2C%20Lewiston%2C%20ME%2004240!5e0!3m2!1sen!2sus!4v1748825673378!5m2!1sen!2sus`;
+                ? `https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2865!2d${recentLocations[0].longitude}!3d${recentLocations[0].latitude}!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e0!3m2!1sen!2sus!4v${Date.now()}!5m2!1sen!2sus`
+                : `https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2865!2d-70.16535158888728!3d44.097371370963934!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x4cb26c6c7f43bbdf%3A0xdb822f84329516f9!2s37%20Fisher%20Ave%2C%20Lewiston%2C%20ME%2004240!5e0!3m2!1sen!2sus!4v${Date.now()}!5m2!1sen!2sus`;
             content.innerHTML = `
                 <h2>Location History</h2>
                 <h3>Last Scanned Locations (Last 2 Hours)</h3>
                 ${recentLocations.length > 0
                     ? recentLocations.map(loc => `
-                        <p>Device: ${loc.deviceName}</p>
+                        <p>Device: ${loc.deviceName || 'Unknown'}</p>
                         <p>Time: ${new Date(loc.timestamp).toLocaleString()}</p>
                         <p>Latitude: ${loc.latitude}, Longitude: ${loc.longitude}</p>
                     `).join('')
@@ -370,7 +384,7 @@ async function logout() {
 }
 
 window.addEventListener('hashchange', () => {
-    const page = window.location.hash.replace('#', '') || 'home';
+    const page = window.location.hash.replace('#', ') || 'home';
     navigate(page);
 });
 
