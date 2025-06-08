@@ -20,14 +20,21 @@ jobs:
         with:
           node-version: '18'
 
-      - name: Install dependencies
-        run: npm install mongoose
+      - name: Initialize project and install dependencies
+        run: |
+          npm init -y
+          npm install mongoose --save
+          echo "Dependencies installed successfully."
 
       - name: Sync data from MongoDB
         run: |
           node -e '
             const mongoose = require("mongoose");
             const fs = require("fs");
+
+            console.log("MONGODB_URI set:", !!process.env.MONGODB_URI);
+            console.log("MONGODB_USER set:", !!process.env.MONGODB_USER);
+            console.log("MONGODB_PASSWORD set:", !!process.env.MONGODB_PASSWORD);
 
             const uri = process.env.MONGODB_URI;
             if (!uri) {
@@ -38,8 +45,10 @@ jobs:
             mongoose.connect(uri, { 
               useNewUrlParser: true, 
               useUnifiedTopology: true,
-              user: process.env.MONGODB_USER,
-              pass: process.env.MONGODB_PASSWORD
+              auth: {
+                username: process.env.MONGODB_USER,
+                password: process.env.MONGODB_PASSWORD
+              }
             })
               .then(async () => {
                 console.log("Connected to MongoDB");
@@ -111,20 +120,22 @@ jobs:
                   const locations = await Location.find();
                   const users = await User.find();
 
-                  if (!fs.existsSync("data")) fs.mkdirSync("data");
+                  if (!fs.existsSync("data")) {
+                    fs.mkdirSync("data", { recursive: true, mode: 0o755 });
+                  }
                   fs.writeFileSync("data/dogs.json", JSON.stringify(dogs, null, 2));
                   fs.writeFileSync("data/locations.json", JSON.stringify(locations, null, 2));
                   fs.writeFileSync("data/users.json", JSON.stringify(users, null, 2));
                   console.log("Data synced successfully");
                 } catch (error) {
-                  console.error("Error syncing data:", error.message);
+                  console.error("Error syncing data:", error.message, error.stack);
                   process.exit(1);
                 } finally {
                   mongoose.connection.close();
                 }
               })
               .catch(err => {
-                console.error("MongoDB connection error:", err.message);
+                console.error("MongoDB connection error:", err.message, err.stack);
                 process.exit(1);
               });
           '
@@ -139,6 +150,6 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add data/dogs.json data/locations.json data/users.json
           git commit -m "Sync MongoDB data [skip ci]" || echo "No changes to commit"
-          git push
+          git push origin main
         env:
           GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
