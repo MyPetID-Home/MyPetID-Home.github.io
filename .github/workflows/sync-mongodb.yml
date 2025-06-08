@@ -21,7 +21,7 @@ jobs:
           node-version: '18'
 
       - name: Install dependencies
-        run: npm install mongoose axios
+        run: npm install mongoose
 
       - name: Sync data from MongoDB
         run: |
@@ -35,7 +35,12 @@ jobs:
               process.exit(1);
             }
 
-            mongoose.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true })
+            mongoose.connect(uri, { 
+              useNewUrlParser: true, 
+              useUnifiedTopology: true,
+              user: process.env.MONGODB_USER,
+              pass: process.env.MONGODB_PASSWORD
+            })
               .then(async () => {
                 console.log("Connected to MongoDB");
 
@@ -125,6 +130,8 @@ jobs:
           '
         env:
           MONGODB_URI: ${{ secrets.MONGODB_URI }}
+          MONGODB_USER: ${{ secrets.MONGODB_USER }}
+          MONGODB_PASSWORD: ${{ secrets.MONGODB_PASSWORD }}
 
       - name: Commit and push changes
         run: |
