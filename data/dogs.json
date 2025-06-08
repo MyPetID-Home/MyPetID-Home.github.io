@@ -1,0 +1,54 @@
+[
+  {
+    "medicalInfo": {
+      "shots": "Rabies, Distemper",
+      "medications": "None",
+      "vaccinations": "Up to date",
+      "checkups": "Last checkup: 2025-01-15",
+      "allergies": "None",
+      "documents": [
+        "https://mypetid-home.github.io/images/medical/Clyde-Medical-1.jpg"
+      ]
+    },
+    "socials": {
+      "youtube": "https://youtu.be/ZlnIO16qK2U?si=sRgnKzVTxaDb7kPH",
+      "instagram": "https://www.instagram.com/clydedog416/",
+      "facebook": "https://www.facebook.com/ClydeDog416",
+      "donationLink": "https://www.paypal.com/paypalme/CAK3D"
+    },
+    "_id": "682774024ca6684a976c5f8e",
+    "nfcTagId": "04:6C:E3:0F:BE:2A:81",
+    "name": "Clyde",
+    "description": "Good Boy",
+    "age": "1 year 6 months",
+    "weight": "33 lbs",
+    "coat": "Short",
+    "sex": "Male",
+    "eyeColor": "Brown",
+    "neutered": "Yes",
+    "breed": "Purebred American Staffordshire Terrier",
+    "personality": "Friendly and energetic",
+    "loves": "Chasing balls",
+    "routine": "Morning/Night walks at 6 AM/PM",
+    "training": "Sit, Stay, Paw, Lay Down, Turn, Up",
+    "quirks": "Barks at squirrels",
+    "testimonials": [
+      {
+        "_id": "68461e2e8700044b90d438d9",
+        "text": "Clyde is the best dog ever!",
+        "author": "Neighbor"
+      }
+    ],
+    "gallery": [
+      {
+        "_id": "68461e2e8700044b90d438da",
+        "type": "Photo",
+        "description": "Clydes Grandmother, Mother and Father",
+        "url": "https://mypetid-home.github.io/images/dog/Clyde-Family.jpeg"
+      }
+    ],
+    "photoUrl": "https://mypetid-home.github.io/images/dog/Clyde.png",
+    "ownerId": "682772c14ca6684a976c5f8d",
+    "coatColor": "Tan"
+  }
+]
