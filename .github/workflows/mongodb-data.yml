@@ -1,0 +1,29 @@
+name: Push Data to MongoDB
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'data/locations.json'
+      - 'data/devices.json'
+      - 'data/users.json'
+      - 'data/dogs.json'
+
+jobs:
+  push-data:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: npm init -y && npm install mongodb
+
+      - name: Run MongoDB push script
+        run: node push-to-mongo.js
+        env:
+          MONGO_URI: ${{ secrets.MONGO_URI }}
