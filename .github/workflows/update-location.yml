@@ -25,11 +25,18 @@ jobs:
             echo "Invalid JSON in comment body."
             exit 1
           fi
-          LAT=$(jq -r '.lat' comment.json 2>/dev/null || echo "null")
-          LON=$(jq -r '.lon' comment.json 2>/dev/null || echo "null")
-          TIMESTAMP=$(jq -r '.timestamp' comment.json 2>/dev/null || echo "null")
+          # Extract the body field and parse the inner JSON
+          BODY=$(jq -r '.body' comment.json 2>/dev/null || echo "null")
+          if [[ "$BODY" == "null" ]]; then
+            echo "Body field not found in the comment."
+            exit 1
+          fi
+          # Parse the inner JSON string
+          LAT=$(echo "$BODY" | jq -r '.lat' 2>/dev/null || echo "null")
+          LON=$(echo "$BODY" | jq -r '.lon' 2>/dev/null || echo "null")
+          TIMESTAMP=$(echo "$BODY" | jq -r '.timestamp' 2>/dev/null || echo "null")
           if [[ "$LAT" == "null" || "$LON" == "null" || "$TIMESTAMP" == "null" ]]; then
-            echo "Latitude, Longitude, or Timestamp not found in the comment."
+            echo "Latitude, Longitude, or Timestamp not found in the body."
             exit 1
           fi
           echo "LAT=$LAT" >> $GITHUB_ENV
@@ -38,9 +45,7 @@ jobs:
 
       - name: Update locations.json
         run: |
-          # Fallback for timestamp conversion if invalid
           TIMESTAMP_DATE=$(date -d @$((TIMESTAMP)) +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date -u +%Y-%m-%dT%H:%M:%SZ)
-          # Fallback for uuidgen if it fails
           UUID=$(uuidgen 2>/dev/null || echo "$(date +%s%N)")
           NEW_LOCATION='{"_id": "'"$UUID"'", "dogId": "682774024ca6684a976c5f8e", "deviceName": "Tasker Device", "latitude": '$LAT', "longitude": '$LON', "timestamp": "'"$TIMESTAMP_DATE"'", "active": true}'
           mkdir -p data
@@ -60,7 +65,7 @@ jobs:
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
-          git add data/locations.json
+          git add -f data/locations.json
           git diff --cached --quiet || git commit -m "Update location to lat: $LAT, lon: $LON, timestamp: $TIMESTAMP"
           git push origin main
         env:
