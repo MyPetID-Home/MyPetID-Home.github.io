@@ -58,7 +58,8 @@ jobs:
           else
             UPDATED_LOCATIONS='['"$NEW_LOCATION"']'
           fi
-          echo "$UPDATED_LOCATIONS" > data/locations.json
+          # Pretty-print the JSON with 2-space indentation
+          echo "$UPDATED_LOCATIONS" | jq --indent 2 > data/locations.json
           echo "Location data updated successfully."
 
       - name: Commit and push changes
