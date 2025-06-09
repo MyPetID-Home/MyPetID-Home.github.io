@@ -15,7 +15,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y jq uuid-runtime
+          sudo apt-get install -y jq uuid-runtime mongodb-clients
 
       - name: Extract data from comment
         id: extract
@@ -61,6 +61,18 @@ jobs:
           # Pretty-print the JSON with 2-space indentation
           echo "$UPDATED_LOCATIONS" | jq --indent 2 > data/locations.json
           echo "Location data updated successfully."
+
+      - name: Update MongoDB
+        run: |
+          # Construct the MongoDB insert command
+          URI="${{ secrets.MONGODB_URI }}"
+          if [ -z "$URI" ]; then
+            echo "MONGODB_URI not set in secrets."
+            exit 1
+          fi
+          TIMESTAMP_DATE=$(date -d @$((TIMESTAMP)) +%Y-%m-%dT%H:%M:%SZ)
+          mongo --uri "$URI" --eval "db.locations.insertOne({ _id: '$UUID', dogId: '$DOG_ID', deviceName: '$DEVICE_NAME', latitude: $LAT, longitude: $LON, timestamp: ISODate('$TIMESTAMP_DATE'), active: $ACTIVE })" --quiet
+          echo "Location data inserted into MongoDB."
 
       - name: Commit and push changes
         run: |
