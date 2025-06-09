@@ -17,7 +17,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y jq uuid-runtime
 
-      - name: Extract lat/lon/timestamp from comment
+      - name: Extract data from comment
         id: extract
         run: |
           echo '${{ github.event.comment.body }}' > comment.json
@@ -32,22 +32,28 @@ jobs:
             exit 1
           fi
           # Parse the inner JSON string
-          LAT=$(echo "$BODY" | jq -r '.lat' 2>/dev/null || echo "null")
-          LON=$(echo "$BODY" | jq -r '.lon' 2>/dev/null || echo "null")
+          DOG_ID=$(echo "$BODY" | jq -r '.dogId' 2>/dev/null || echo "682774024ca6684a976c5f8e")
+          DEVICE_NAME=$(echo "$BODY" | jq -r '.deviceName' 2>/dev/null || echo "Tasker Device")
+          LAT=$(echo "$BODY" | jq -r '.latitude' 2>/dev/null || echo "null")
+          LON=$(echo "$BODY" | jq -r '.longitude' 2>/dev/null || echo "null")
           TIMESTAMP=$(echo "$BODY" | jq -r '.timestamp' 2>/dev/null || echo "null")
+          ACTIVE=$(echo "$BODY" | jq -r '.active' 2>/dev/null || echo "true")
           if [[ "$LAT" == "null" || "$LON" == "null" || "$TIMESTAMP" == "null" ]]; then
             echo "Latitude, Longitude, or Timestamp not found in the body."
             exit 1
           fi
+          echo "DOG_ID=$DOG_ID" >> $GITHUB_ENV
+          echo "DEVICE_NAME=$DEVICE_NAME" >> $GITHUB_ENV
           echo "LAT=$LAT" >> $GITHUB_ENV
           echo "LON=$LON" >> $GITHUB_ENV
           echo "TIMESTAMP=$TIMESTAMP" >> $GITHUB_ENV
+          echo "ACTIVE=$ACTIVE" >> $GITHUB_ENV
 
       - name: Update locations.json
         run: |
           TIMESTAMP_DATE=$(date -d @$((TIMESTAMP)) +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date -u +%Y-%m-%dT%H:%M:%SZ)
           UUID=$(uuidgen 2>/dev/null || echo "$(date +%s%N)")
-          NEW_LOCATION='{"_id": "'"$UUID"'", "dogId": "682774024ca6684a976c5f8e", "deviceName": "Tasker Device", "latitude": '$LAT', "longitude": '$LON', "timestamp": "'"$TIMESTAMP_DATE"'", "active": true}'
+          NEW_LOCATION='{"_id": "'"$UUID"'", "dogId": "'"$DOG_ID"'", "deviceName": "'"$DEVICE_NAME"'", "latitude": '$LAT', "longitude": '$LON', "timestamp": "'"$TIMESTAMP_DATE"'", "active": '$ACTIVE'}'
           mkdir -p data
           if [ -f "data/locations.json" ]; then
             LOCATIONS=$(cat data/locations.json 2>/dev/null || echo '[]')
