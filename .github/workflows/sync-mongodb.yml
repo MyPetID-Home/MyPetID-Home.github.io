@@ -115,10 +115,19 @@ jobs:
                 });
                 const User = mongoose.model("User", userSchema, "users");
 
+                const deviceSchema = new mongoose.Schema({
+                  _id: String,
+                  userId: String,
+                  deviceName: String,
+                  deviceId: String
+                });
+                const Device = mongoose.model("Device", deviceSchema, "devices");
+
                 try {
                   const dogs = await Dog.find();
                   const locations = await Location.find();
                   const users = await User.find();
+                  const devices = await Device.find();
 
                   if (!fs.existsSync("data")) {
                     fs.mkdirSync("data", { recursive: true, mode: 0o755 });
@@ -126,6 +135,7 @@ jobs:
                   fs.writeFileSync("data/dogs.json", JSON.stringify(dogs, null, 2));
                   fs.writeFileSync("data/locations.json", JSON.stringify(locations, null, 2));
                   fs.writeFileSync("data/users.json", JSON.stringify(users, null, 2));
+                  fs.writeFileSync("data/devices.json", JSON.stringify(devices, null, 2));
                   console.log("Data synced successfully");
                 } catch (error) {
                   console.error("Error syncing data:", error.message, error.stack);
@@ -148,7 +158,7 @@ jobs:
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/dogs.json data/locations.json data/users.json
+          git add data/dogs.json data/locations.json data/users.json data/devices.json
           git commit -m "Sync MongoDB data [skip ci]" || echo "No changes to commit"
           git push origin main
         env:
