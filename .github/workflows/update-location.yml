@@ -25,21 +25,15 @@ jobs:
             echo "Invalid JSON in comment body."
             exit 1
           fi
-          # Extract the body field and parse the inner JSON
-          BODY=$(jq -r '.body' comment.json 2>/dev/null || echo "null")
-          if [[ "$BODY" == "null" ]]; then
-            echo "Body field not found in the comment."
-            exit 1
-          fi
-          # Parse the inner JSON string
-          DOG_ID=$(echo "$BODY" | jq -r '.dogId' 2>/dev/null || echo "682774024ca6684a976c5f8e")
-          DEVICE_NAME=$(echo "$BODY" | jq -r '.deviceName' 2>/dev/null || echo "Tasker Device")
-          LAT=$(echo "$BODY" | jq -r '.latitude' 2>/dev/null || echo "null")
-          LON=$(echo "$BODY" | jq -r '.longitude' 2>/dev/null || echo "null")
-          TIMESTAMP=$(echo "$BODY" | jq -r '.timestamp' 2>/dev/null || echo "null")
-          ACTIVE=$(echo "$BODY" | jq -r '.active' 2>/dev/null || echo "true")
+          # Extract fields directly from the comment JSON
+          DOG_ID=$(jq -r '.dogId' comment.json 2>/dev/null || echo "682774024ca6684a976c5f8e")
+          DEVICE_NAME=$(jq -r '.deviceName' comment.json 2>/dev/null || echo "Tasker Device")
+          LAT=$(jq -r '.latitude' comment.json 2>/dev/null || echo "null")
+          LON=$(jq -r '.longitude' comment.json 2>/dev/null || echo "null")
+          TIMESTAMP=$(jq -r '.timestamp' comment.json 2>/dev/null || echo "null")
+          ACTIVE=$(jq -r '.active' comment.json 2>/dev/null || echo "true")
           if [[ "$LAT" == "null" || "$LON" == "null" || "$TIMESTAMP" == "null" ]]; then
-            echo "Latitude, Longitude, or Timestamp not found in the body."
+            echo "Latitude, Longitude, or Timestamp not found in the comment."
             exit 1
           fi
           echo "DOG_ID=$DOG_ID" >> $GITHUB_ENV
