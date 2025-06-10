@@ -13,9 +13,8 @@ async function fetchData() {
         return;
     }
 
-    // Load static data from GitHub Pages with fallback and cache-busting
     try {
-        const cacheBust = new Date().getTime(); // Add timestamp to bust cache
+        const cacheBust = new Date().getTime();
         const dogsResponse = await fetch(`/data/dogs.json?t=${cacheBust}`);
         const dogs = dogsResponse.ok ? await dogsResponse.json() : [];
         dogData = dogs.find(dog => dog.nfcTagId === tagId) || {
@@ -42,13 +41,16 @@ async function fetchData() {
             photoUrl: '',
             ownerId: ''
         };
+        console.log('Dog Data:', dogData);
 
         const usersResponse = await fetch(`/data/users.json?t=${cacheBust}`);
         const users = usersResponse.ok ? await usersResponse.json() : [];
         userData = users.find(user => user._id === dogData.ownerId) || null;
+        console.log('User Data:', userData);
 
         const locationsResponse = await fetch(`/data/locations.json?t=${cacheBust}`);
         locationsData = locationsResponse.ok ? await locationsResponse.json() : [];
+        console.log('Locations Data:', locationsData);
     } catch (error) {
         console.error('Error fetching static data:', error);
         const content = document.getElementById('content');
@@ -64,7 +66,6 @@ async function fetchData() {
     navigate(window.location.hash.replace('#', '') || 'home');
 }
 
-// Add periodic refresh
 setInterval(fetchData, 30000); // Refresh every 30 seconds
 
 function showLoggedInState() {
@@ -334,6 +335,7 @@ async function navigate(page) {
             `;
             locationMap.src = mapUrl;
             locationMap.style.display = 'block';
+            console.log('Map URL set to:', mapUrl);
             break;
         case 'project-info':
             try {
