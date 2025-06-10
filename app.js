@@ -13,9 +13,10 @@ async function fetchData() {
         return;
     }
 
-    // Load static data from GitHub Pages with fallback
+    // Load static data from GitHub Pages with fallback and cache-busting
     try {
-        const dogsResponse = await fetch('/data/dogs.json');
+        const cacheBust = new Date().getTime(); // Add timestamp to bust cache
+        const dogsResponse = await fetch(`/data/dogs.json?t=${cacheBust}`);
         const dogs = dogsResponse.ok ? await dogsResponse.json() : [];
         dogData = dogs.find(dog => dog.nfcTagId === tagId) || {
             _id: 'defaultDogId',
@@ -42,11 +43,11 @@ async function fetchData() {
             ownerId: ''
         };
 
-        const usersResponse = await fetch('/data/users.json');
+        const usersResponse = await fetch(`/data/users.json?t=${cacheBust}`);
         const users = usersResponse.ok ? await usersResponse.json() : [];
         userData = users.find(user => user._id === dogData.ownerId) || null;
 
-        const locationsResponse = await fetch('/data/locations.json');
+        const locationsResponse = await fetch(`/data/locations.json?t=${cacheBust}`);
         locationsData = locationsResponse.ok ? await locationsResponse.json() : [];
     } catch (error) {
         console.error('Error fetching static data:', error);
@@ -62,6 +63,9 @@ async function fetchData() {
 
     navigate(window.location.hash.replace('#', '') || 'home');
 }
+
+// Add periodic refresh
+setInterval(fetchData, 30000); // Refresh every 30 seconds
 
 function showLoggedInState() {
     const loginBtn = document.getElementById('loginBtn');
@@ -384,7 +388,7 @@ async function logout() {
 }
 
 window.addEventListener('hashchange', () => {
-    const page = window.location.hash.replace('#', ') || 'home';
+    const page = window.location.hash.replace('#', '') || 'home';
     navigate(page);
 });
 
