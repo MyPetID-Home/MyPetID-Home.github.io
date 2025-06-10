@@ -34,14 +34,14 @@
     "quirks": "Barks at squirrels",
     "testimonials": [
       {
-        "_id": "6846d12216a159fa23107df3",
+        "_id": "6847a892e7f69623b94ee8de",
         "text": "Clyde is the best dog ever!",
         "author": "Neighbor"
       }
     ],
     "gallery": [
       {
-        "_id": "6846d12216a159fa23107df4",
+        "_id": "6847a892e7f69623b94ee8df",
         "type": "Photo",
         "description": "Clydes Grandmother, Mother and Father",
         "url": "https://mypetid-home.github.io/images/dog/Clyde-Family.jpeg"
