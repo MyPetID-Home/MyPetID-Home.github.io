@@ -77,41 +77,5 @@
     "timestamp": "2025-06-04T12:58:47.000Z",
     "active": true,
     "__v": 0
-  },
-  {
-    "_id": "0b735b94-ff4b-4e70-b42a-802831ecf4d2",
-    "dogId": "682774024ca6684a976c5f8e",
-    "deviceName": "AP3A.240905.015.A2",
-    "latitude": 44.1077414,
-    "longitude": -70.2261971,
-    "timestamp": "2025-06-10T12:53:07Z",
-    "active": true
-  },
-  {
-    "_id": "2ebad960-0fae-4ba8-b510-516fff39b844",
-    "dogId": "682774024ca6684a976c5f8e",
-    "deviceName": "AP3A.240905.015.A2",
-    "latitude": 44.1079277,
-    "longitude": -70.2263085,
-    "timestamp": "2025-06-10T17:09:23Z",
-    "active": true
-  },
-  {
-    "_id": "b3a0a711-0567-4089-9b70-e8400050450c",
-    "dogId": "682774024ca6684a976c5f8e",
-    "deviceName": "AP3A.240905.015.A2",
-    "latitude": 44.1077077,
-    "longitude": -70.2263533,
-    "timestamp": "2025-06-10T17:30:04Z",
-    "active": true
-  },
-  {
-    "_id": "6f5640a2-d9b4-4541-ae72-d8d597dd5bf6",
-    "dogId": "682774024ca6684a976c5f8e",
-    "deviceName": "AP3A.240905.015.A2",
-    "latitude": 44.0973136,
-    "longitude": -70.162884,
-    "timestamp": "2025-06-11T00:21:41Z",
-    "active": true
   }
 ]
