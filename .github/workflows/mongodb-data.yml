@@ -26,4 +26,4 @@ jobs:
       - name: Run MongoDB push script
         run: node push-to-mongo.js
         env:
-          MONGO_URI: ${{ secrets.MONGO_URI }}
+          MONGO_URI: ${{ secrets.MONGODB_URI }}
