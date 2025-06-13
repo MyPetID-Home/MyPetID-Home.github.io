@@ -25,7 +25,7 @@
     "coat": "Short",
     "sex": "Male",
     "eyeColor": "Brown",
-    "neutered": "No",
+    "neutered": "Yes",
     "breed": "Purebred American Staffordshire Terrier",
     "personality": "Friendly and energetic",
     "loves": "Chasing balls",
@@ -34,14 +34,14 @@
     "quirks": "Barks at squirrels",
     "testimonials": [
       {
-        "_id": "684a4b47e061e2ccd7052154",
+        "_id": "684b9cf3b34ea0cbe41fcd69",
         "text": "Clyde is the best dog ever!",
         "author": "Neighbor"
       }
     ],
     "gallery": [
       {
-        "_id": "684a4b47e061e2ccd7052155",
+        "_id": "684b9cf3b34ea0cbe41fcd6a",
         "type": "Photo",
         "description": "Clydes Grandmother, Mother and Father",
         "url": "https://mypetid-home.github.io/images/dog/Clyde-Family.jpeg"
