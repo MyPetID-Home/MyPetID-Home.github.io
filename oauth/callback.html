@@ -1,0 +1,47 @@
+<!-- callback.html -->
+<!DOCTYPE html>
+<html>
+<head>
+  <title>MyPetID - Linked!</title>
+</head>
+<body>
+  <h1>Linking your Patreon…</h1>
+  <p>Please wait. This will update within 30 minutes.</p>
+
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get("code");
+    const username = localStorage.getItem("mypetid_username");
+
+    if (!code || !username) {
+      document.body.innerHTML = "<p>Error: Missing data.</p>";
+    } else {
+      const fileContent = {
+        username: username,
+        code: code,
+        timestamp: new Date().toISOString(),
+      };
+
+      fetch("https://api.github.com/repos/MyPetID-Home/MyPetID-Home.github.io/contents/data/pending/" + username + ".json", {
+        method: "PUT",
+        headers: {
+          "Authorization": "token YOUR_GITHUB_PERSONAL_ACCESS_TOKEN", // Use a public write token or proxy later
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          message: "New Patreon link for " + username,
+          content: btoa(JSON.stringify(fileContent)),
+        }),
+      })
+      .then(response => response.json())
+      .then(data => {
+        document.body.innerHTML += "<p>Done! Please refresh in ~30 minutes.</p>";
+      })
+      .catch(err => {
+        console.error(err);
+        document.body.innerHTML += "<p>Error submitting data.</p>";
+      });
+    }
+  </script>
+</body>
+</html>
