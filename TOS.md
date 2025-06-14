@@ -1,5 +1,5 @@
 ---
-layout: default
+layout: tos_layout
 title: Terms of Service
 permalink: /tos/
 ---
