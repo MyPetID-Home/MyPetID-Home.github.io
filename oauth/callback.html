@@ -1,47 +1,55 @@
-<!-- callback.html -->
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>MyPetID - Linked!</title>
+  <meta charset="UTF-8" />
+  <title>Redirecting...</title>
 </head>
 <body>
-  <h1>Linking your Patreon…</h1>
-  <p>Please wait. This will update within 30 minutes.</p>
+  <p>Processing your Patreon sign-in...</p>
 
   <script>
-    const urlParams = new URLSearchParams(window.location.search);
-    const code = urlParams.get("code");
-    const username = localStorage.getItem("mypetid_username");
+    async function main() {
+      const params = new URLSearchParams(window.location.search);
+      const code = params.get('code');
+      if (!code) {
+        document.body.innerHTML = "<p>❌ No code provided. Please try again.</p>";
+        return;
+      }
 
-    if (!code || !username) {
-      document.body.innerHTML = "<p>Error: Missing data.</p>";
-    } else {
-      const fileContent = {
-        username: username,
+      const filename = `data/pending/${Date.now()}.json`;
+      const content = {
         code: code,
-        timestamp: new Date().toISOString(),
+        timestamp: new Date().toISOString()
       };
 
-      fetch("https://api.github.com/repos/MyPetID-Home/MyPetID-Home.github.io/contents/data/pending/" + username + ".json", {
-        method: "PUT",
+      const githubToken = 'YOUR_GITHUB_PAT'; // ❗ Only include this temporarily if public repo
+
+      const res = await fetch(`https://api.github.com/repos/MyPetID-Home/MyPetID-Home.github.io/contents/${filename}`, {
+        method: 'PUT',
         headers: {
-          "Authorization": "token YOUR_GITHUB_PERSONAL_ACCESS_TOKEN", // Use a public write token or proxy later
-          "Content-Type": "application/json",
+          'Authorization': `token ${githubToken}`,
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          message: "New Patreon link for " + username,
-          content: btoa(JSON.stringify(fileContent)),
-        }),
-      })
-      .then(response => response.json())
-      .then(data => {
-        document.body.innerHTML += "<p>Done! Please refresh in ~30 minutes.</p>";
-      })
-      .catch(err => {
-        console.error(err);
-        document.body.innerHTML += "<p>Error submitting data.</p>";
+          message: `Patreon signup: ${filename}`,
+          content: btoa(JSON.stringify(content, null, 2)),
+          committer: {
+            name: 'MyPetID Bot',
+            email: 'bot@mypetid.com'
+          }
+        })
       });
+
+      if (res.ok) {
+        document.body.innerHTML = "<p>✅ Signup submitted! Processing will complete within ~30 minutes.</p>";
+      } else {
+        const err = await res.json();
+        document.body.innerHTML = `<p>❌ Failed to save code: ${err.message}</p>`;
+        console.error(err);
+      }
     }
+
+    main();
   </script>
 </body>
 </html>
