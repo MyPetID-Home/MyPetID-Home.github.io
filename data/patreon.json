@@ -1,14 +1,9 @@
 [
   {
-    "username": "andrew",
-    "patreon": {
-      "data": {
-        "id": "user_id",
-        "attributes": {
-          "full_name": "Andrew Evensen",
-          "email": "email@example.com"
-        }
-      }
-    }
+    "id": "123456789",
+    "name": "Jane Doe",
+    "email": "jane@example.com",
+    "tier": "Gold",
+    "joined_at": "2025-06-12T14:32:00Z"
   }
 ]
