@@ -320,9 +320,8 @@ async function navigate(page) {
                 return loc.active && locTime >= twoHoursAgo && loc.latitude && loc.longitude && !isNaN(loc.latitude) && !isNaN(loc.longitude);
             });
             const mapUrl = recentLocations.length > 0
-                ? `https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2865!2d${recentLocations[0].longitude}!3d${recentLocations[0].latitude}!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e0!3m2!1sen!2sus!4v${Date.now()}!5m2!1sen!2sus`
-                : `https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2865!2d-70.16535158888728!3d44.097371370963934!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x4cb26c6c7f43bbdf%3A0xdb822f84329516f9!2s37%20Fisher%20Ave%2C%20Lewiston%2C%20ME%2004240!5e0!3m2!1sen!2sus!4v${Date.now()}!5m2!1sen!2sus`;
-            content.innerHTML = `
+                ? `https://maps.google.com/maps?q=${recentLocations[0].latitude},${recentLocations[0].longitude}&z=15&output=embed`
+                : `https://maps.google.com/maps?q=44.097371370963934,-70.16535158888728&z=15&output=embed`;content.innerHTML = `
                 <h2>Location History</h2>
                 <h3>Last Scanned Locations (Last 2 Hours)</h3>
                 ${recentLocations.length > 0
