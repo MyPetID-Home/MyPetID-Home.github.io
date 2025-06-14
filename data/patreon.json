@@ -1,0 +1,14 @@
+[
+  {
+    "username": "andrew",
+    "patreon": {
+      "data": {
+        "id": "user_id",
+        "attributes": {
+          "full_name": "Andrew Evensen",
+          "email": "email@example.com"
+        }
+      }
+    }
+  }
+]
