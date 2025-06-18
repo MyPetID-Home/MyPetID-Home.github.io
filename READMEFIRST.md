@@ -21,3 +21,7 @@ Welcome to **My Pet ID**, a web app designed to help keep track of your pet's lo
 
 - Integration with Tasker and NFC Tools Pro to automatically update location data when the owner scans the tag.
 - Support for additional devices (e.g., family members’ phones) to update locations.
+
+[TOS](https://mypetid-home.github.io/tos/)
+
+[Privacy Policy](https://mypetid-home.github.io/privacy-policy/)
