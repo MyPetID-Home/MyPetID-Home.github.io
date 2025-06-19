@@ -104,5 +104,14 @@
     "longitude": -70.2261029,
     "timestamp": "2025-06-19T16:06:44Z",
     "active": true
+  },
+  {
+    "_id": "2267afb0-74bb-4ad1-a381-88317528f0ca",
+    "dogId": "682774024ca6684a976c5f8e",
+    "deviceName": "AP3A.240905.015.A2",
+    "latitude": 44.1077409,
+    "longitude": -70.2263712,
+    "timestamp": "2025-06-19T16:09:35Z",
+    "active": true
   }
 ]
