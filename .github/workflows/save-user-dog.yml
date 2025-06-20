@@ -1,0 +1,104 @@
+name: Save User and Dog Data
+
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  save-user-dog:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.issue.pull_request == null && contains(github.event.comment.body, '/save-user-dog') }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq
+
+      - name: Extract data from comment
+        id: extract
+        run: |
+          echo '${{ github.event.comment.body }}' > comment.txt
+          if ! grep -q '/save-user-dog' comment.txt; then
+            echo "No /save-user-dog command found."
+            exit 1
+          fi
+          USER_ID=$(grep -o 'UserId:[^ ]*' comment.txt | cut -d':' -f2)
+          NAME=$(grep -o 'Name:[^ ]*' comment.txt | cut -d':' -f2)
+          EMAIL=$(grep -o 'Email:[^ ]*' comment.txt | cut -d':' -f2)
+          PHONE=$(grep -o 'Phone:[^ ]*' comment.txt | cut -d':' -f2)
+          ADDRESS=$(grep -o 'Address:[^ ]*' comment.txt | cut -d':' -f2)
+          DOG_ID=$(grep -o 'DogId:[^ ]*' comment.txt | cut -d':' -f2)
+          DOG_NAME=$(grep -o 'DogName:[^ ]*' comment.txt | cut -d':' -f2)
+          DESCRIPTION=$(grep -o 'Description:[^ ]*' comment.txt | cut -d':' -f2)
+          AGE=$(grep -o 'Age:[^ ]*' comment.txt | cut -d':' -f2)
+          WEIGHT=$(grep -o 'Weight:[^ ]*' comment.txt | cut -d':' -f2)
+          COAT=$(grep -o 'Coat:[^ ]*' comment.txt | cut -d':' -f2)
+          SEX=$(grep -o 'Sex:[^ ]*' comment.txt | cut -d':' -f2)
+          EYE_COLOR=$(grep -o 'EyeColor:[^ ]*' comment.txt | cut -d':' -f2)
+          NEUTERED=$(grep -o 'Neutered:[^ ]*' comment.txt | cut -d':' -f2)
+          BREED=$(grep -o 'Breed:[^ ]*' comment.txt | cut -d':' -f2)
+          PERSONALITY=$(grep -o 'Personality:[^ ]*' comment.txt | cut -d':' -f2)
+          LOVES=$(grep -o 'Loves:[^ ]*' comment.txt | cut -d':' -f2)
+          ROUTINE=$(grep -o 'Routine:[^ ]*' comment.txt | cut -d':' -f2)
+          TRAINING=$(grep -o 'Training:[^ ]*' comment.txt | cut -d':' -f2)
+          QUIRKS=$(grep -o 'Quirks:[^ ]*' comment.txt | cut -d':' -f2)
+
+          if [[ -z "$USER_ID" || -z "$NAME" || -z "$EMAIL" || -z "$DOG_ID" || -z "$DOG_NAME" ]]; then
+            echo "Missing required fields."
+            exit 1
+          fi
+
+          echo "USER_ID=$USER_ID" >> $GITHUB_ENV
+          echo "NAME=$NAME" >> $GITHUB_ENV
+          echo "EMAIL=$EMAIL" >> $GITHUB_ENV
+          echo "PHONE=$PHONE" >> $GITHUB_ENV
+          echo "ADDRESS=$ADDRESS" >> $GITHUB_ENV
+          echo "DOG_ID=$DOG_ID" >> $GITHUB_ENV
+          echo "DOG_NAME=$DOG_NAME" >> $GITHUB_ENV
+          echo "DESCRIPTION=$DESCRIPTION" >> $GITHUB_ENV
+          echo "AGE=$AGE" >> $GITHUB_ENV
+          echo "WEIGHT=$WEIGHT" >> $GITHUB_ENV
+          echo "COAT=$COAT" >> $GITHUB_ENV
+          echo "SEX=$SEX" >> $GITHUB_ENV
+          echo "EYE_COLOR=$EYE_COLOR" >> $GITHUB_ENV
+          echo "NEUTERED=$NEUTERED" >> $GITHUB_ENV
+          echo "BREED=$BREED" >> $GITHUB_ENV
+          echo "PERSONALITY=$PERSONALITY" >> $GITHUB_ENV
+          echo "LOVES=$LOVES" >> $GITHUB_ENV
+          echo "ROUTINE=$ROUTINE" >> $GITHUB_ENV
+          echo "TRAINING=$TRAINING" >> $GITHUB_ENV
+          echo "QUIRKS=$QUIRKS" >> $GITHUB_ENV
+
+      - name: Update users.json
+        run: |
+          mkdir -p data
+          if [ -f "data/users.json" ]; then
+            USERS=$(cat data/users.json)
+          else
+            USERS='[]'
+          fi
+          UPDATED_USERS=$(echo "$USERS" | jq -c --arg id "$USER_ID" --arg name "$NAME" --arg email "$EMAIL" --arg phone "$PHONE" --arg address "$ADDRESS" 'map(if ._id == $id then .name = $name | .email = $email | .phone = $phone | .address = $address else . end)' || echo '[]')
+          echo "$UPDATED_USERS" | jq --indent 2 > data/users.json.tmp
+          mv data/users.json.tmp data/users.json
+
+      - name: Update dogs.json
+        run: |
+          if [ -f "data/dogs.json" ]; then
+            DOGS=$(cat data/dogs.json)
+            UPDATED_DOGS=$(echo "$DOGS" | jq -c --arg id "$DOG_ID" --arg name "$DOG_NAME" --arg desc "$DESCRIPTION" --arg age "$AGE" --arg weight "$WEIGHT" --arg coat "$COAT" --arg sex "$SEX" --arg eye "$EYE_COLOR" --arg neutered "$NEUTERED" --arg breed "$BREED" --arg pers "$PERSONALITY" --arg loves "$LOVES" --arg routine "$ROUTINE" --arg train "$TRAINING" --arg quirks "$QUIRKS" 'map(if ._id == $id then .name = $name | .description = $desc | .age = $age | .weight = $weight | .coat = $coat | .sex = $sex | .eyeColor = $eye | .neutered = $neutered | .breed = $breed | .personality = $pers | .loves = $loves | .routine = $routine | .training = $train | .quirks = $quirks else . end)' || echo '[]')
+            echo "$UPDATED_DOGS" | jq --indent 2 > data/dogs.json.tmp
+            mv data/dogs.json.tmp data/dogs.json
+          fi
+
+      - name: Commit and push changes
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add data/users.json data/dogs.json
+          git diff --cached --quiet || git commit -m "Save changes for user $USER_ID and dog $DOG_ID"
+          git push origin main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
