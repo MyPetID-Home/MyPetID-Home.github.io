@@ -61,9 +61,12 @@ async function fetchData() {
     if (userData) {
         isLoggedIn = true;
         showLoggedInState();
+    } else {
+        isLoggedIn = false;
+        showLoggedOutState();
     }
 
-    navigate(window.location.hash.replace('#', '') || 'home');
+    navigate(window.location.hash.replace('#', '') || 'account');
 }
 
 setInterval(fetchData, 30000);
@@ -84,10 +87,10 @@ function showLoggedOutState() {
     const logoutBtn = document.getElementById('logoutBtn');
     const registerBtn = document.getElementById('registerBtn');
     const accountBtn = document.getElementById('accountBtn');
-    if (loginBtn) loginBtn.style.display = 'block';
+    if (loginBtn) loginBtn.style.display = 'none'; // Hidden; use account page for login
     if (logoutBtn) logoutBtn.style.display = 'none';
-    if (registerBtn) registerBtn.style.display = 'block';
-    if (accountBtn) accountBtn.style.display = 'none';
+    if (registerBtn) registerBtn.style.display = 'none'; // Hidden; use account page for register
+    if (accountBtn) accountBtn.style.display = 'block';
 }
 
 function toggleDrawer() {
@@ -239,15 +242,10 @@ async function navigate(page) {
             locationMap.style.display = 'none';
             break;
         case 'account':
-            if (!isLoggedIn) {
+            const subPage = window.location.hash.split('#')[1] || (isLoggedIn ? 'view' : 'login');
+            if (isLoggedIn && subPage === 'view') {
                 content.innerHTML = `
-                    <h2>Account View</h2>
-                    <p>Please log in to view your account.</p>
-                    <button onclick="navigate('login')">Login</button>
-                `;
-            } else {
-                content.innerHTML = `
-                    <h2>Account View</h2>
+                    <h2>Account</h2>
                     <strong>User Information</strong>
                     <p>Name: ${userData.name || 'Not set'}</p>
                     <p>Email: ${userData.email}</p>
@@ -270,47 +268,43 @@ async function navigate(page) {
                     <p>Quirks: ${dogData.quirks}</p>
                     <button onclick="navigate('logout')">Logout</button>
                 `;
+            } else if (!isLoggedIn) {
+                switch (subPage) {
+                    case 'login':
+                        content.innerHTML = `
+                            <h2>Account - Login</h2>
+                            <input type="text" id="email" placeholder="Email">
+                            <input type="password" id="password" placeholder="Password">
+                            <button onclick="login()">Login</button>
+                            <button class="text-button" onclick="navigate('account#register')">Register</button>
+                            <button class="text-button" onclick="navigate('account#reset-password')">Forgot Password?</button>
+                        `;
+                        break;
+                    case 'register':
+                        content.innerHTML = `
+                            <h2>Account - Register</h2>
+                            <input type="text" id="reg-email" placeholder="Email">
+                            <input type="password" id="reg-password" placeholder="Password">
+                            <input type="text" id="reg-name" placeholder="Name">
+                            <input type="text" id="reg-phone" placeholder="Phone">
+                            <input type="text" id="reg-address" placeholder="Address">
+                            <input type="text" id="reg-device" placeholder="Device Name (e.g., Dad's Phone)">
+                            <button onclick="register()">Register</button>
+                            <button class="text-button" onclick="navigate('account#login')">Back to Login</button>
+                        `;
+                        break;
+                    case 'reset-password':
+                        content.innerHTML = `
+                            <h2>Account - Reset Password</h2>
+                            <input type="text" id="reset-email" placeholder="Enter your email">
+                            <button onclick="resetPassword()">Send Reset Link</button>
+                            <button class="text-button" onclick="navigate('account#login')">Back to Login</button>
+                        `;
+                        break;
+                    default:
+                        navigate('account#login');
+                }
             }
-            locationMap.style.display = 'none';
-            break;
-        case 'login':
-            if (isLoggedIn) {
-                content.innerHTML = `
-                    <h2>Welcome, ${userData.email}</h2>
-                    <button onclick="navigate('account')">Go to Account</button>
-                    <button onclick="navigate('home')">View Pet Profile</button>
-                `;
-            } else {
-                content.innerHTML = `
-                    <h2>Login</h2>
-                    <input type="text" id="email" placeholder="Email">
-                    <input type="password" id="password" placeholder="Password">
-                    <button onclick="login()">Login</button>
-                    <button class="text-button" onclick="navigate('register')">Register</button>
-                    <button class="text-button" onclick="navigate('reset-password')">Forgot Password?</button>
-                `;
-            }
-            locationMap.style.display = 'none';
-            break;
-        case 'register':
-            content.innerHTML = `
-                <h2>Register</h2>
-                <input type="text" id="reg-email" placeholder="Email">
-                <input type="password" id="reg-password" placeholder="Password">
-                <input type="text" id="reg-name" placeholder="Name">
-                <input type="text" id="reg-phone" placeholder="Phone">
-                <input type="text" id="reg-address" placeholder="Address">
-                <input type="text" id="reg-device" placeholder="Device Name (e.g., Dad's Phone)">
-                <button onclick="register()">Register</button>
-            `;
-            locationMap.style.display = 'none';
-            break;
-        case 'reset-password':
-            content.innerHTML = `
-                <h2>Reset Password</h2>
-                <input type="text" id="reset-email" placeholder="Enter your email">
-                <button onclick="resetPassword()">Send Reset Link</button>
-            `;
             locationMap.style.display = 'none';
             break;
         case 'logout':
@@ -388,7 +382,7 @@ async function login() {
             isLoggedIn = true;
             userData = user;
             showLoggedInState();
-            navigate('account');
+            navigate('account#view');
         } else {
             alert('Invalid credentials.');
         }
@@ -438,7 +432,7 @@ async function register() {
             body: JSON.stringify(users)
         });
         alert('Registration successful. Please log in.');
-        navigate('login');
+        navigate('account#login');
     } catch (error) {
         console.error('Registration error:', error);
         alert('Failed to register. Please try again later.');
@@ -461,7 +455,7 @@ async function resetPassword() {
         } else {
             alert('No account found with that email.');
         }
-        navigate('login');
+        navigate('account#login');
     } catch (error) {
         console.error('Reset password error:', error);
         alert('Failed to process reset. Please try again later.');
@@ -473,11 +467,11 @@ async function logout() {
     userData = null;
     showLoggedOutState();
     await fetchData();
-    navigate('home');
+    navigate('account#login');
 }
 
 window.addEventListener('hashchange', () => {
-    const page = window.location.hash.replace('#', '') || 'home';
+    const page = window.location.hash.replace('#', '') || 'account';
     navigate(page);
 });
 
