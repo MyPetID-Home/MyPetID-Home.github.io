@@ -66,7 +66,7 @@ async function fetchData() {
     navigate(window.location.hash.replace('#', '') || 'home');
 }
 
-setInterval(fetchData, 30000); // Refresh every 30 seconds
+setInterval(fetchData, 30000);
 
 function showLoggedInState() {
     const loginBtn = document.getElementById('loginBtn');
@@ -240,7 +240,11 @@ async function navigate(page) {
             break;
         case 'account':
             if (!isLoggedIn) {
-                content.innerHTML = `<p>Please log in to view your account.</p><button onclick="navigate('login')">Login</button>`;
+                content.innerHTML = `
+                    <h2>Account View</h2>
+                    <p>Please log in to view your account.</p>
+                    <button onclick="navigate('login')">Login</button>
+                `;
             } else {
                 content.innerHTML = `
                     <h2>Account View</h2>
@@ -250,21 +254,21 @@ async function navigate(page) {
                     <p>Phone: ${userData.phone || 'Not set'}</p>
                     <p>Address: ${userData.address || 'Not set'}</p>
                     <strong>Dog Information</strong>
-                    <input type="text" id="dog-name" value="${dogData.name}">
-                    <input type="text" id="dog-description" value="${dogData.description}">
-                    <input type="text" id="dog-age" value="${dogData.age}">
-                    <input type="text" id="dog-weight" value="${dogData.weight}">
-                    <input type="text" id="dog-coat" value="${dogData.coat}">
-                    <input type="text" id="dog-sex" value="${dogData.sex}">
-                    <input type="text" id="dog-eyeColor" value="${dogData.eyeColor}">
-                    <input type="text" id="dog-neutered" value="${dogData.neutered}">
-                    <input type="text" id="dog-breed" value="${dogData.breed}">
-                    <input type="text" id="dog-personality" value="${dogData.personality}">
-                    <input type="text" id="dog-loves" value="${dogData.loves}">
-                    <input type="text" id="dog-routine" value="${dogData.routine}">
-                    <input type="text" id="dog-training" value="${dogData.training}">
-                    <input type="text" id="dog-quirks" value="${dogData.quirks}">
-                    <button onclick="saveChanges()">Save Changes</button>
+                    <p>Name: ${dogData.name}</p>
+                    <p>Description: ${dogData.description}</p>
+                    <p>Age: ${dogData.age}</p>
+                    <p>Weight: ${dogData.weight}</p>
+                    <p>Coat: ${dogData.coat}</p>
+                    <p>Sex: ${dogData.sex}</p>
+                    <p>Eye Color: ${dogData.eyeColor}</p>
+                    <p>Neutered: ${dogData.neutered}</p>
+                    <p>Breed: ${dogData.breed}</p>
+                    <p>Personality: ${dogData.personality}</p>
+                    <p>Loves: ${dogData.loves}</p>
+                    <p>Routine: ${dogData.routine}</p>
+                    <p>Training: ${dogData.training}</p>
+                    <p>Quirks: ${dogData.quirks}</p>
+                    <button onclick="navigate('logout')">Logout</button>
                 `;
             }
             locationMap.style.display = 'none';
@@ -321,7 +325,8 @@ async function navigate(page) {
             });
             const mapUrl = recentLocations.length > 0
                 ? `https://maps.google.com/maps?q=${recentLocations[0].latitude},${recentLocations[0].longitude}&z=15&output=embed`
-                : `https://maps.google.com/maps?q=44.097371370963934,-70.16535158888728&z=15&output=embed`;content.innerHTML = `
+                : `https://maps.google.com/maps?q=44.097371370963934,-70.16535158888728&z=15&output=embed`;
+            content.innerHTML = `
                 <h2>Location History</h2>
                 <h3>Last Scanned Locations (Last 2 Hours)</h3>
                 ${recentLocations.length > 0
@@ -366,18 +371,101 @@ async function saveChanges() {
 }
 
 async function login() {
-    alert('Login feature is not available without a backend. Please use static data.');
-    navigate('home');
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+
+    if (!email || !password) {
+        alert('Please enter both email and password.');
+        return;
+    }
+
+    try {
+        const cacheBust = new Date().getTime();
+        const usersResponse = await fetch(`/data/users.json?t=${cacheBust}`);
+        const users = usersResponse.ok ? await usersResponse.json() : [];
+        const user = users.find(u => u.email === email && u.password === password); // Placeholder; use hashing in production
+        if (user) {
+            isLoggedIn = true;
+            userData = user;
+            showLoggedInState();
+            navigate('account');
+        } else {
+            alert('Invalid credentials.');
+        }
+    } catch (error) {
+        console.error('Login error:', error);
+        alert('Failed to log in. Please try again later.');
+    }
 }
 
 async function register() {
-    alert('Registration is not available without a backend. Please contact the owner to add a user.');
-    navigate('login');
+    const email = document.getElementById('reg-email').value;
+    const password = document.getElementById('reg-password').value;
+    const name = document.getElementById('reg-name').value;
+    const phone = document.getElementById('reg-phone').value;
+    const address = document.getElementById('reg-address').value;
+    const device = document.getElementById('reg-device').value;
+
+    if (!email || !password || !name || !phone || !address || !device) {
+        alert('All fields are required.');
+        return;
+    }
+
+    try {
+        const cacheBust = new Date().getTime();
+        const usersResponse = await fetch(`/data/users.json?t=${cacheBust}`);
+        const users = usersResponse.ok ? await usersResponse.json() : [];
+        if (users.find(u => u.email === email)) {
+            alert('Email already registered.');
+            return;
+        }
+
+        const newUser = {
+            _id: crypto.randomUUID(),
+            username: name,
+            password: password, // Placeholder; hash in production
+            email: email,
+            name: name,
+            phone: phone,
+            address: address,
+            device: device
+        };
+
+        users.push(newUser);
+        await fetch('/data/users.json', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(users)
+        });
+        alert('Registration successful. Please log in.');
+        navigate('login');
+    } catch (error) {
+        console.error('Registration error:', error);
+        alert('Failed to register. Please try again later.');
+    }
 }
 
 async function resetPassword() {
-    alert('Password reset is not available without a backend.');
-    navigate('login');
+    const email = document.getElementById('reset-email').value;
+    if (!email) {
+        alert('Please enter an email.');
+        return;
+    }
+
+    try {
+        const cacheBust = new Date().getTime();
+        const usersResponse = await fetch(`/data/users.json?t=${cacheBust}`);
+        const users = usersResponse.ok ? await usersResponse.json() : [];
+        if (users.find(u => u.email === email)) {
+            alert('Password reset link would be sent if backend were implemented. Contact support.');
+        } else {
+            alert('No account found with that email.');
+        }
+        navigate('login');
+    } catch (error) {
+        console.error('Reset password error:', error);
+        alert('Failed to process reset. Please try again later.');
+    }
 }
 
 async function logout() {
