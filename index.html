@@ -19,10 +19,9 @@
             <button onclick="navigate('gallery')">Gallery</button>
             <button onclick="navigate('report-lost')">Report Lost</button>
             <button onclick="navigate('account')" id="accountBtn">Account</button>
-            <button onclick="navigate('login')" id="loginBtn">Login</button>
             <button onclick="navigate('logout')" id="logoutBtn" style="display: none;">Logout</button>
-            <button onclick="navigate('register')" id="registerBtn">Register</button>
             <button onclick="navigate('project-info')">Project Info</button>
+            <!-- Removed loginBtn and registerBtn; handled within account page -->
         </div>
         <div class="main-content">
             <header>
@@ -33,7 +32,6 @@
             <div id="content">
                 <p>Loading pet data...</p>
             </div>
-            <!-- Move iframe here -->
             <iframe id="location-map" width="100%" height="400" style="border:0; display: none;" loading="lazy" allowfullscreen referrerpolicy="no-referrer-when-downgrade" src=""></iframe>
         </div>
     </div>
