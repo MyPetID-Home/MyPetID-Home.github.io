@@ -1,0 +1,96 @@
+name: Register User
+
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  register-user:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.issue.pull_request == null && contains(github.event.comment.body, '/register') }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq
+
+      - name: Extract data from comment
+        id: extract
+        run: |
+          echo '${{ github.event.comment.body }}' > comment.txt
+          if ! grep -q '/register' comment.txt; then
+            echo "No /register command found."
+            exit 1
+          fi
+          _ID=$(grep -o '_id:[^ ]*' comment.txt | cut -d':' -f2)
+          USERNAME=$(grep -o 'Username:[^ ]*' comment.txt | cut -d':' -f2)
+          PASSWORD=$(grep -o 'Password:[^ ]*' comment.txt | cut -d':' -f2)
+          EMAIL=$(grep -o 'Email:[^ ]*' comment.txt | cut -d':' -f2)
+          PHONE=$(grep -o 'Phone:[^ ]*' comment.txt | cut -d':' -f2)
+          ADDRESS=$(grep -o 'Address:[^ ]*' comment.txt | cut -d':' -f2)
+          DEVICE=$(grep -o 'Device:[^ ]*' comment.txt | cut -d':' -f2)
+          TAG_ID=$(grep -o 'TagId:[^ ]*' comment.txt | cut -d':' -f2)
+
+          if [[ -z "$_ID" || -z "$USERNAME" || -z "$PASSWORD" || -z "$EMAIL" || -z "$PHONE" || -z "$ADDRESS" || -z "$DEVICE" || -z "$TAG_ID" ]]; then
+            echo "Missing required fields."
+            exit 1
+          fi
+
+          # Validate password
+          if ! echo "$PASSWORD" | grep -E '^(?=.*[A-Z])(?=.*\d).{8,}$' > /dev/null; then
+            echo "Password must be at least 8 characters with 1 uppercase and 1 number."
+            exit 1
+          fi
+
+          echo "_ID=$_ID" >> $GITHUB_ENV
+          echo "USERNAME=$USERNAME" >> $GITHUB_ENV
+          echo "PASSWORD=$PASSWORD" >> $GITHUB_ENV
+          echo "EMAIL=$EMAIL" >> $GITHUB_ENV
+          echo "PHONE=$PHONE" >> $GITHUB_ENV
+          echo "ADDRESS=$ADDRESS" >> $GITHUB_ENV
+          echo "DEVICE=$DEVICE" >> $GITHUB_ENV
+          echo "TAG_ID=$TAG_ID" >> $GITHUB_ENV
+
+      - name: Update users.json
+        run: |
+          mkdir -p data
+          if [ -f "data/users.json" ]; then
+            USERS=$(cat data/users.json)
+          else
+            USERS='[]'
+          fi
+          NEW_USER='{"_id": "'$_ID'", "username": "'$USERNAME'", "password": "'$PASSWORD'", "email": "'$EMAIL'", "phone": "'$PHONE'", "address": "'$ADDRESS'", "device": "'$DEVICE'", "tagId": "'$TAG_ID'"}'
+          UPDATED_USERS=$(echo "$USERS" | jq -c --argjson newUser "$NEW_USER" '. += [$newUser]' || echo '[]')
+          echo "$UPDATED_USERS" | jq --indent 2 > data/users.json.tmp
+          mv data/users.json.tmp data/users.json
+
+          # Update dogs.json to link tagId (up to 2 users)
+          if [ -f "data/dogs.json" ]; then
+            DOGS=$(cat data/dogs.json)
+            DOG=$(echo "$DOGS" | jq -c --arg tagId "$TAG_ID" 'map(select(.nfcTagId == $tagId)) | .[0]')
+            if [ ! -z "$DOG" ]; then
+              CURRENT_USERS=$(echo "$DOG" | jq -r '.linkedUsers // [] | length')
+              if [ "$CURRENT_USERS" -lt 2 ]; then
+                UPDATED_DOG=$(echo "$DOG" | jq -c --arg id "$_ID" '.linkedUsers += [$id] | del(.linkedUsers[]) | .linkedUsers')
+                UPDATED_DOGS=$(echo "$DOGS" | jq -c --argjson updatedDog "$UPDATED_DOG" 'map(if .nfcTagId == $updatedDog.nfcTagId then $updatedDog else . end)')
+                echo "$UPDATED_DOGS" | jq --indent 2 > data/dogs.json.tmp
+                mv data/dogs.json.tmp data/dogs.json
+              else
+                echo "Maximum 2 users already linked to tag $TAG_ID."
+                exit 1
+              fi
+            fi
+          fi
+
+      - name: Commit and push changes
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add data/users.json data/dogs.json
+          git diff --cached --quiet || git commit -m "Register user $_ID for tag $TAG_ID"
+          git push origin main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
