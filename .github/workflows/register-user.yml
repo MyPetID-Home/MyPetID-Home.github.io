@@ -63,21 +63,21 @@ jobs:
             USERS='[]'
           fi
           NEW_USER='{"_id": "'$_ID'", "username": "'$USERNAME'", "password": "'$PASSWORD'", "email": "'$EMAIL'", "phone": "'$PHONE'", "address": "'$ADDRESS'", "device": "'$DEVICE'", "tagId": "'$TAG_ID'"}'
-          UPDATED_USERS=$(echo "$USERS" | jq -c --argjson newUser "$NEW_USER" '. += [$newUser]' || echo '[]')
-          echo "$UPDATED_USERS" | jq --indent 2 > data/users.json.tmp
-          mv data/users.json.tmp data/users.json
+          UPDATED_USERS=$(echo "$USERS" | jq -c --argjson newUser "$NEW_USER" '. += [$newUser]')
+          echo "$UPDATED_USERS" | jq --indent 2 > data/users.json
 
           # Update dogs.json to link tagId (up to 2 users)
           if [ -f "data/dogs.json" ]; then
             DOGS=$(cat data/dogs.json)
-            DOG=$(echo "$DOGS" | jq -c --arg tagId "$TAG_ID" 'map(select(.nfcTagId == $tagId)) | .[0]')
-            if [ ! -z "$DOG" ]; then
-              CURRENT_USERS=$(echo "$DOG" | jq -r '.linkedUsers // [] | length')
+            # Check if dog with tagId exists
+            DOG_EXISTS=$(echo "$DOGS" | jq -r --arg tagId "$TAG_ID" 'any(.[]; .nfcTagId == $tagId)')
+            if [ "$DOG_EXISTS" == "true" ]; then
+              # Get current linked users count
+              CURRENT_USERS=$(echo "$DOGS" | jq -r --arg tagId "$TAG_ID" 'map(select(.nfcTagId == $tagId)) | .[0].linkedUsers // [] | length')
               if [ "$CURRENT_USERS" -lt 2 ]; then
-                UPDATED_DOG=$(echo "$DOG" | jq -c --arg id "$_ID" '.linkedUsers += [$id] | del(.linkedUsers[]) | .linkedUsers')
-                UPDATED_DOGS=$(echo "$DOGS" | jq -c --argjson updatedDog "$UPDATED_DOG" 'map(if .nfcTagId == $updatedDog.nfcTagId then $updatedDog else . end)')
-                echo "$UPDATED_DOGS" | jq --indent 2 > data/dogs.json.tmp
-                mv data/dogs.json.tmp data/dogs.json
+                # Add user to linkedUsers array
+                UPDATED_DOGS=$(echo "$DOGS" | jq -c --arg tagId "$TAG_ID" --arg userId "$_ID" 'map(if .nfcTagId == $tagId then .linkedUsers = (.linkedUsers // []) + [$userId] else . end)')
+                echo "$UPDATED_DOGS" | jq --indent 2 > data/dogs.json
               else
                 echo "Maximum 2 users already linked to tag $TAG_ID."
                 exit 1
