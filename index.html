@@ -1,40 +1,274 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Pet ID</title>
-    <link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MyPetID</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.auth0.com/js/auth0-spa-js/2.1/auth0-spa-js.production.js"></script>
+  <script src="https://kit.fontawesome.com/4a2b0555e5.js" crossorigin="anonymous"></script>
 </head>
 <body>
-    <div id="app">
-        <div class="drawer" id="drawer">
-            <h2>PAGES</h2>
-            <button onclick="navigate('home')">Home</button>
-            <button onclick="navigate('contact')">Contact</button>
-            <button onclick="navigate('location')">Location</button>
-            <button onclick="navigate('medical')">Medical</button>
-            <button onclick="navigate('about')">About Me</button>
-            <button onclick="navigate('socials')">Socials</button>
-            <button onclick="navigate('gallery')">Gallery</button>
-            <button onclick="navigate('report-lost')">Report Lost</button>
-            <button onclick="navigate('account')" id="accountBtn">Account</button>
-            <button onclick="navigate('logout')" id="logoutBtn" style="display: none;">Logout</button>
-            <button onclick="navigate('project-info')">Project Info</button>
-            <!-- Removed loginBtn and registerBtn; handled within account page -->
-        </div>
-        <div class="main-content">
-            <header>
-                <button onclick="toggleDrawer()">☰</button>
-                <h1 id="page-title">Loading...</h1>
-                <div class="profile-pic" id="profile-pic"></div>
-            </header>
-            <div id="content">
-                <p>Loading pet data...</p>
-            </div>
-            <iframe id="location-map" width="100%" height="400" style="border:0; display: none;" loading="lazy" allowfullscreen referrerpolicy="no-referrer-when-downgrade" src=""></iframe>
-        </div>
+  <nav class="navbar">
+    <div class="nav-brand">MyPetID</div>
+    <div class="nav-menu">
+      <button class="nav-trigger" onclick="navigate('home')">Home</button>
+      <button class="nav-trigger" onclick="navigate('dashboard')">Dashboard</button>
+      <button class="nav-trigger" onclick="navigate('register')">Register</button>
+      <button class="nav-trigger" onclick="logout()">Logout</button>
     </div>
-    <script src="app.js"></script>
+  </nav>
+
+  <div id="home" class="page">
+    <h1>Welcome to MyPetID</h1>
+    <p>Scan your pet's NFC tag to view their profile or register to manage your pets.</p>
+    <button class="btn-primary" onclick="navigate('register')">Get Started</button>
+  </div>
+
+  <div id="register" class="page hidden">
+    <div class="card">
+      <h2>Register</h2>
+      <form id="register-form" onsubmit="handleRegister(event)">
+        <div class="form-group">
+          <label class="label" for="register-username">Username</label>
+          <input class="input" id="register-username" type="text" required>
+        </div>
+        <div class="form-group">
+          <label class="label" for="register-email">Email</label>
+          <input class="input" id="register-email" type="email" required>
+        </div>
+        <div class="form-group">
+          <label class="label" for="register-password">Password</label>
+          <input class="input" id="register-password" type="password" required>
+        </div>
+        <div class="form-group">
+          <label class="label" for="register-confirm-password">Confirm Password</label>
+          <input class="input" id="register-confirm-password" type="password" required>
+        </div>
+        <button class="btn-primary" type="submit">Register</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="dashboard" class="page hidden">
+    <div class="sidebar">
+      <h3>User Dashboard</h3>
+      <div id="user-info"></div>
+      <button class="btn-primary" onclick="navigate('pet-editor')">Add Pet</button>
+    </div>
+    <div class="card">
+      <div class="tabs">
+        <button class="tabs-trigger active" onclick="showTab('pets')">Pets</button>
+        <button class="tabs-trigger" onclick="showTab('locations')">Locations</button>
+        <button class="tabs-trigger" onclick="showTab('admin')">Admin</button>
+      </div>
+      <div id="pets" class="tabs-content">
+        <div id="pet-management"></div>
+      </div>
+      <div id="locations" class="tabs-content hidden">
+        <table class="table">
+          <thead>
+            <tr>
+              <th class="table-head">Dog</th>
+              <th class="table-head">Latitude</th>
+              <th class="table-head">Longitude</th>
+              <th class="table-head">Timestamp</th>
+            </tr>
+          </thead>
+          <tbody id="location-table"></tbody>
+        </table>
+      </div>
+      <div id="admin" class="tabs-content hidden">
+        <table class="table">
+          <thead>
+            <tr>
+              <th class="table-head">Username</th>
+              <th class="table-head">Email</th>
+              <th class="table-head">Pets</th>
+            </tr>
+          </thead>
+          <tbody id="admin-table"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div id="pet-editor" class="page hidden">
+    <div class="card">
+      <h2>Add/Edit Pet</h2>
+      <form id="pet-editor-form" onsubmit="handlePetSubmit(event)">
+        <div class="form-group">
+          <label class="label" for="pet-name">Name</label>
+          <input class="input" id="pet-name" required>
+        </div>
+        <div class="form-group">
+          <label class="label" for="pet-breed">Breed</label>
+          <select class="select" id="pet-breed" required>
+            <option value="">Select Breed</option>
+            <option value="Labrador Retriever">Labrador Retriever</option>
+            <option value="Golden Retriever">Golden Retriever</option>
+            <option value="German Shepherd">German Shepherd</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="label" for="pet-description">Description</label>
+          <textarea class="textarea" id="pet-description"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="label" for="pet-sex">Sex</label>
+          <select class="select" id="pet-sex" required>
+            <option value="">Select Sex</option>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="label">Neutered</label>
+          <div class="toggle-group" id="neutered-group">
+            <button class="toggle active" onclick="toggleValue('neutered', 'Yes')">Yes</button>
+            <button class="toggle" onclick="toggleValue('neutered', 'No')">No</button>
+          </div>
+          <input type="hidden" id="pet-neutered" value="Yes">
+        </div>
+        <div class="form-group">
+          <label class="label" for="pet-age">Age</label>
+          <input class="input" id="pet-age" type="text">
+        </div>
+        <div class="form-group">
+          <label class="label" for="pet-weight">Weight</label>
+          <input class="input" id="pet-weight" type="text">
+        </div>
+        <button class="btn-primary" type="submit">Save Pet</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="pet-profile" class="page hidden">
+    <div id="pet-loading" class="space-y-6">
+      <div class="card">
+        <div class="card-header">
+          <div class="skeleton h-8 w-48"></div>
+        </div>
+        <div class="card-content">
+          <div class="skeleton h-32 w-full"></div>
+        </div>
+      </div>
+    </div>
+    <div id="pet-error" class="hidden card">
+      <div class="card-content pt-6 text-center">
+        <i class="fas fa-exclamation-triangle text-3xl text-red-500 mb-4"></i>
+        <h3 className="text-lg font-semibold mb-2">Pet Not Found</h3>
+        <p className="text-gray-600">The pet profile you're looking for doesn't exist or has been removed.</p>
+      </div>
+    </div>
+    <div id="pet-content" class="hidden space-y-6">
+      <div class="hero-gradient rounded-2xl p-8 text-white relative overflow-hidden">
+        <div class="absolute inset-0 bg-black bg-opacity-20"></div>
+        <div class="relative z-10 flex flex-col md:flex-row items-center gap-8">
+          <div class="relative">
+            <div class="w-32 h-32 rounded-full bg-white bg-opacity-20 flex items-center justify-center">
+              <img id="pet-photo" class="w-full h-full object-cover rounded-full hidden" alt="Pet profile photo">
+              <div id="pet-photo-placeholder" class="w-full h-full bg-gray-300 rounded-full flex items-center justify-center">
+                <span class="text-gray-600 text-4xl">🐕</span>
+              </div>
+            </div>
+            <div class="absolute -bottom-2 -right-2 bg-green-500 w-8 h-8 rounded-full flex items-center justify-center">
+              <i class="fas fa-check text-white text-sm"></i>
+            </div>
+          </div>
+          <div class="text-center md:text-left">
+            <h2 id="pet-name" class="text-3xl font-bold mb-2"></h2>
+            <p id="pet-details" class="text-lg opacity-90 mb-4"></p>
+            <div class="flex flex-wrap gap-2 justify-center md:justify-start">
+              <span class="badge bg-white bg-opacity-20">Friendly</span>
+              <span class="badge bg-white bg-opacity-20">Trained</span>
+              <span class="badge bg-white bg-opacity-20">Vaccinated</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="card border-red-200 bg-red-50">
+          <div class="card-content p-6">
+            <div class="flex items-center mb-4">
+              <i class="fas fa-exclamation-triangle h-6 w-6 text-red-600 mr-3"></i>
+              <h3 class="text-xl font-semibold text-red-800">Found Me?</h3>
+            </div>
+            <p class="text-red-700 mb-4">If you've found me, please help me get back home!</p>
+            <button class="btn-primary bg-red-600 hover:bg-red-700 w-full" onclick="reportFound()">Report Found</button>
+          </div>
+        </div>
+        <div class="card border-blue-200 bg-blue-50">
+          <div class="card-content p-6">
+            <div class="flex items-center mb-4">
+              <i class="fas fa-phone h-6 w-6 text-blue-600 mr-3"></i>
+              <h3 class="text-xl font-semibold text-blue-800">Emergency Contact</h3>
+            </div>
+            <p class="text-blue-700 mb-4">Need immediate help? Contact my family.</p>
+            <button class="btn-primary bg-blue-600 hover:bg-blue-700 w-full" onclick="contactOwner()">Contact Owner</button>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <h3 class="flex items-center"><i class="fas fa-heart h-5 w-5 mr-2"></i>About <span id="pet-name-about"></span></h3>
+        </div>
+        <div class="card-content">
+          <p id="pet-description" class="text-gray-700 mb-4"></p>
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg p-4 text-white text-center">
+              <i class="fas fa-birthday-cake text-2xl mb-2"></i>
+              <p class="text-sm opacity-90">Age</p>
+              <p id="pet-age" class="font-bold"></p>
+            </div>
+            <div class="bg-gradient-to-br from-green-500 to-teal-600 rounded-lg p-4 text-white text-center">
+              <i class="fas fa-weight text-2xl mb-2"></i>
+              <p class="text-sm opacity-90">Weight</p>
+              <p id="pet-weight" class="font-bold"></p>
+            </div>
+            <div class="bg-gradient-to-br from-purple-500 to-blue-600 rounded-lg p-4 text-white text-center">
+              <i class="fas fa-palette text-2xl mb-2"></i>
+              <p class="text-sm opacity-90">Coat</p>
+              <p id="pet-coat" class="font-bold"></p>
+            </div>
+            <div class="bg-gradient-to-br from-pink-500 to-rose-600 rounded-lg p-4 text-white text-center">
+              <i class="fas fa-eye text-2xl mb-2"></i>
+              <p class="text-sm opacity-90">Eyes</p>
+              <p id="pet-eye-color" class="font-bold"></p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="tabs">
+        <button class="tabs-trigger active" onclick="showTab('pet-info')">Info</button>
+        <button class="tabs-trigger" onclick="showTab('pet-medical')">Medical</button>
+        <button class="tabs-trigger" onclick="showTab('pet-socials')">Socials</button>
+      </div>
+      <div id="pet-info" class="tabs-content card">
+        <div class="card-content">
+          <p id="pet-personality"></p>
+          <p id="pet-loves"></p>
+          <p id="pet-quirks"></p>
+        </div>
+      </div>
+      <div id="pet-medical" class="tabs-content card hidden">
+        <div class="card-content">
+          <p id="pet-medical-info"></p>
+        </div>
+      </div>
+      <div id="pet-socials" class="tabs-content card hidden">
+        <div class="card-content">
+          <p id="pet-socials"></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+  <footer id="footer">
+    <a href="https://patreon.com/MyPetID">Support us on Patreon</a>
+  </footer>
+
+  <script src="app.js"></script>
 </body>
 </html>
