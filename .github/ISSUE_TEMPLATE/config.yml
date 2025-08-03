@@ -1,8 +1,8 @@
 blank_issues_enabled: true
 contact_links:
-  - name: Questions
-    url: https://discord.gg/5CceB5Y6Zt
-    about: You can join the discussions on Discord.
-  - name: Login does not work
-    url: https://github.com/Balastrong/github-stats/blob/main/CONTRIBUTING.md
-    about: Before opening a new issue, please make sure to read CONTRIBUTING.md
+  - name: Purchase a Membership
+    url: https://www.patreon.com/c/MyPetID
+    about: Memberships are billed monthly. NFC Tag REQUIRED for service.
+  - name: About the Project
+    url: https://github.com/MyPetID-Home/MyPetID-Home.github.io/blob/main/README.md
+    about: An explenation of what the MyPetID App and NFC Tag do.
