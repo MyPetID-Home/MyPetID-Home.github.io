@@ -1,0 +1,75 @@
+name: Rotate GitHub Status Hourly
+
+on:
+  # This schedule runs at the start of every hour (minute 0).
+  schedule:
+    - cron: '0 * * * *'
+
+jobs:
+  update-status:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Choose a status from the list
+        id: set_status
+        run: |
+          # Define your list of statuses here. Add as many as you like!
+          STATUS_OPTIONS=(
+            ":sparkles: Updating Location Details"
+            ":walking: Taking a Quick Walk"
+            ":pencil: Validating Pet Profiles"
+            ":bar_chart: Fetching User Data"
+            ":dog: Catching the Ball"
+            ":zzz: Taking a Nap"
+            ":cat: Chasing my Tail"
+            ":link: Scanning NFC Tags"
+            ":paw_prints: Sniffing Butts"
+            ":camera_flash: Processing Pet Image Uploads"
+            ":bell: Scanning for LOST DOG Notifications"
+            ":syringe: Generating Vaccination Reminders"
+            ":mag: Debugging a Microchip Lookup"
+            ":package: Deploying a New Feature"
+            ":file_folder: Running Database Backups"
+            ":scroll: Checking Server Logs"
+            ":speech_balloon: Reviewing User Feedback"
+            ":iphone: Optimizing for Mobile Devices"
+            ":dna: Adding New Pet Breeds to the database"
+            ":shield: Running Security Scans"
+            ":globe_with_meridians: Connecting to the Cloud"
+            ":house: Home for the Day"
+          )
+          
+          # Get the current hour in UTC (0-23) and use it as an index.
+          # The modulo operator ensures the index wraps around to the beginning of the array.
+          CURRENT_HOUR=$(date -u +%H)
+          STATUS_INDEX=$((CURRENT_HOUR % ${#STATUS_OPTIONS[@]}))
+          
+          SELECTED_STATUS="${STATUS_OPTIONS[$STATUS_INDEX]}"
+          
+          echo "selected_status=${SELECTED_STATUS}" >> $GITHUB_OUTPUT
+
+      - name: Update GitHub User Status
+        env:
+          GITHUB_TOKEN: ${{ secrets.STATUS_TOKEN }}
+          STATUS: ${{ steps.set_status.outputs.selected_status }}
+        run: |
+          # The 'gh' command-line tool is pre-installed on GitHub Actions runners.
+          # We use it to call the GitHub GraphQL API to update the user's status.
+          
+          # Extract emoji and message from the selected status
+          EMOJI=$(echo "$STATUS" | awk '{print $1}')
+          MESSAGE=$(echo "$STATUS" | awk '{$1=""; print $0}')
+
+          gh api graphql -f query='
+            mutation ($emoji: String, $message: String) {
+              changeUserStatus(input: {
+                emoji: $emoji,
+                message: $message,
+                clientMutationId: "rotate-status-action"
+              }) {
+                status {
+                  message
+                  emoji
+                }
+              }
+            }
+          ' -F emoji="$EMOJI" -F message="$MESSAGE"
