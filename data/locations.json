@@ -77,14 +77,5 @@
     "timestamp": "2025-06-04T12:58:47.000Z",
     "active": true,
     "__v": 0
-  },
-  {
-    "_id": "53f4d0ce-1632-42c0-ac4a-ac4a1d87b446",
-    "dogId": "682774024ca6684a976c5f8e",
-    "deviceName": "AP3A.240905.015.A2",
-    "latitude": 44.1074576,
-    "longitude": -70.2262326,
-    "timestamp": "2025-07-30T21:41:55Z",
-    "active": true
   }
 ]
