@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { supabase } from '../lib/supabase';
 
 function readTag() {
   if (typeof window === 'undefined') return 'demo-tag-001';
@@ -12,7 +13,29 @@ export function PublicPetProfile() {
   const tag = readTag();
   const [locationStatus, setLocationStatus] = useState('Last scan shown until the current scanner chooses to share location.');
   const [scanEnabled, setScanEnabled] = useState(true);
+  const [pet, setPet] = useState({
+    id: '11111111-1111-4111-8111-111111111111',
+    name: 'Clyde',
+    breed: 'Good boy mix',
+    photo_url: '/images/dog/Clyde.png',
+    medical_public: 'Sensitive stomach. Avoid rich treats unless needed for safety.',
+    behavior_public: 'Friendly, loves tug, nervous around loud trucks.',
+    lost_mode: false,
+  });
   const demoMap = useMemo(() => 'https://maps.google.com/maps?q=44.097371370963934,-70.16535158888728&z=13&output=embed', []);
+
+  useEffect(() => {
+    async function loadPet() {
+      if (!supabase) return;
+      const { data, error } = await supabase
+        .from('tags')
+        .select('pet:pets(id,name,breed,photo_url,medical_public,behavior_public,lost_mode)')
+        .eq('tag_code', tag)
+        .maybeSingle();
+      if (!error && data?.pet) setPet(Array.isArray(data.pet) ? data.pet[0] : data.pet);
+    }
+    loadPet();
+  }, [tag]);
 
   async function shareLocation() {
     if (!scanEnabled) {
@@ -25,7 +48,23 @@ export function PublicPetProfile() {
     }
     setLocationStatus('Opening app flow and requesting location permission…');
     navigator.geolocation.getCurrentPosition(
-      (position) => setLocationStatus(`Ready to save scan: ${position.coords.latitude.toFixed(5)}, ${position.coords.longitude.toFixed(5)}. Supabase save comes next.`),
+      (position) => {
+        const msg = `Ready to save scan: ${position.coords.latitude.toFixed(5)}, ${position.coords.longitude.toFixed(5)}.`;
+        setLocationStatus(msg);
+        if (supabase) {
+          supabase.from('scan_events').insert({
+            pet_id: pet.id,
+            actor: 'stranger',
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+            accuracy_meters: position.coords.accuracy,
+            note: 'Public scan location consented from tag page',
+          }).then(({ error }) => {
+            if (error) setLocationStatus(`${msg} Supabase save blocked: ${error.message}`);
+            else setLocationStatus(`${msg} Scan location saved.`);
+          });
+        }
+      },
       () => setLocationStatus('Location permission denied or unavailable. You can still contact the owner.'),
       { enableHighAccuracy: true, timeout: 10000 }
     );
@@ -39,9 +78,9 @@ export function PublicPetProfile() {
           <div className="scanPhotoWrap"><img src="/images/dog/Clyde.png" alt="Demo pet" /><span className="scanPulse" /></div>
           <div>
             <p className="eyebrow">Scanned tag {tag}</p>
-            <h1>Clyde</h1>
-            <p className="lead">Friendly good boy mix. Loves tug and treats. Nervous around loud trucks.</p>
-            <div className="lostRibbon">Not marked lost — demo status</div>
+            <h1>{pet.name}</h1>
+            <p className="lead">{pet.behavior_public}</p>
+            <div className="lostRibbon">{pet.lost_mode ? 'Marked lost — contact owner now' : 'Not marked lost — demo status'}</div>
           </div>
         </div>
       </section>
@@ -49,7 +88,7 @@ export function PublicPetProfile() {
       <section className="publicGrid">
         <article className="panel">
           <h2>Owner-approved info</h2>
-          <dl className="infoList"><dt>Medical</dt><dd>Sensitive stomach. Avoid rich treats unless needed for safety.</dd><dt>Behavior</dt><dd>Approach calmly, crouch low, say “Clyde, home?”</dd><dt>Contact</dt><dd>Owner contact buttons will appear here once Supabase is connected.</dd></dl>
+          <dl className="infoList"><dt>Medical</dt><dd>{pet.medical_public}</dd><dt>Behavior</dt><dd>{pet.behavior_public}</dd><dt>Contact</dt><dd>Owner contact buttons will appear here once contact preferences are enabled.</dd></dl>
           <div className="actions"><button className="primary" type="button">Contact owner</button><button type="button">Report lost sighting</button></div>
         </article>
 

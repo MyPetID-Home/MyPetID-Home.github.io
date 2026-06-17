@@ -21,8 +21,8 @@ Copy `.env.example` to `.env.local` and add browser-safe Supabase values when re
 
 ## Confirmed roadmap
 1. Fresh Supabase project `MyPetID-Home` has been created and the starter schema has been applied.
-2. Enable Supabase email/password auth and Google OAuth.
-3. Create/admin-mark the CAK3D admin/user account with unrestricted access.
+2. Enable/configure Google OAuth after Google Cloud OAuth credentials are available.
+3. Admin user has been created and seeded as unrestricted admin.
 4. Build real account, pet, tag, scan, trusted-device, and admin-dashboard flows.
 5. Restore useful chunks from the imported old database backup.
 6. Integrate Patreon membership linking and tier limits.

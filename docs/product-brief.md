@@ -7,11 +7,12 @@ A pet owner logs in, creates an account profile, creates one or more pet profile
 - Supabase is the preferred backend.
 - The old Supabase project was inactive for more than 90 days and could not be restored through the Management API.
 - A fresh Supabase project named `MyPetID-Home` has been created in the existing `MyPetID-Home` organization.
-- The starter schema has been applied to the new project.
-- Login should support email/password and Google OAuth.
+- The starter schema and app extension schema have been applied to the new project.
+- Login supports email/password now.
+- Google OAuth is planned but still needs Google Cloud OAuth client credentials; Patreon API credentials are not Google OAuth credentials.
 - The CAK3D admin email is stored in Clydius profile env and should not be committed publicly.
 - The admin account is both an unrestricted admin/tester account and a normal real user account.
-- Never commit passwords, Supabase access tokens, service-role keys, OAuth secrets, PATs, or database URLs.
+- Never commit passwords, Supabase access tokens, service-role/secret keys, OAuth secrets, PATs, or database URLs.
 
 ## Confirmed business rules
 - A free account can create one user profile and one pet profile.
@@ -20,6 +21,12 @@ A pet owner logs in, creates an account profile, creates one or more pet profile
 - Patreon-linked users should show Patreon status on the user profile.
 - Patreon members get updates/tutorials/support and a 15% coupon for the first Pet ID tag purchase.
 - Admin accounts bypass all tier limits for active testing.
+
+## Patreon API
+- Patreon app name: `MyPetID`.
+- API version: `2`.
+- Client ID/secret and creator access/refresh tokens are stored in Clydius profile env only.
+- Patreon linking should be handled by a server-side function later; never expose Patreon client secret or creator tokens in the static Pages app.
 
 ## Patreon tiers
 | Tier | Price | NFC tag/pet allowance | User profile allowance | Notes |
@@ -32,7 +39,7 @@ A pet owner logs in, creates an account profile, creates one or more pet profile
 | Admin | internal | Unlimited | Unlimited | CAK3D testing/management bypass. |
 
 ## Key flows
-1. Owner signs up with Supabase Auth via email/password or Google.
+1. Owner signs up with Supabase Auth via email/password now, Google later.
 2. Owner creates profile/contact preferences.
 3. Owner creates pet profile with public-safe medical, behavior, and return-home info.
 4. Admin/CAK3D creates physical tag IDs and enters tag codes into the admin dashboard/database.
@@ -62,7 +69,7 @@ Use multiple practical browser-safe options:
 ## Current technical direction
 - Next.js static export deployed by GitHub Pages now.
 - Supabase Auth/database/storage next.
-- Vercel later if server routes, Patreon callbacks, webhooks, private admin APIs, or secure coupon/tag fulfillment need server execution.
+- Vercel or Supabase Edge Functions later for Patreon callbacks/webhooks, Google OAuth secrets, coupon generation, and private admin APIs.
 
 ## Legacy material to mine
 Existing repos contain useful pieces from earlier experiments:
@@ -73,6 +80,6 @@ Existing repos contain useful pieces from earlier experiments:
 - Mongo/Auth0 prototypes
 - Patreon sync sketches
 
-CAK3D also has local backup files on the NukeBox that may contain useful database/storage chunks:
-- `C:\Users\CAK3D\Downloads\db_cluster-29-09-2025@05-13-44.backup.gz`
-- `C:\Users\CAK3D\Downloads\bzfmluscikipkwaiophn.storage.zip`
+Imported backup files on the VM:
+- `/home/ubuntu/workspaces/mypetid/imports/db_cluster-29-09-2025.backup.gz`
+- `/home/ubuntu/workspaces/mypetid/imports/bzfmluscikipkwaiophn.storage.zip`

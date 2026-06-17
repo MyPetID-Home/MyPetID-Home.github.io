@@ -3,7 +3,8 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { QRCodeSVG } from 'qrcode.react';
-import { hasSupabaseConfig } from '../lib/supabase';
+import { hasSupabaseConfig, supabase } from '../lib/supabase';
+import { AuthPanel } from './auth-panel';
 
 const tierRules = {
   free: { label: 'Free', pets: '1 profile preview', users: '1 user', scans: 'Location scans locked', accent: 'muted' },
@@ -65,6 +66,24 @@ export function DashboardClient() {
     return `${window.location.origin}/pet/?tag=${encodeURIComponent(pet.tagId)}`;
   }, [pet.tagId]);
 
+  async function saveDemoPet() {
+    if (!supabase) return;
+    const { data: auth } = await supabase.auth.getUser();
+    if (!auth.user) return;
+    const { error } = await supabase.from('pets').upsert({
+      owner_id: auth.user.id,
+      name: pet.name,
+      species: pet.species.toLowerCase(),
+      breed: pet.breed,
+      medical_public: pet.medicalNotes,
+      behavior_public: pet.behaviorNotes,
+      feeding_plan: pet.feeding,
+      care_notes: 'Saved from the MyPetID dashboard.',
+    });
+    if (error) window.alert(error.message);
+    else window.alert('Pet profile saved to Supabase.');
+  }
+
   const selectedTier = tierRules[tier];
 
   return (
@@ -101,8 +120,10 @@ export function DashboardClient() {
         </header>
 
         {!hasSupabaseConfig && (
-          <p className="notice">Demo mode: the new Supabase project exists, but public env values and live tables still need to be wired into GitHub Pages/Vercel before this saves real data.</p>
+          <p className="notice">Demo mode: Supabase public env values are missing from this static build. Add GitHub Actions variables to enable real auth/data.</p>
         )}
+
+        <AuthPanel />
 
         {activeTab === 'overview' && (
           <div className="dashboardGrid">
@@ -111,7 +132,7 @@ export function DashboardClient() {
                 <p className="eyebrow">Scan profile preview</p>
                 <h2>{pet.name}</h2>
                 <p>{pet.breed} • Tag {pet.tagId}</p>
-                <div className="actions"><Link className="button primary" href={`/pet/?tag=${encodeURIComponent(pet.tagId)}`}>Open public page</Link><button type="button">Toggle lost mode</button></div>
+                <div className="actions"><Link className="button primary" href={`/pet/?tag=${encodeURIComponent(pet.tagId)}`}>Open public page</Link><button type="button">Toggle lost mode</button><button type="button" onClick={saveDemoPet}>Save to Supabase</button></div>
               </div>
               <QRCodeSVG value={publicUrl} size={160} bgColor="transparent" fgColor="#f5f7ef" />
             </section>
