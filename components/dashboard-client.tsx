@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { QRCodeSVG } from 'qrcode.react';
 import { hasSupabaseConfig, supabase } from '../lib/supabase';
@@ -44,12 +44,22 @@ const healthMetrics = [
   ['Mood', 'Playful', 'tail up'],
 ];
 
-const tabs = ['overview', 'walks', 'care', 'documents', 'appointments', 'data', 'admin'] as const;
+const tabs = ['overview', 'walks', 'care', 'documents', 'appointments', 'data', 'settings', 'admin'] as const;
 type Tab = typeof tabs[number];
 
 export function DashboardClient() {
   const [tier, setTier] = useState<keyof typeof tierRules>('admin');
   const [activeTab, setActiveTab] = useState<Tab>('overview');
+  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+  const [dashboardMessage, setDashboardMessage] = useState('All controls are live demo controls unless marked as a backend task.');
+  const [settings, setSettings] = useState({
+    pushAlerts: true,
+    shareLastScan: true,
+    publicMedical: true,
+    publicBehavior: true,
+    publicContact: true,
+    lostMode: false,
+  });
   const [pet, setPet] = useState({
     name: 'Clyde',
     tagId: 'demo-tag-001',
@@ -61,10 +71,22 @@ export function DashboardClient() {
     publicFields: ['Photo', 'Owner contact button', 'Medical notes', 'Behavior notes', 'Lost mode', 'Last safe scan map'],
   });
 
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    window.localStorage.setItem('mypetid.theme', theme);
+  }, [theme]);
+
+  useEffect(() => {
+    const saved = window.localStorage.getItem('mypetid.theme');
+    if (saved === 'light' || saved === 'dark') setTheme(saved);
+  }, []);
+
   const publicUrl = useMemo(() => {
-    if (typeof window === 'undefined') return `/pet/?tag=${pet.tagId}`;
-    return `${window.location.origin}/pet/?tag=${encodeURIComponent(pet.tagId)}`;
+    if (typeof window === 'undefined') return `/scan/?tag=${pet.tagId}`;
+    return `${window.location.origin}/scan/?tag=${encodeURIComponent(pet.tagId)}`;
   }, [pet.tagId]);
+
+  const readOnlyPublicUrl = useMemo(() => `/pet/?tag=${encodeURIComponent(pet.tagId)}`, [pet.tagId]);
 
   async function saveDemoPet() {
     if (!supabase) return;
@@ -125,6 +147,8 @@ export function DashboardClient() {
 
         <AuthPanel />
 
+        <div className="dashboardStatus"><span>{dashboardMessage}</span><button type="button" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>{theme === 'dark' ? 'Light mode' : 'Dark mode'}</button></div>
+
         {activeTab === 'overview' && (
           <div className="dashboardGrid">
             <section className="panel heroPanel">
@@ -132,7 +156,7 @@ export function DashboardClient() {
                 <p className="eyebrow">Scan profile preview</p>
                 <h2>{pet.name}</h2>
                 <p>{pet.breed} • Tag {pet.tagId}</p>
-                <div className="actions"><Link className="button primary" href={`/pet/?tag=${encodeURIComponent(pet.tagId)}`}>Open public page</Link><button type="button">Toggle lost mode</button><button type="button" onClick={saveDemoPet}>Save to Supabase</button></div>
+                <div className="actions"><Link className="button primary" href={`/scan/?tag=${encodeURIComponent(pet.tagId)}`}>Open NFC scan gate</Link><Link className="button" href={readOnlyPublicUrl}>Preview public profile</Link><button type="button" onClick={() => { setSettings({ ...settings, lostMode: !settings.lostMode }); setDashboardMessage(!settings.lostMode ? 'Lost mode enabled in the dashboard demo.' : 'Lost mode disabled in the dashboard demo.'); }}>Toggle lost mode</button><button type="button" onClick={saveDemoPet}>Save to Supabase</button></div>
               </div>
               <QRCodeSVG value={publicUrl} size={160} bgColor="transparent" fgColor="#f5f7ef" />
             </section>
@@ -141,6 +165,7 @@ export function DashboardClient() {
               <div className="dogWalker"><span className="walker">🚶</span><span className="leash" /><span className="doggo">🐕</span></div>
               <h3>Next up: Walk time</h3>
               <p>Animated reminders can fire for feeding, play, walks, appointments, and play dates.</p>
+              <button type="button" onClick={() => setDashboardMessage('Walk reminder armed for the next care pass. Backend notification delivery is a production task.')} >Arm walk reminder</button>
             </section>
 
             <section className="panel publicControls">
@@ -151,7 +176,7 @@ export function DashboardClient() {
 
             <section className="panel tierMatrix">
               <h3>Membership limits</h3>
-              <select value={tier} onChange={(event) => setTier(event.target.value as keyof typeof tierRules)}>
+              <select value={tier} onChange={(event) => { setTier(event.target.value as keyof typeof tierRules); setDashboardMessage(`Membership preview changed to ${event.target.value}.`); }}>
                 {Object.entries(tierRules).map(([key, rule]) => <option value={key} key={key}>{rule.label}: {rule.pets} / {rule.users}</option>)}
               </select>
               <p>Patreon-linked accounts unlock scanning and tag/user capacity. Admin stays unrestricted.</p>
@@ -182,7 +207,7 @@ export function DashboardClient() {
 
         {activeTab === 'appointments' && (
           <div className="dashboardGrid">
-            <section className="panel wide"><h2>Appointments and reminders</h2>{timeline.filter((item) => ['Appointment', 'Play date', 'Feed', 'Walk'].includes(item.type)).map((item) => <div className="appointment" key={item.type}><span>{item.animation}</span><div><strong>{item.type}</strong><p>{item.time} — {item.note}</p></div><button type="button">Remind me</button></div>)}</section>
+            <section className="panel wide"><h2>Appointments and reminders</h2>{timeline.filter((item) => ['Appointment', 'Play date', 'Feed', 'Walk'].includes(item.type)).map((item) => <div className="appointment" key={item.type}><span>{item.animation}</span><div><strong>{item.type}</strong><p>{item.time} — {item.note}</p></div><button type="button" onClick={() => setDashboardMessage(`${item.type} reminder staged for ${item.time}.`)}>Remind me</button></div>)}</section>
           </div>
         )}
 
@@ -190,9 +215,26 @@ export function DashboardClient() {
           <div className="dashboardGrid">{healthMetrics.map(([label, value, sub]) => <section className="panel stat" key={label}><p>{label}</p><strong>{value}</strong><span>{sub}</span></section>)}<section className="panel wide"><h2>Scan/location data</h2><p>Charts will combine scan records, profile views, lost reports, location consent, linked-user walks, and device trust. Free users can see profile data; subscription users unlock scan history.</p></section></div>
         )}
 
+        {activeTab === 'settings' && (
+          <div className="dashboardGrid">
+            <section className="panel wide"><h2>Settings</h2><p>These settings are reactive now and ready to wire to Supabase profile preferences next.</p>
+              {([
+                ['pushAlerts', 'Push / email alerts for scans and lost reports'],
+                ['shareLastScan', 'Show last eligible scan on public profile'],
+                ['publicMedical', 'Show public medical notes'],
+                ['publicBehavior', 'Show behavior notes'],
+                ['publicContact', 'Show owner contact actions'],
+                ['lostMode', 'Lost mode banner enabled'],
+              ] as const).map(([key, label]) => <label className="toggleRow" key={key}><input type="checkbox" checked={settings[key]} onChange={(event) => { setSettings({ ...settings, [key]: event.target.checked }); setDashboardMessage(`${label}: ${event.target.checked ? 'on' : 'off'}.`); }} /> {label}</label>)}
+            </section>
+            <section className="panel"><h3>Appearance</h3><p>Theme persists in this browser.</p><button className="primary" type="button" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>{theme === 'dark' ? 'Switch to light' : 'Switch to dark'}</button></section>
+            <section className="panel"><h3>Scan URLs</h3><p>NFC/QR write-capable URL:</p><code>{publicUrl}</code><p>Read-only public preview:</p><code>{readOnlyPublicUrl}</code></section>
+          </div>
+        )}
+
         {activeTab === 'admin' && (
           <div className="dashboardGrid">
-            <section className="panel wide"><h2>Admin console</h2><p>Create user accounts, enter physical tag IDs, assign/unassign tags, grant admin bypass, review Patreon status, generate coupons, and audit scan events.</p><div className="adminActions"><button className="primary" type="button">Create tag ID</button><button type="button">Invite user</button><button type="button">Review lost reports</button><button type="button">Sync Patreon</button></div></section>
+            <section className="panel wide"><h2>Admin console</h2><p>Create user accounts, enter physical tag IDs, assign/unassign tags, grant admin bypass, review Patreon status, generate coupons, and audit scan events.</p><div className="adminActions"><button className="primary" type="button" onClick={() => setDashboardMessage('Tag ID creation staged. Backend will mint a unique tag row before print/write.')} >Create tag ID</button><button type="button" onClick={() => setDashboardMessage('Invite flow staged. Next pass will send Supabase invite links from a server function.')} >Invite user</button><button type="button" onClick={() => setDashboardMessage('Lost report queue opened in demo mode.')} >Review lost reports</button><button type="button" onClick={() => setDashboardMessage('Patreon sync must run server-side; credentials are not exposed to this static app.')} >Sync Patreon</button></div></section>
           </div>
         )}
       </section>

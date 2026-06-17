@@ -71,6 +71,30 @@ Use multiple practical browser-safe options:
 - Supabase Auth/database/storage next.
 - Vercel or Supabase Edge Functions later for Patreon callbacks/webhooks, Google OAuth secrets, coupon generation, and private admin APIs.
 
+## NFC scan routing decision
+The NFC/QR tag should point to `/scan/?tag=<tag_code>`, not directly to `/pet/?tag=<tag_code>`.
+
+- `/scan/` is the consent gate. It mimics the public profile visually, but does not save location on page load. It only attempts GPS after the finder taps an explicit consent button and the browser grants permission.
+- `/pet/` is the read-only public profile. It can show the previous eligible scan/map and owner-approved public details, but must not write scan GPS.
+- Owner dashboard preview links should expose both routes: scan-gate URL for tags and read-only public URL for checking public content.
+- Production hardening should move scan writes into a Supabase Edge Function so Patreon tier checks, tag activation, bot/rate limits, trusted-device owner detection, and abuse filtering happen server-side.
+
+## Google Cloud OAuth settings
+Use the production GitHub Pages origin plus local dev origins while the app is still static-exported.
+
+Authorized JavaScript origins:
+- `https://mypetid-home.github.io`
+- `http://localhost:3000`
+- `http://127.0.0.1:3000`
+
+Authorized redirect URIs for Supabase Auth Google provider:
+- `https://ryyaefxszkmibcnngnfg.supabase.co/auth/v1/callback`
+- Keep app post-login redirects in Supabase URL settings / client calls:
+  - `https://mypetid-home.github.io/dashboard/`
+  - `http://localhost:3000/dashboard/`
+
+Do not use the static GitHub Pages app as the Google OAuth secret callback; Google client secret handling belongs in Supabase Auth or a future server/Edge Function.
+
 ## Legacy material to mine
 Existing repos contain useful pieces from earlier experiments:
 - static JSON models for dogs/users/devices/locations/patreon
