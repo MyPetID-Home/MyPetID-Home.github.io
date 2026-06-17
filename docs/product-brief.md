@@ -82,6 +82,12 @@ The NFC/QR tag should point to `/scan/?tag=<tag_code>`, not directly to `/pet/?t
 ## Google Cloud OAuth settings
 Use the production GitHub Pages origin plus local dev origins while the app is still static-exported.
 
+Google OAuth Client ID supplied by CAK3D:
+- `126805153488-mgmkt24vqgtuoc2f7191o6o0sm4ido7b.apps.googleusercontent.com`
+
+Still needed before Supabase Google login can be fully enabled:
+- Google OAuth client secret. The JSON download is convenient but not required; Google Cloud Console can show/copy the client secret from the OAuth client details page.
+
 Authorized JavaScript origins:
 - `https://mypetid-home.github.io`
 - `http://localhost:3000`
@@ -94,6 +100,19 @@ Authorized redirect URIs for Supabase Auth Google provider:
   - `http://localhost:3000/dashboard/`
 
 Do not use the static GitHub Pages app as the Google OAuth secret callback; Google client secret handling belongs in Supabase Auth or a future server/Edge Function.
+
+## Production feature direction
+The dashboard is evolving into a full pet profile + activity + health tracker, not a brochure/demo. Core production modules:
+- editable account identity: username, display name, email, phone, avatar, emergency contact, password reset via Supabase Auth
+- editable pet profiles: tag ID, species, breed, birthday, weight, markings, microchip, vet, photo, behavior, public fields
+- live walk tracker: start/end walk, moving map tracker, distance timer, weekly distance goal, saved walk history
+- diet tracker: feeding plan, meal/snack logs, calories/amounts, completion toggles
+- medical record keeper: vaccines, microchip, allergies, medications, public-safe flags, dates, notes
+- lost/found center: lost reports, sighting notes, last scan sharing, public return-home info
+- goals/levels: XP, levels, weekly distance goals, meals-per-day goals, care-task streaks
+- settings/privacy: public field toggles, alert toggles, units, privacy mode, theme
+
+Static GitHub Pages can provide the interactive UI and browser-side Supabase calls. Final production trust boundaries still need Supabase Edge Functions or a server backend for scan validation, Patreon sync, trusted-device decisions, and admin-only actions.
 
 ## Legacy material to mine
 Existing repos contain useful pieces from earlier experiments:

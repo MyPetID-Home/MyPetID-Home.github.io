@@ -62,7 +62,19 @@ input, textarea, select { width: 100%; border: 1px solid var(--line); background
 code { display: inline-block; max-width: 100%; overflow-wrap: anywhere; border: 1px solid var(--line); border-radius: 12px; padding: 8px 10px; background: rgba(0,0,0,.16); color: var(--brand2); }
 button:disabled { opacity: .55; cursor: wait; transform: none; }
 .dashboardStatus { display: flex; justify-content: space-between; gap: 12px; align-items: center; border: 1px solid var(--line); border-radius: 20px; padding: 12px 14px; margin: 0 0 18px; background: rgba(255,255,255,.06); color: var(--muted); }
+.profilePreview { width: 120px; height: 120px; object-fit: cover; border-radius: 32px; border: 1px solid var(--line); }
+.progress { height: 12px; border-radius: 999px; overflow: hidden; background: rgba(255,255,255,.1); border: 1px solid var(--line); margin: 10px 0; }
+.progress span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--brand), var(--brand2)); transition: width .35s ease; }
+.liveMap { position: relative; height: 260px; border-radius: 28px; overflow: hidden; border: 1px solid var(--line); background: radial-gradient(circle at 20% 35%, rgba(87,215,255,.22), transparent 12rem), radial-gradient(circle at 75% 65%, rgba(135,224,111,.2), transparent 14rem), linear-gradient(135deg, rgba(255,255,255,.08), rgba(255,255,255,.03)); }
+.liveMap::before { content: ''; position: absolute; inset: 20px; border-radius: 36px; background-image: linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px); background-size: 34px 34px; opacity: .38; }
+.liveMap svg { position: relative; width: 100%; height: 100%; display: block; }
+.liveMap polyline { fill: none; stroke: var(--brand); stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 4 3; filter: drop-shadow(0 0 10px rgba(135,224,111,.45)); }
+.liveMap circle { fill: var(--brand2); stroke: var(--text); stroke-width: 1.2; animation: pulseNode 1.4s ease-in-out infinite; }
+.liveMap text { font-size: 8px; transform-box: fill-box; transform-origin: center; animation: trackerBob 1s ease-in-out infinite; }
+.levelBadge { border-radius: 24px; padding: 18px; background: rgba(255,255,255,.07); border: 1px solid var(--line); font-weight: 900; }
 .scanLanding .consentPanel { min-height: 280px; }
+@keyframes pulseNode { 0%,100% { r: 3.8; opacity: .85; } 50% { r: 5.4; opacity: 1; } }
+@keyframes trackerBob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
 textarea { min-height: 96px; resize: vertical; }
 .notice { border: 1px solid rgba(255,206,107,.35); background: rgba(255,206,107,.09); padding: 14px; border-radius: 18px; color: #ffe2a0; }
 .mapBox { min-height: 260px; border-radius: 22px; overflow: hidden; border: 1px solid var(--line); background: rgba(0,0,0,.2); display: grid; place-items: center; }

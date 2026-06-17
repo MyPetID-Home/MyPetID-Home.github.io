@@ -1,5 +1,13 @@
 # Google OAuth configuration
 
+## Google Cloud OAuth Client ID
+
+Client ID supplied by CAK3D:
+
+- `126805153488-mgmkt24vqgtuoc2f7191o6o0sm4ido7b.apps.googleusercontent.com`
+
+The downloadable JSON is not strictly required. To enable Supabase Google login, the Google OAuth client secret is still required. Copy it from Google Cloud Console → APIs & Services → Credentials → the Web OAuth client details page.
+
 ## Google Cloud Authorized JavaScript origins
 
 Add these to the Google OAuth web client:
