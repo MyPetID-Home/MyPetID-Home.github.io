@@ -16,15 +16,16 @@ export default function HomePage() {
         <p className="eyebrow">MyPetID-Home rebuild • Clydius lane</p>
         <div className="heroGrid">
           <div>
-            <h1>NFC and QR pet IDs that help get them home faster.</h1>
-            <p className="lead">Create owner and pet profiles, link a physical tag, and give anyone who scans it the right public info, contact choices, and last-scan map.</p>
+            <div className="brandLockup" style={{ marginBottom: 18 }}><img src="/images/logo/MyPetID-Logo_Resized.jpg" alt="MyPetID logo" /><span>MyPetID</span></div>
+            <h1>A full pet command center behind every NFC tag.</h1>
+            <p className="lead">Profiles, lost-pet scans, trusted helpers, walks, feeding reminders, play dates, appointments, medical documents, Patreon tier limits, and admin tag management in one app.</p>
             <div className="actions">
-              <Link className="button primary" href="/dashboard/">Open dashboard</Link>
-              <Link className="button" href="/pet/?tag=demo-tag-001">View demo tag</Link>
+              <Link className="button primary" href="/dashboard/">Open app dashboard</Link>
+              <Link className="button" href="/pet/?tag=demo-tag-001">Scan demo tag</Link>
             </div>
           </div>
           <div className="phoneCard" aria-label="Demo public pet card">
-            <div className="petPhoto">🐾</div>
+            <div className="petPhoto"><img src="/images/logo/MyPetID-Logo_Resized.jpg" alt="MyPetID" style={{ borderRadius: 28 }} /></div>
             <h2>Ibby</h2>
             <p>Friendly, food-motivated, nervous around loud trucks.</p>
             <div className="status lost">Demo scan page</div>

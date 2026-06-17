@@ -20,13 +20,12 @@ pnpm build
 Copy `.env.example` to `.env.local` and add browser-safe Supabase values when ready.
 
 ## Confirmed roadmap
-1. Create a new Supabase project named `MyPetID-Home`.
+1. Fresh Supabase project `MyPetID-Home` has been created and the starter schema has been applied.
 2. Enable Supabase email/password auth and Google OAuth.
-3. Create the CAK3D admin/user account with unrestricted access.
-4. Apply the starter schema and tighten Row Level Security.
-5. Build real account, pet, tag, scan, trusted-device, and admin-dashboard flows.
-6. Restore any useful chunks from old database/storage backups.
-7. Integrate Patreon membership linking and tier limits.
+3. Create/admin-mark the CAK3D admin/user account with unrestricted access.
+4. Build real account, pet, tag, scan, trusted-device, and admin-dashboard flows.
+5. Restore useful chunks from the imported old database backup.
+6. Integrate Patreon membership linking and tier limits.
 
 ## Deployment
 `next.config.mjs` uses `output: 'export'`, producing the static `out/` directory. GitHub Pages builds and deploys the export through `.github/workflows/deploy-pages.yml`.

@@ -5,7 +5,9 @@ A pet owner logs in, creates an account profile, creates one or more pet profile
 
 ## Confirmed auth direction
 - Supabase is the preferred backend.
-- The old Supabase project was removed, so create a fresh Supabase project named `MyPetID-Home` if available.
+- The old Supabase project was inactive for more than 90 days and could not be restored through the Management API.
+- A fresh Supabase project named `MyPetID-Home` has been created in the existing `MyPetID-Home` organization.
+- The starter schema has been applied to the new project.
 - Login should support email/password and Google OAuth.
 - The CAK3D admin email is stored in Clydius profile env and should not be committed publicly.
 - The admin account is both an unrestricted admin/tester account and a normal real user account.
