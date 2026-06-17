@@ -1,8 +1,0 @@
-blank_issues_enabled: true
-contact_links:
-  - name: Purchase a Membership
-    url: https://www.patreon.com/c/MyPetID
-    about: Memberships are billed monthly. NFC Tag REQUIRED for service.
-  - name: About the Project
-    url: https://github.com/MyPetID-Home/MyPetID-Home.github.io/blob/main/README.md
-    about: An explenation of what the MyPetID App and NFC Tag do.

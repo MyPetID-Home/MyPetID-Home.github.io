@@ -1,0 +1,7 @@
+type IconProps = { className?: string };
+const common = { fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
+export function PawPrint(props: IconProps) { return <svg viewBox="0 0 24 24" {...common} {...props}><circle cx="6" cy="8" r="2"/><circle cx="10" cy="5" r="2"/><circle cx="14" cy="5" r="2"/><circle cx="18" cy="8" r="2"/><path d="M8 16c.6-3 2.3-5 4-5s3.4 2 4 5c.5 2.6-1.2 4-4 4s-4.5-1.4-4-4Z"/></svg>; }
+export function ShieldCheck(props: IconProps) { return <svg viewBox="0 0 24 24" {...common} {...props}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-5"/></svg>; }
+export function MapPinned(props: IconProps) { return <svg viewBox="0 0 24 24" {...common} {...props}><path d="M9 18 3 21V6l6-3 6 3 6-3v15l-6 3-6-3Z"/><path d="M9 3v15M15 6v15"/><path d="M12 7.5a2.5 2.5 0 0 1 2.5 2.5c0 2-2.5 4-2.5 4s-2.5-2-2.5-4A2.5 2.5 0 0 1 12 7.5Z"/></svg>; }
+export function Users(props: IconProps) { return <svg viewBox="0 0 24 24" {...common} {...props}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>; }
+export function QrCode(props: IconProps) { return <svg viewBox="0 0 24 24" {...common} {...props}><path d="M3 3h6v6H3zM15 3h6v6h-6zM3 15h6v6H3z"/><path d="M15 15h2v2h-2zM19 15h2v6h-6v-2M13 13h2M13 17h2M17 11h4"/></svg>; }

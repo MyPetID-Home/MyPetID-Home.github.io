@@ -1,1 +1,8 @@
-backend/.env
+node_modules
+.next
+out
+.env
+.env.*
+!.env.example
+.DS_Store
+*.log
