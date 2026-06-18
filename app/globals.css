@@ -61,7 +61,10 @@ p { color: var(--muted); line-height: 1.65; }
 .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
 .formPanel, .petPublic, .panel { padding: 24px; }
 label { display: grid; gap: 8px; color: var(--muted); font-weight: 700; margin: 12px 0; }
-input, textarea, select { width: 100%; border: 1px solid var(--line); background: rgba(0,0,0,.18); color: var(--text); border-radius: 14px; padding: 12px 14px; font: inherit; }
+input, textarea, select { width: 100%; border: 1px solid var(--line); background: rgba(0,0,0,.28); color: var(--text); border-radius: 14px; padding: 12px 14px; font: inherit; }
+select option { background: #101712; color: #f5f7ef; }
+:root[data-theme="light"] input, :root[data-theme="light"] textarea, :root[data-theme="light"] select { background: rgba(255,255,255,.72); color: var(--text); }
+:root[data-theme="light"] select option { background: #f5f8ef; color: #08130b; }
 code { display: inline-block; max-width: 100%; overflow-wrap: anywhere; border: 1px solid var(--line); border-radius: 12px; padding: 8px 10px; background: rgba(0,0,0,.16); color: var(--brand2); }
 button:disabled { opacity: .55; cursor: wait; transform: none; }
 .dashboardStatus { display: flex; justify-content: space-between; gap: 12px; align-items: center; border: 1px solid var(--line); border-radius: 20px; padding: 12px 14px; margin: 0 0 18px; background: rgba(255,255,255,.06); color: var(--muted); }
@@ -86,7 +89,7 @@ textarea { min-height: 96px; resize: vertical; }
 .brandLockup { display: inline-flex; align-items: center; gap: 12px; text-decoration: none; font-weight: 950; letter-spacing: -.03em; }
 .brandLockup img { width: 48px; height: 48px; object-fit: cover; border-radius: 14px; }
 .appShell { display: grid; grid-template-columns: 250px 1fr; min-height: 100vh; }
-.sidebar { position: sticky; top: 0; height: 100vh; padding: 24px; border-right: 1px solid var(--line); background: rgba(0,0,0,.18); backdrop-filter: blur(18px); display: grid; align-content: start; gap: 24px; }
+.sidebar { position: sticky; top: 0; height: 100vh; overflow-y: auto; padding: 24px; border-right: 1px solid var(--line); background: rgba(0,0,0,.18); backdrop-filter: blur(18px); display: grid; align-content: start; gap: 24px; }
 .sideNav { display: grid; gap: 10px; }
 .sideNav button { width: 100%; text-transform: capitalize; text-align: left; border-radius: 18px; }
 .sideNav button.active { background: rgba(135,224,111,.16); border-color: rgba(135,224,111,.5); color: var(--brand); }
@@ -162,6 +165,11 @@ textarea { min-height: 96px; resize: vertical; }
 .chatBubble span { color: var(--muted); font-size: .82rem; }
 .notificationDock { display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 18px; }
 .notificationDock span { display: inline-flex; align-items: center; justify-content: center; min-width: 58px; padding: 10px 12px; border-radius: 18px; border: 1px solid var(--line); background: rgba(255,255,255,.08); font-weight: 900; }
+.realMap { position: relative; min-height: 320px; border-radius: 28px; overflow: hidden; border: 1px solid var(--line); background: rgba(0,0,0,.2); }
+.realMap iframe { width: 100%; height: 360px; border: 0; display: block; filter: saturate(1.05) contrast(1.03); }
+.sectionNav { position: sticky; bottom: 16px; z-index: 5; display: flex; justify-content: space-between; gap: 12px; margin: 24px 0 8px; padding: 12px; border: 1px solid var(--line); border-radius: 24px; background: rgba(16,23,18,.86); backdrop-filter: blur(18px); box-shadow: 0 18px 60px rgba(0,0,0,.28); }
+:root[data-theme="light"] .sectionNav { background: rgba(245,248,239,.88); }
+.sectionNav button { min-width: 120px; }
 @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(135,224,111,.7); } 70% { box-shadow: 0 0 0 16px rgba(135,224,111,0); } 100% { box-shadow: 0 0 0 0 rgba(135,224,111,0); } }
 @keyframes walkAcross { 0%,100% { transform: translateX(0) translateY(0); } 50% { transform: translateX(85px) translateY(-4px); } }
 @keyframes leashWiggle { 0%,100% { transform: rotate(8deg); } 50% { transform: rotate(-4deg); } }
@@ -170,4 +178,4 @@ textarea { min-height: 96px; resize: vertical; }
 @keyframes bounce { 0%,100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-8px) scale(1.06); } }
 @media (max-width: 1100px) { .appShell { grid-template-columns: 1fr; } .sidebar { position: relative; height: auto; border-right: 0; border-bottom: 1px solid var(--line); } .sideNav { grid-template-columns: repeat(4, 1fr); } .dashboardGrid, .publicGrid { grid-template-columns: repeat(2, 1fr); } .cards { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 900px) { .heroGrid, .splitPanel, .grid2, .scanCard, .appHeader { grid-template-columns: 1fr; } .phoneCard { min-height: auto; } .docGrid { grid-template-columns: 1fr 1fr; } }
-@media (max-width: 620px) { .cards, .dashboardGrid, .publicGrid, .docGrid, .wizardSteps, .publicPreview, .routeMeta { grid-template-columns: 1fr; } .panel.wide, .heroPanel { grid-column: span 1; } .heroPanel { display: grid; } .sideNav { grid-template-columns: 1fr 1fr; max-height: 260px; overflow: auto; } h1 { font-size: 2.8rem; } .workspace { padding: 16px; } .dashboardStatus { display: grid; } }
+@media (max-width: 620px) { .cards, .dashboardGrid, .publicGrid, .docGrid, .wizardSteps, .publicPreview, .routeMeta { grid-template-columns: 1fr; } .panel.wide, .heroPanel { grid-column: span 1; } .heroPanel { display: grid; } .sideNav { grid-template-columns: 1fr 1fr; max-height: 360px; overflow: auto; } h1 { font-size: 2.8rem; } .workspace { padding: 16px; } .dashboardStatus, .sectionNav { display: grid; } .realMap iframe { height: 300px; } }

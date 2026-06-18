@@ -6,12 +6,11 @@ import { QRCodeSVG } from 'qrcode.react';
 import { hasSupabaseConfig, supabase } from '../lib/supabase';
 import { AuthPanel } from './auth-panel';
 
-type Tab = 'onboarding' | 'overview' | 'public' | 'account' | 'pets' | 'walks' | 'diet' | 'medical' | 'lost' | 'pack' | 'goals' | 'settings' | 'admin';
+type Tab = 'overview' | 'public' | 'account' | 'pets' | 'walks' | 'diet' | 'medical' | 'play' | 'training' | 'lost' | 'pack' | 'goals' | 'settings' | 'admin';
 type Theme = 'dark' | 'light';
 type Palette = 'forest' | 'ocean' | 'sunset' | 'mono';
 type WalkEndMode = 'destination' | 'start' | 'home' | 'custom';
 type Coords = { lat: number; lng: number; accuracy?: number; label: string };
-type RoutePoint = { x: number; y: number; label?: string; coords?: Coords };
 
 type PetProfile = {
   name: string;
@@ -23,159 +22,85 @@ type PetProfile = {
   eyeColor: string;
   coatColor: string;
   coatType: string;
+  size: string;
   weight: string;
   height: string;
   length: string;
   microchip: string;
-  vetName: string;
-  vetPhone: string;
-  vetAddress: string;
   homeBase: string;
   photoUrl: string;
   medicalNotes: string;
   behaviorNotes: string;
   allergies: string;
+  illnesses: string;
+  surgeries: string;
   medications: string;
+  insurance: string;
+  serviceStatus: string;
+  rescueStatus: string;
+  certifications: string;
   feeding: string;
   favoriteTreats: string;
   publicFields: string[];
 };
 
-type AccountProfile = {
-  username: string;
-  displayName: string;
-  email: string;
-  phone: string;
-  address: string;
-  avatarUrl: string;
-  emergencyContact: string;
-  passwordLabel: string;
-};
-
-type WalkSession = { id: number; start: string; end?: string; distance: number; duration: number; notes: string; mode?: WalkEndMode; startCoords?: Coords; endCoords?: Coords; route?: RoutePoint[] };
+type VetProfile = { clinic: string; doctor: string; phone: string; address: string; emergencyClinic: string; lastVisit: string; nextVisit: string; notes: string };
+type AccountProfile = { username: string; displayName: string; email: string; phone: string; address: string; avatarUrl: string; emergencyContact: string; passwordLabel: string };
+type WalkSession = { id: number; start: string; end?: string; distance: number; duration: number; notes: string; mode?: WalkEndMode; startCoords?: Coords; endCoords?: Coords };
 type MealLog = { id: number; time: string; meal: string; amount: string; calories: number; done: boolean };
 type MedicalRecord = { id: number; title: string; kind: string; date: string; notes: string; public: boolean };
 type LostReport = { id: number; status: string; location: string; note: string; time: string };
-type PackMessage = { id: number; author: string; text: string; time: string };
-type PackFriend = { id: number; name: string; dog: string; status: string; activity: string };
+type PackMessage = { id: number; author: string; text: string; group: string; time: string };
+type PackFriend = { id: number; name: string; dog: string; group: string; status: string; activity: string };
+type TrainingItem = { id: number; command: string; category: string; cue: string; status: string; points: number; notes: string };
+type PlayItem = { id: number; activity: string; toy: string; place: string; minutes: number; favorite: boolean; notes: string };
+type Achievement = { id: number; title: string; category: string; points: number; earned: boolean; requirement: string };
 type ManagedUser = { id: number; role: string; name: string; email: string; plan: keyof typeof tiers; pets: number; status: string };
 
-const tabs: Tab[] = ['onboarding', 'overview', 'public', 'account', 'pets', 'walks', 'diet', 'medical', 'lost', 'pack', 'goals', 'settings', 'admin'];
+const tabs: Tab[] = ['overview', 'public', 'account', 'pets', 'walks', 'diet', 'medical', 'play', 'training', 'lost', 'pack', 'goals', 'settings', 'admin'];
+const tabLabels: Record<Tab, string> = { overview: 'Overview', public: 'Public', account: 'Account', pets: 'Pet profile', walks: 'Walks', diet: 'Diet', medical: 'Medical', play: 'Play', training: 'Training', lost: 'Lost/found', pack: 'Dog Pack', goals: 'Goals', settings: 'Settings', admin: 'Admin' };
 const eyeColors = ['Brown', 'Amber', 'Hazel', 'Blue', 'Green', 'Heterochromia', 'Unknown'];
 const coatColors = ['Black', 'White', 'Brown', 'Tan', 'Golden', 'Gray', 'Red', 'Merle', 'Brindle', 'Black / white', 'Tri-color', 'Custom'];
 const coatTypes = ['Short', 'Medium', 'Long', 'Curly', 'Wire', 'Double coat', 'Hairless', 'Custom'];
 const sizeBands = ['Toy', 'Small', 'Medium', 'Large', 'Giant', 'Custom'];
-const recordKinds = ['Vaccine', 'Medication', 'Vet visit', 'Lab result', 'Insurance', 'ID', 'Document', 'Custom'];
-
-const tiers = {
-  free: { label: 'Free', pets: 1, users: 1, scan: false },
-  basic: { label: 'Basic', pets: 1, users: 1, scan: true },
-  silver: { label: 'Silver', pets: 1, users: 2, scan: true },
-  gold: { label: 'Gold', pets: 2, users: 1, scan: true },
-  diamond: { label: 'Diamond', pets: 3, users: 2, scan: true },
-  admin: { label: 'Admin', pets: 999, users: 999, scan: true },
-};
+const recordKinds = ['Vaccine', 'Medication', 'Vet visit', 'Lab result', 'Insurance', 'Certificate', 'Service animal', 'Rescue/adoption', 'ID', 'Document', 'Custom'];
+const trainingStatuses = ['Not started', 'Learning', 'Reliable at home', 'Reliable outside', 'Mastered', 'Needs refresher'];
+const tiers = { free: { label: 'Free', pets: 1, users: 1, scan: false }, basic: { label: 'Basic', pets: 1, users: 1, scan: true }, silver: { label: 'Silver', pets: 1, users: 2, scan: true }, gold: { label: 'Gold', pets: 2, users: 1, scan: true }, diamond: { label: 'Diamond', pets: 3, users: 2, scan: true }, admin: { label: 'Admin', pets: 999, users: 999, scan: true } };
 
 const defaultState = {
   theme: 'dark' as Theme,
   palette: 'forest' as Palette,
   tier: 'admin' as keyof typeof tiers,
   adminMode: false,
-  onboardingStep: 0,
-  account: {
-    username: 'cak3d',
-    displayName: 'CAK3D',
-    email: 'admin@mypetid.local',
-    phone: '(207) 555-0137',
-    address: 'Owner address private by default',
-    avatarUrl: '/images/logo/MyPetID-Logo_Resized.jpg',
-    emergencyContact: 'Secondary contact not set',
-    passwordLabel: 'Password managed by Supabase Auth',
-  } satisfies AccountProfile,
+  account: { username: 'cak3d', displayName: 'CAK3D', email: 'admin@mypetid.local', phone: '(207) 555-0137', address: 'Owner address private by default', avatarUrl: '/images/logo/MyPetID-Logo_Resized.jpg', emergencyContact: 'Secondary contact not set', passwordLabel: 'Password managed by Supabase Auth' } satisfies AccountProfile,
   pet: {
-    name: 'Clyde',
-    tagId: 'demo-tag-001',
-    species: 'Dog',
-    breed: 'Good boy mix',
-    birthday: '2021-06-01',
-    sex: 'Male',
-    eyeColor: 'Brown',
-    coatColor: 'Black / white',
-    coatType: 'Short',
-    weight: '58 lb',
-    height: 'Large',
-    length: 'Medium',
-    microchip: '982000000000000',
-    vetName: 'MyPetID Family Vet',
-    vetPhone: '(207) 555-0198',
-    vetAddress: 'Vet address private unless owner shares it',
-    homeBase: 'Home',
-    photoUrl: '/images/dog/Clyde-Nice.jpg',
-    medicalNotes: 'Sensitive stomach. Avoid rich treats unless necessary.',
-    behaviorNotes: 'Friendly, loves tug, nervous around loud trucks.',
-    allergies: 'Chicken-heavy treats, unknown pollen sensitivity',
-    medications: 'Monthly flea/tick. Probiotic with dinner.',
-    feeding: 'Breakfast 7 AM: 1 cup kibble. Dinner 6 PM: 1 cup kibble + probiotic.',
-    favoriteTreats: 'Pumpkin biscuits, peanut butter lick mat',
-    publicFields: ['Photo', 'Owner contact', 'Medical notes', 'Behavior notes', 'Lost mode', 'Last safe scan map'],
+    name: 'Clyde', tagId: 'demo-tag-001', species: 'Dog', breed: 'Good boy mix', birthday: '2021-06-01', sex: 'Male', eyeColor: 'Brown', coatColor: 'Black / white', coatType: 'Short', size: 'Large', weight: '58', height: '24', length: '34', microchip: '982000000000000', homeBase: 'Home', photoUrl: '/images/dog/Clyde-Nice.jpg',
+    medicalNotes: 'Sensitive stomach. Avoid rich treats unless necessary.', behaviorNotes: 'Friendly, loves tug, nervous around loud trucks.', allergies: 'Chicken-heavy treats, unknown pollen sensitivity', illnesses: 'No chronic illnesses logged.', surgeries: 'No surgeries logged.', medications: 'Monthly flea/tick. Probiotic with dinner.', insurance: 'Not set', serviceStatus: 'Family pet', rescueStatus: 'Not set', certifications: 'Rabies certificate on file', feeding: 'Breakfast 7 AM: 1 cup kibble. Dinner 6 PM: 1 cup kibble + probiotic.', favoriteTreats: 'Pumpkin biscuits, peanut butter lick mat', publicFields: ['Photo', 'Owner contact', 'Medical notes', 'Behavior notes', 'Lost mode', 'Last safe scan map'],
   } satisfies PetProfile,
-  walks: [{ id: 1, start: 'Today 8:15 AM', end: 'Today 8:42 AM', distance: 1.42, duration: 27, mode: 'start' as WalkEndMode, notes: 'Morning loop, normal pace.', route: [{ x: 15, y: 70 }, { x: 35, y: 48 }, { x: 58, y: 62 }, { x: 78, y: 42 }] }] as WalkSession[],
-  meals: [
-    { id: 1, time: '7:00 AM', meal: 'Breakfast', amount: '1 cup kibble', calories: 410, done: true },
-    { id: 2, time: '6:00 PM', meal: 'Dinner', amount: '1 cup kibble + probiotic', calories: 430, done: false },
-  ] as MealLog[],
-  records: [
-    { id: 1, title: 'Rabies certificate', kind: 'Vaccine', date: '2026-08-01', notes: 'Certificate on file.', public: true },
-    { id: 2, title: 'Microchip registration', kind: 'ID', date: '2026-01-12', notes: 'Verified owner contact.', public: false },
-  ] as MedicalRecord[],
+  vet: { clinic: 'MyPetID Family Vet', doctor: 'Primary vet not set', phone: '(207) 555-0198', address: 'Vet address private unless owner shares it', emergencyClinic: 'Nearest 24/7 emergency clinic not set', lastVisit: '2026-01-12', nextVisit: '2026-08-01', notes: 'Ask about stomach sensitivity and seasonal pollen.' } satisfies VetProfile,
+  walks: [{ id: 1, start: 'Today 8:15 AM', end: 'Today 8:42 AM', distance: 1.42, duration: 27, mode: 'start' as WalkEndMode, notes: 'Morning loop, normal pace.', startCoords: { lat: 44.09737, lng: -70.16535, label: 'Walk start demo' }, endCoords: { lat: 44.1001, lng: -70.1614, label: 'Walk end demo' } }] as WalkSession[],
+  meals: [{ id: 1, time: '7:00 AM', meal: 'Breakfast', amount: '1 cup kibble', calories: 410, done: true }, { id: 2, time: '6:00 PM', meal: 'Dinner', amount: '1 cup kibble + probiotic', calories: 430, done: false }] as MealLog[],
+  records: [{ id: 1, title: 'Rabies certificate', kind: 'Vaccine', date: '2026-08-01', notes: 'Certificate on file.', public: true }, { id: 2, title: 'Microchip registration', kind: 'ID', date: '2026-01-12', notes: 'Verified owner contact.', public: false }, { id: 3, title: 'Service/rescue status', kind: 'Certificate', date: '2026-06-01', notes: 'Use for service, therapy, adoption, or training certificates.', public: false }] as MedicalRecord[],
   lostReports: [{ id: 1, status: 'Resolved', location: 'Demo park trail', note: 'Finder shared safe location.', time: 'Yesterday 5:12 PM' }] as LostReport[],
-  packFriends: [
-    { id: 1, name: 'Sam', dog: 'Ranger', status: 'Friend', activity: 'Planning a park day Saturday' },
-    { id: 2, name: 'Mia', dog: 'Nova', status: 'Invite sent', activity: 'Evening walk streak: 4 days' },
-  ] as PackFriend[],
-  packMessages: [
-    { id: 1, author: 'Sam', text: 'Ranger is free for the park loop after 4.', time: '10:22 AM' },
-    { id: 2, author: 'CAK3D', text: 'Clyde is in. I will start a route and share the plan.', time: '10:25 AM' },
-  ] as PackMessage[],
-  managedUsers: [
-    { id: 1, role: 'Admin', name: 'CAK3D', email: 'admin@mypetid.local', plan: 'admin' as keyof typeof tiers, pets: 1, status: 'Active' },
-    { id: 2, role: 'User', name: 'Demo Walker', email: 'walker@example.com', plan: 'basic' as keyof typeof tiers, pets: 1, status: 'Invited' },
-  ] as ManagedUser[],
-  settings: {
-    pushAlerts: true,
-    emailAlerts: true,
-    publicMedical: true,
-    publicBehavior: true,
-    publicContact: true,
-    shareLastScan: true,
-    gamifyCare: true,
-    units: 'miles',
-    privacyMode: 'balanced',
-    mapStyle: 'topographic',
-    defaultWalkEnd: 'start' as WalkEndMode,
-    customDestination: 'Neighborhood loop',
-  },
-  goals: { weeklyMiles: 8, mealsPerDay: 2, careTasks: 18, currentXp: 640, level: 4 },
+  packFriends: [{ id: 1, name: 'Sam', dog: 'Ranger', group: 'Park crew', status: 'Friend', activity: 'Planning a park day Saturday' }, { id: 2, name: 'Mia', dog: 'Nova', group: 'Training buddies', status: 'Invite sent', activity: 'Evening walk streak: 4 days' }] as PackFriend[],
+  packMessages: [{ id: 1, author: 'Sam', text: 'Ranger is free for the park loop after 4.', group: 'Park crew', time: '10:22 AM' }, { id: 2, author: 'CAK3D', text: 'Clyde is in. I will start a route and share the plan.', group: 'Park crew', time: '10:25 AM' }] as PackMessage[],
+  training: [{ id: 1, command: 'Sit', category: 'Basic obedience', cue: 'verbal + hand signal', status: 'Mastered', points: 20, notes: 'Reliable.' }, { id: 2, command: 'Heel', category: 'Leash manners', cue: 'left side cue', status: 'Learning', points: 35, notes: 'Practice near distractions.' }] as TrainingItem[],
+  play: [{ id: 1, activity: 'Tug', toy: 'rope toy', place: 'Living room', minutes: 15, favorite: true, notes: 'Good reward after training.' }, { id: 2, activity: 'Fetch', toy: 'ball', place: 'Backyard', minutes: 20, favorite: false, notes: 'Stop before overtired.' }] as PlayItem[],
+  achievements: [{ id: 1, title: 'First saved walk', category: 'Walks', points: 50, earned: true, requirement: 'Save one walk route.' }, { id: 2, title: 'Training streak', category: 'Training', points: 75, earned: false, requirement: 'Complete three training sessions.' }, { id: 3, title: 'Medical profile complete', category: 'Medical', points: 60, earned: false, requirement: 'Add vet, allergies, meds, and certificates.' }] as Achievement[],
+  managedUsers: [{ id: 1, role: 'Admin', name: 'CAK3D', email: 'admin@mypetid.local', plan: 'admin' as keyof typeof tiers, pets: 1, status: 'Active' }, { id: 2, role: 'User', name: 'Demo Walker', email: 'walker@example.com', plan: 'basic' as keyof typeof tiers, pets: 1, status: 'Invited' }] as ManagedUser[],
+  settings: { pushAlerts: true, emailAlerts: true, publicMedical: true, publicBehavior: true, publicContact: true, shareLastScan: true, gamifyCare: true, units: 'miles', privacyMode: 'balanced', mapStyle: 'standard map', defaultWalkEnd: 'start' as WalkEndMode, customDestination: 'Neighborhood loop' },
+  goals: { weeklyMiles: 8, mealsPerDay: 2, careTasks: 18, trainingSessions: 3, playMinutes: 90, currentXp: 640, level: 4 },
 };
 
-function mergeState(raw: Partial<typeof defaultState>) {
-  return {
-    ...defaultState,
-    ...raw,
-    account: { ...defaultState.account, ...(raw.account || {}) },
-    pet: { ...defaultState.pet, ...(raw.pet || {}) },
-    settings: { ...defaultState.settings, ...(raw.settings || {}) },
-    goals: { ...defaultState.goals, ...(raw.goals || {}) },
-  };
+type DashboardState = typeof defaultState;
+
+function mergeState(raw: Partial<DashboardState>): DashboardState {
+  return { ...defaultState, ...raw, account: { ...defaultState.account, ...(raw.account || {}) }, pet: { ...defaultState.pet, ...(raw.pet || {}) }, vet: { ...defaultState.vet, ...(raw.vet || {}) }, settings: { ...defaultState.settings, ...(raw.settings || {}) }, goals: { ...defaultState.goals, ...(raw.goals || {}) }, walks: raw.walks || defaultState.walks, meals: raw.meals || defaultState.meals, records: raw.records || defaultState.records, lostReports: raw.lostReports || defaultState.lostReports, packFriends: raw.packFriends || defaultState.packFriends, packMessages: raw.packMessages || defaultState.packMessages, training: raw.training || defaultState.training, play: raw.play || defaultState.play, achievements: raw.achievements || defaultState.achievements, managedUsers: raw.managedUsers || defaultState.managedUsers };
 }
 
 function loadState() {
   if (typeof window === 'undefined') return defaultState;
-  try {
-    return mergeState(JSON.parse(localStorage.getItem('mypetid.dashboard') || '{}'));
-  } catch {
-    return defaultState;
-  }
+  try { return mergeState(JSON.parse(localStorage.getItem('mypetid.dashboard') || '{}')); } catch { return defaultState; }
 }
 
 function ageFromBirthday(value: string) {
@@ -195,191 +120,123 @@ function formatCoords(coords?: Coords) {
   return `${coords.label}: ${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)}${coords.accuracy ? ` ±${Math.round(coords.accuracy)}m` : ''}`;
 }
 
-function Field({ label, value, onChange, type = 'text', hint }: { label: string; value: string; type?: string; hint?: string; onChange: (value: string) => void }) {
-  return <label>{label}<input type={type} value={value} onChange={(event) => onChange(event.target.value)} />{hint && <small>{hint}</small>}</label>;
+function walkMapUrl(start?: Coords, end?: Coords) {
+  const fallback = 'https://maps.google.com/maps?q=44.097371370963934,-70.16535158888728&z=14&output=embed';
+  if (start && end) return `https://maps.google.com/maps?saddr=${start.lat},${start.lng}&daddr=${end.lat},${end.lng}&z=15&output=embed`;
+  const point = start || end;
+  return point ? `https://maps.google.com/maps?q=${point.lat},${point.lng}&z=15&output=embed` : fallback;
 }
 
+function Field({ label, value, onChange, type = 'text', hint, min }: { label: string; value: string; type?: string; hint?: string; min?: string; onChange: (value: string) => void }) {
+  return <label>{label}<input min={min} type={type} value={value} onChange={(event) => onChange(event.target.value)} />{hint && <small>{hint}</small>}</label>;
+}
 function SelectField({ label, value, options, onChange }: { label: string; value: string; options: string[]; onChange: (value: string) => void }) {
   return <label>{label}<select value={value} onChange={(event) => onChange(event.target.value)}>{options.map((option) => <option key={option} value={option}>{option}</option>)}</select></label>;
 }
-
 function TextArea({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
   return <label>{label}<textarea value={value} onChange={(event) => onChange(event.target.value)} /></label>;
 }
 
 export function DashboardClient() {
   const [state, setState] = useState(defaultState);
-  const [activeTab, setActiveTab] = useState<Tab>('onboarding');
-  const [message, setMessage] = useState('Ready. Every field saves to this app shell, updates previews, and is ready for Supabase-backed persistence.');
+  const [activeTab, setActiveTab] = useState<Tab>('overview');
+  const [message, setMessage] = useState('Ready. Finish one section, then use Next to keep the app flowing section by section.');
   const [walking, setWalking] = useState(false);
   const [walkSeconds, setWalkSeconds] = useState(0);
   const [walkMiles, setWalkMiles] = useState(0);
-  const [walkPath, setWalkPath] = useState<RoutePoint[]>([{ x: 12, y: 70, label: 'Start' }, { x: 20, y: 62 }]);
-  const [walkStart, setWalkStart] = useState<Coords | undefined>();
-  const [walkEnd, setWalkEnd] = useState<Coords | undefined>();
+  const [walkStart, setWalkStart] = useState<Coords | undefined>(defaultState.walks[0].startCoords);
+  const [walkEnd, setWalkEnd] = useState<Coords | undefined>(defaultState.walks[0].endCoords);
   const [walkEndMode, setWalkEndMode] = useState<WalkEndMode>('start');
   const [packDraft, setPackDraft] = useState('Who wants to hit the park this afternoon?');
+  const [packGroup, setPackGroup] = useState('Park crew');
   const [userDraft, setUserDraft] = useState({ name: 'New Owner', email: 'owner@example.com', role: 'User' });
 
   useEffect(() => setState(loadState()), []);
-  useEffect(() => {
-    document.documentElement.dataset.theme = state.theme;
-    document.documentElement.dataset.palette = state.palette;
-    localStorage.setItem('mypetid.dashboard', JSON.stringify(state));
-  }, [state]);
-
-  useEffect(() => {
-    if (!walking) return;
-    const timer = window.setInterval(() => {
-      setWalkSeconds((value) => value + 1);
-      setWalkMiles((value) => Number((value + 0.018).toFixed(3)));
-      setWalkPath((path) => {
-        const last = path[path.length - 1];
-        const next = { x: Math.min(92, last.x + 3 + Math.random() * 4), y: Math.max(18, Math.min(82, last.y + (Math.random() * 14 - 7))), label: 'Live tracker' };
-        return [...path.slice(-15), next];
-      });
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [walking]);
+  useEffect(() => { document.documentElement.dataset.theme = state.theme; document.documentElement.dataset.palette = state.palette; localStorage.setItem('mypetid.dashboard', JSON.stringify(state)); }, [state]);
+  useEffect(() => { if (!walking) return; const timer = window.setInterval(() => { setWalkSeconds((value) => value + 1); setWalkMiles((value) => Number((value + 0.018).toFixed(3))); }, 1000); return () => clearInterval(timer); }, [walking]);
 
   const pet = state.pet;
+  const vet = state.vet;
   const account = state.account;
   const petAge = ageFromBirthday(pet.birthday);
   const weeklyDone = state.walks.reduce((sum, walk) => sum + walk.distance, 0) + walkMiles;
   const weeklyProgress = Math.min(100, Math.round((weeklyDone / Math.max(1, state.goals.weeklyMiles)) * 100));
   const publicUrl = useMemo(() => typeof window === 'undefined' ? `/scan/?tag=${pet.tagId}` : `${window.location.origin}/scan/?tag=${encodeURIComponent(pet.tagId)}`, [pet.tagId]);
   const readOnlyUrl = `/pet/?tag=${encodeURIComponent(pet.tagId)}`;
-  const pathPoints = walkPath.map((point) => `${point.x},${point.y}`).join(' ');
-  const lastPoint = walkPath[walkPath.length - 1];
-  const onboardingComplete = [account.displayName, account.email, pet.name, pet.birthday, pet.vetName, pet.weight, pet.eyeColor, pet.coatColor].filter(Boolean).length;
+  const currentIndex = tabs.indexOf(activeTab);
+  const nextTab = tabs[Math.min(tabs.length - 1, currentIndex + 1)];
+  const prevTab = tabs[Math.max(0, currentIndex - 1)];
+  const earnedXp = state.achievements.filter((item) => item.earned).reduce((sum, item) => sum + item.points, 0);
 
   function patchAccount(next: Partial<AccountProfile>) { setState({ ...state, account: { ...account, ...next } }); }
   function patchPet(next: Partial<PetProfile>) { setState({ ...state, pet: { ...pet, ...next } }); }
+  function patchVet(next: Partial<VetProfile>) { setState({ ...state, vet: { ...vet, ...next } }); }
   function patchSettings(next: Partial<typeof state.settings>) { setState({ ...state, settings: { ...state.settings, ...next } }); }
-  function awardXp(points: number, reason: string) {
-    const currentXp = state.goals.currentXp + points;
-    const level = Math.max(state.goals.level, Math.floor(currentXp / 250) + 1);
-    setState({ ...state, goals: { ...state.goals, currentXp, level } });
-    setMessage(`+${points} XP: ${reason}`);
-  }
-
+  function finishSection(next: Tab = nextTab) { setActiveTab(next); setMessage(`Saved this section locally. Next up: ${tabLabels[next]}.`); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+  function goBack() { setActiveTab(prevTab); setMessage(`Back to ${tabLabels[prevTab]}.`); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+  function awardXp(points: number, reason: string) { const currentXp = state.goals.currentXp + points; const level = Math.max(state.goals.level, Math.floor(currentXp / 250) + 1); setState({ ...state, goals: { ...state.goals, currentXp, level } }); setMessage(`+${points} XP: ${reason}`); }
   function captureLocation(label: string, callback: (coords: Coords) => void) {
-    if (!navigator.geolocation) {
-      const fallback = { lat: 44.09737 + Math.random() / 100, lng: -70.16535 + Math.random() / 100, label: `${label} demo` };
-      callback(fallback);
-      setMessage(`${label} saved with demo coordinates because browser GPS is unavailable.`);
-      return;
-    }
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const coords = { lat: position.coords.latitude, lng: position.coords.longitude, accuracy: position.coords.accuracy, label };
-        callback(coords);
-        setMessage(`${label} saved from this device: ${formatCoords(coords)}.`);
-      },
-      () => {
-        const fallback = { lat: 44.09737 + Math.random() / 100, lng: -70.16535 + Math.random() / 100, label: `${label} demo` };
-        callback(fallback);
-        setMessage(`${label} saved with demo coordinates because GPS permission was declined.`);
-      },
-      { enableHighAccuracy: true, timeout: 8000, maximumAge: 15000 }
-    );
+    if (!navigator.geolocation) { const fallback = { lat: 44.09737 + Math.random() / 100, lng: -70.16535 + Math.random() / 100, label: `${label} demo` }; callback(fallback); setMessage(`${label} saved with demo coordinates because browser GPS is unavailable.`); return; }
+    navigator.geolocation.getCurrentPosition((position) => { const coords = { lat: position.coords.latitude, lng: position.coords.longitude, accuracy: position.coords.accuracy, label }; callback(coords); setMessage(`${label} saved from this device: ${formatCoords(coords)}.`); }, () => { const fallback = { lat: 44.09737 + Math.random() / 100, lng: -70.16535 + Math.random() / 100, label: `${label} demo` }; callback(fallback); setMessage(`${label} saved with demo coordinates because GPS permission was declined.`); }, { enableHighAccuracy: true, timeout: 8000, maximumAge: 15000 });
   }
-
   async function savePetToSupabase() {
     if (!supabase) return setMessage('Supabase is not configured in this build; data is saved locally and routed through previews.');
     const { data: auth } = await supabase.auth.getUser();
     if (!auth.user) return setMessage('Sign in first before saving pet data to Supabase.');
-    const { error } = await supabase.from('pets').upsert({
-      owner_id: auth.user.id,
-      name: pet.name,
-      species: pet.species.toLowerCase(),
-      breed: pet.breed,
-      photo_url: pet.photoUrl,
-      medical_public: pet.medicalNotes,
-      behavior_public: pet.behaviorNotes,
-      feeding_plan: pet.feeding,
-      care_notes: `${pet.allergies}\n${pet.medications}\nVet: ${pet.vetName} ${pet.vetPhone}`,
-    });
+    const { error } = await supabase.from('pets').upsert({ owner_id: auth.user.id, name: pet.name, species: pet.species.toLowerCase(), breed: pet.breed, photo_url: pet.photoUrl, medical_public: pet.medicalNotes, behavior_public: pet.behaviorNotes, feeding_plan: pet.feeding, care_notes: `${pet.allergies}\n${pet.illnesses}\n${pet.medications}\nVet: ${vet.clinic} ${vet.phone}` });
     setMessage(error ? error.message : 'Pet profile saved to Supabase. Public profile and dashboard previews are already updated locally.');
   }
-
-  function startWalk() {
-    setWalking(true); setWalkSeconds(0); setWalkMiles(0); setWalkEnd(undefined); setWalkPath([{ x: 12, y: 70, label: 'Start' }, { x: 20, y: 62 }]);
-    captureLocation('Walk start', setWalkStart);
-  }
-  function endWalk(mode = walkEndMode) {
-    captureLocation('Walk end', (coords) => {
-      const route = [...walkPath, { x: mode === 'start' ? 12 : mode === 'home' ? 22 : mode === 'destination' ? 88 : lastPoint.x, y: mode === 'start' ? 70 : mode === 'home' ? 76 : mode === 'destination' ? 30 : lastPoint.y, label: `End: ${mode}`, coords }];
-      const entry = { id: Date.now(), start: 'Just now', end: `Ended by ${mode}`, distance: Number(walkMiles.toFixed(2)), duration: Math.max(1, Math.round(walkSeconds / 60)), mode, notes: `Tracked from ${formatCoords(walkStart)} to ${formatCoords(coords)}.`, startCoords: walkStart, endCoords: coords, route };
-      setState({ ...state, walks: [entry, ...state.walks], goals: { ...state.goals, currentXp: state.goals.currentXp + 50, level: Math.max(state.goals.level, Math.floor((state.goals.currentXp + 50) / 250) + 1) } });
-      setWalkPath(route); setWalkEnd(coords); setWalking(false); setMessage(`Walk saved: ${entry.distance} mi, ${walkSeconds}s, ended by ${mode}. +50 XP.`);
-    });
-  }
+  function startWalk() { setWalking(true); setWalkSeconds(0); setWalkMiles(0); setWalkEnd(undefined); captureLocation('Walk start', setWalkStart); }
+  function endWalk(mode = walkEndMode) { captureLocation('Walk end', (coords) => { const entry = { id: Date.now(), start: 'Just now', end: `Ended by ${mode}`, distance: Number(walkMiles.toFixed(2)), duration: Math.max(1, Math.round(walkSeconds / 60)), mode, notes: `Tracked from ${formatCoords(walkStart)} to ${formatCoords(coords)}.`, startCoords: walkStart, endCoords: coords }; setState({ ...state, walks: [entry, ...state.walks], goals: { ...state.goals, currentXp: state.goals.currentXp + 50, level: Math.max(state.goals.level, Math.floor((state.goals.currentXp + 50) / 250) + 1) } }); setWalkEnd(coords); setWalking(false); setMessage(`Walk saved: ${entry.distance} mi, ${walkSeconds}s, ended by ${mode}. +50 XP.`); }); }
   function addMeal() { setState({ ...state, meals: [{ id: Date.now(), time: '12:00 PM', meal: 'Snack', amount: 'Custom amount', calories: 120, done: false }, ...state.meals] }); }
   function addRecord() { setState({ ...state, records: [{ id: Date.now(), title: 'New record', kind: 'Medical', date: new Date().toISOString().slice(0, 10), notes: 'Editable notes', public: false }, ...state.records] }); }
   function addLostReport(status = 'Open') { setState({ ...state, lostReports: [{ id: Date.now(), status, location: 'New sighting location', note: 'Editable lost/found note', time: 'Now' }, ...state.lostReports] }); }
-  function sendPackMessage() {
-    if (!packDraft.trim()) return;
-    setState({ ...state, packMessages: [{ id: Date.now(), author: account.displayName, text: packDraft, time: 'Now' }, ...state.packMessages] });
-    setPackDraft(''); setMessage('Dog Pack message posted locally. Production chat should persist through Supabase realtime.');
-  }
-  function addManagedUser() {
-    setState({ ...state, managedUsers: [{ id: Date.now(), role: userDraft.role, name: userDraft.name, email: userDraft.email, plan: 'free', pets: 0, status: 'Invited' }, ...state.managedUsers] });
-    setMessage(`Admin invite staged for ${userDraft.email}. Production email invite belongs behind Supabase admin/Edge Function.`);
-  }
+  function sendPackMessage() { if (!packDraft.trim()) return; setState({ ...state, packMessages: [{ id: Date.now(), author: account.displayName, text: packDraft, group: packGroup, time: 'Now' }, ...state.packMessages] }); setPackDraft(''); setMessage('Dog Pack message posted locally. Production chat should persist through Supabase realtime.'); }
+  function addManagedUser() { setState({ ...state, managedUsers: [{ id: Date.now(), role: userDraft.role, name: userDraft.name, email: userDraft.email, plan: 'free', pets: 0, status: 'Invited' }, ...state.managedUsers] }); setMessage(`Admin invite staged for ${userDraft.email}. Production email invite belongs behind Supabase admin/Edge Function.`); }
+  function sectionNav() { return <div className="sectionNav"><button type="button" onClick={goBack} disabled={currentIndex === 0}>Back</button><button className="primary" type="button" onClick={() => finishSection()} disabled={currentIndex === tabs.length - 1}>Save + Next: {tabLabels[nextTab]}</button></div>; }
 
   return (
     <main className="appShell proApp">
       <aside className="sidebar">
         <Link className="brandLockup" href="/"><img src="/images/logo/MyPetID-Logo_Resized.jpg" alt="MyPetID logo" /><span>MyPetID</span></Link>
-        <nav className="sideNav" aria-label="Dashboard sections">{tabs.map((tab) => <button key={tab} className={activeTab === tab ? 'active' : ''} onClick={() => setActiveTab(tab)} type="button">{tab}</button>)}</nav>
+        <nav className="sideNav" aria-label="Dashboard sections">{tabs.map((tab) => <button key={tab} className={activeTab === tab ? 'active' : ''} onClick={() => setActiveTab(tab)} type="button">{tabLabels[tab]}</button>)}</nav>
         <div className={`tierBadge ${state.tier === 'admin' ? 'red' : 'green'}`}><span>{state.adminMode ? 'Admin view' : tiers[state.tier].label}</span><strong>{tiers[state.tier].pets} pets • {tiers[state.tier].users} users</strong><small>{tiers[state.tier].scan ? 'Scan tracking unlocked' : 'Scan tracking locked'}</small></div>
       </aside>
-
       <section className="workspace">
-        <header className="appHeader">
-          <div><p className="eyebrow">Production command center</p><h1>{state.adminMode ? 'Admin app studio' : `${pet.name}'s life tracker`}</h1><p>Step-by-step setup, editable account and pet records, live walking routes, public profile preview, Dog Pack social tools, and admin controls that all update shared app state.</p></div>
-          <div className="petAvatarCard"><img src={pet.photoUrl || '/images/dog/Clyde-Nice.jpg'} alt={pet.name} /><span className="pulseDot" /></div>
-        </header>
+        <header className="appHeader"><div><p className="eyebrow">Production command center</p><h1>{state.adminMode ? 'Admin app studio' : `${pet.name}'s life tracker`}</h1><p>Fill out a section, save it, then move forward. Every field updates local app state, previews, public routing, admin views, and the next Supabase-backed data model.</p></div><div className="petAvatarCard"><img src={pet.photoUrl || '/images/dog/Clyde-Nice.jpg'} alt={pet.name} /><span className="pulseDot" /></div></header>
         {!hasSupabaseConfig && <p className="notice">Demo mode: Supabase public env values are missing from this static build, so edits save locally in this browser and flow through the UI.</p>}
         <AuthPanel />
         <div className="dashboardStatus"><span>{message}</span><div className="actions compact"><button type="button" onClick={() => setState({ ...state, adminMode: !state.adminMode })}>{state.adminMode ? 'Use as user' : 'Switch to admin'}</button><button type="button" onClick={() => setState({ ...state, theme: state.theme === 'dark' ? 'light' : 'dark' })}>{state.theme === 'dark' ? 'Light mode' : 'Dark mode'}</button></div></div>
 
-        {activeTab === 'onboarding' && <div className="dashboardGrid">
-          <section className="panel wide"><p className="eyebrow">Step-by-step setup</p><h2>Finish the profile without guessing where anything goes</h2><div className="progress"><span style={{ width: `${Math.round((onboardingComplete / 8) * 100)}%` }} /></div><p>{onboardingComplete}/8 starter items complete. Use Next to move through account, pet, vet, walking, privacy, and public preview setup.</p><div className="wizardSteps">{['Account', 'Pet basics', 'Measurements', 'Vet + medical', 'Walk route', 'Public profile'].map((step, index) => <button key={step} type="button" className={state.onboardingStep === index ? 'active' : ''} onClick={() => setState({ ...state, onboardingStep: index })}>{index + 1}. {step}</button>)}</div><div className="actions"><button className="primary" type="button" onClick={() => setState({ ...state, onboardingStep: Math.min(5, state.onboardingStep + 1) })}>Next step</button><button type="button" onClick={() => setActiveTab(['account','pets','pets','medical','walks','public'][state.onboardingStep] as Tab)}>Open this section</button><button type="button" onClick={() => { localStorage.setItem('mypetid.onboardingComplete', 'true'); setMessage('Onboarding marked complete locally.'); }}>Mark setup complete</button></div></section>
-          <section className="panel"><h3>Current step</h3><p>{['Create the owner account and contact routes.', 'Enter name, birthday, sex, breed, tag, and photo.', 'Use dropdowns for eyes, coat, size, weight, height, and length.', 'Add vet contact, allergies, medications, and public-safe records.', 'Start a GPS route and choose how walks end.', 'Preview exactly what a finder or friend sees.'][state.onboardingStep]}</p></section>
-          <section className="panel"><h3>Live preview</h3><p>{pet.name} • {petAge}</p><p>{pet.eyeColor} eyes • {pet.coatColor} {pet.coatType} coat</p><p>{pet.vetName} • {pet.vetPhone}</p></section>
-        </div>}
+        {activeTab === 'overview' && <div className="dashboardGrid"><section className="panel heroPanel"><div><p className="eyebrow">NFC-ready profile</p><h2>{pet.name}</h2><p>{pet.breed} • {petAge} • {pet.size} • {pet.weight} lb • tag {pet.tagId}</p><div className="actions"><Link className="button primary" href={`/scan/?tag=${encodeURIComponent(pet.tagId)}`}>Open scan gate</Link><Link className="button" href={readOnlyUrl}>Public profile</Link><button type="button" onClick={savePetToSupabase}>Save pet</button></div></div><QRCodeSVG value={publicUrl} size={160} bgColor="transparent" fgColor="currentColor" /></section><section className="panel stat"><p>Weekly walks</p><strong>{weeklyDone.toFixed(1)} mi</strong><div className="progress"><span style={{ width: `${weeklyProgress}%` }} /></div><span>{weeklyProgress}% of {state.goals.weeklyMiles} mi</span></section><section className="panel stat"><p>Care level</p><strong>Lv {state.goals.level}</strong><span>{state.goals.currentXp + earnedXp} XP total</span></section><section className="panel stat"><p>Training</p><strong>{state.training.filter((item) => item.status === 'Mastered').length}/{state.training.length}</strong><span>commands mastered</span></section><section className="panel wide"><h2>Live walk map</h2><div className="realMap"><iframe title="Live walk map" src={walkMapUrl(walkStart, walkEnd)} loading="lazy" /></div><div className="routeMeta"><span>{formatCoords(walkStart)}</span><span>{formatCoords(walkEnd)}</span></div><div className="actions">{walking ? <button className="primary" type="button" onClick={() => endWalk(walkEndMode)}>End walk</button> : <button className="primary" type="button" onClick={startWalk}>Start walk</button>}<span>{walkMiles.toFixed(2)} mi • {walkSeconds}s</span></div></section></div>}
 
-        {activeTab === 'overview' && <div className="dashboardGrid">
-          <section className="panel heroPanel"><div><p className="eyebrow">NFC-ready profile</p><h2>{pet.name}</h2><p>{pet.breed} • {petAge} • {pet.weight} • tag {pet.tagId}</p><div className="actions"><Link className="button primary" href={`/scan/?tag=${encodeURIComponent(pet.tagId)}`}>Open scan gate</Link><Link className="button" href={readOnlyUrl}>Public profile</Link><button type="button" onClick={savePetToSupabase}>Save pet</button></div></div><QRCodeSVG value={publicUrl} size={160} bgColor="transparent" fgColor="currentColor" /></section>
-          <section className="panel stat"><p>Weekly walks</p><strong>{weeklyDone.toFixed(1)} mi</strong><div className="progress"><span style={{ width: `${weeklyProgress}%` }} /></div><span>{weeklyProgress}% of {state.goals.weeklyMiles} mi</span></section>
-          <section className="panel stat"><p>Care level</p><strong>Lv {state.goals.level}</strong><span>{state.goals.currentXp} XP</span></section>
-          <section className="panel stat"><p>Meals today</p><strong>{state.meals.filter((meal) => meal.done).length}/{state.goals.mealsPerDay}</strong><span>diet tracker</span></section>
-          <section className="panel wide"><h2>Real-time topographic walk map</h2><div className="liveMap topoMap"><svg viewBox="0 0 100 100" aria-label="Live route"><path className="contour c1" d="M8 78 C24 42 40 94 62 54 S82 24 96 38"/><path className="contour c2" d="M4 26 C30 8 42 48 62 20 S84 72 99 58"/><polyline points={pathPoints} /><circle cx={walkPath[0].x} cy={walkPath[0].y} r="3"/><circle cx={lastPoint.x} cy={lastPoint.y} r="4" /><text x={lastPoint.x + 4} y={lastPoint.y - 4}>🐾</text></svg></div><div className="routeMeta"><span>{formatCoords(walkStart)}</span><span>{formatCoords(walkEnd)}</span></div><div className="actions">{walking ? <button className="primary" type="button" onClick={() => endWalk(walkEndMode)}>End walk</button> : <button className="primary" type="button" onClick={startWalk}>Start walk</button>}<SelectField label="End option" value={walkEndMode} options={['destination', 'start', 'home', 'custom']} onChange={(v) => setWalkEndMode(v as WalkEndMode)} /><span>{walkMiles.toFixed(2)} mi • {walkSeconds}s</span></div></section>
-        </div>}
+        {activeTab === 'public' && <div className="dashboardGrid"><section className="panel wide"><p className="eyebrow">Public profile preview</p><h2>What finders, friends, and approved viewers see</h2><div className="publicPreview"><img src={pet.photoUrl} alt={pet.name} /><div><h3>{pet.name}</h3><p>{pet.breed} • {petAge} • {pet.size}</p><p>{state.settings.publicBehavior ? pet.behaviorNotes : 'Behavior notes hidden'}</p><dl className="infoList"><dt>Owner-approved medical</dt><dd>{state.settings.publicMedical ? pet.medicalNotes : 'Hidden by privacy settings'}</dd><dt>Contact route</dt><dd>{state.settings.publicContact ? `${account.displayName} via ${account.phone}` : 'Contact hidden'}</dd><dt>Last safe scan</dt><dd>{state.settings.shareLastScan ? 'Map visible during owner-approved mode' : 'Hidden'}</dd></dl><div className="actions"><Link className="button primary" href={readOnlyUrl}>Open public route</Link><button type="button" onClick={() => setActiveTab('settings')}>Edit visibility</button></div></div></div></section><section className="panel"><h3>Routes</h3><p>NFC scan writes only after consent:</p><code>{publicUrl}</code><p>Read-only profile:</p><code>{readOnlyUrl}</code></section></div>}
 
-        {activeTab === 'public' && <div className="dashboardGrid"><section className="panel wide"><p className="eyebrow">Public profile preview</p><h2>What finders, friends, and approved viewers see</h2><div className="publicPreview"><img src={pet.photoUrl} alt={pet.name} /><div><h3>{pet.name}</h3><p>{pet.breed} • {petAge}</p><p>{state.settings.publicBehavior ? pet.behaviorNotes : 'Behavior notes hidden'}</p><dl className="infoList"><dt>Owner-approved medical</dt><dd>{state.settings.publicMedical ? pet.medicalNotes : 'Hidden by privacy settings'}</dd><dt>Contact route</dt><dd>{state.settings.publicContact ? `${account.displayName} via ${account.phone}` : 'Contact hidden'}</dd><dt>Last safe scan</dt><dd>{state.settings.shareLastScan ? 'Map visible during owner-approved mode' : 'Hidden'}</dd></dl><div className="actions"><Link className="button primary" href={readOnlyUrl}>Open public route</Link><button type="button" onClick={() => setActiveTab('settings')}>Edit visibility</button></div></div></div></section><section className="panel"><h3>Routes</h3><p>NFC scan writes only after consent:</p><code>{publicUrl}</code><p>Read-only profile:</p><code>{readOnlyUrl}</code></section></div>}
+        {activeTab === 'account' && <div className="dashboardGrid"><section className="panel wide"><h2>Account information</h2><p className="formHint">These fields feed the dashboard header, public contact preview, admin user list, and invite/account routes.</p><div className="grid2"><Field label="Username" value={account.username} onChange={(v) => patchAccount({ username: v })} /><Field label="Display name" value={account.displayName} onChange={(v) => patchAccount({ displayName: v })} /><Field label="Email" type="email" value={account.email} onChange={(v) => patchAccount({ email: v })} /><Field label="Phone" value={account.phone} onChange={(v) => patchAccount({ phone: v })} /><Field label="Profile picture URL" value={account.avatarUrl} onChange={(v) => patchAccount({ avatarUrl: v })} /><Field label="Emergency contact" value={account.emergencyContact} onChange={(v) => patchAccount({ emergencyContact: v })} /></div><TextArea label="Private address" value={account.address} onChange={(v) => patchAccount({ address: v })} /></section><section className="panel"><img className="profilePreview" src={account.avatarUrl} alt={account.displayName} /><h3>{account.displayName}</h3><p>@{account.username}</p><p>{account.passwordLabel}</p><button type="button" onClick={() => setMessage('Password resets should use Supabase Auth reset email; no password is stored in the static app.')}>Send password reset</button></section></div>}
 
-        {activeTab === 'account' && <div className="dashboardGrid"><section className="panel wide"><h2>Account information</h2><p className="formHint">These fields feed the dashboard header, public contact preview, admin user list, and invite/account routes.</p><div className="grid2"><Field label="Username" value={account.username} onChange={(v) => patchAccount({ username: v })} /><Field label="Display name" value={account.displayName} onChange={(v) => patchAccount({ displayName: v })} /><Field label="Email" type="email" value={account.email} onChange={(v) => patchAccount({ email: v })} /><Field label="Phone" value={account.phone} onChange={(v) => patchAccount({ phone: v })} /><Field label="Profile picture URL" value={account.avatarUrl} onChange={(v) => patchAccount({ avatarUrl: v })} /><Field label="Emergency contact" value={account.emergencyContact} onChange={(v) => patchAccount({ emergencyContact: v })} /></div><TextArea label="Private address" value={account.address} onChange={(v) => patchAccount({ address: v })} /><button className="primary" type="button" onClick={() => setMessage('Account edits saved locally and routed to public/admin previews.')}>Save account</button></section><section className="panel"><img className="profilePreview" src={account.avatarUrl} alt={account.displayName} /><h3>{account.displayName}</h3><p>@{account.username}</p><p>{account.passwordLabel}</p><button type="button" onClick={() => setMessage('Password resets should use Supabase Auth reset email; no password is stored in the static app.')}>Send password reset</button></section></div>}
+        {activeTab === 'pets' && <div className="dashboardGrid"><section className="panel wide"><h2>Pet profile details</h2><p className="formHint">Birthday calculates age; numeric measurements stay numeric; normalized dropdowns keep profiles searchable.</p><div className="grid2"><Field label="Name" value={pet.name} onChange={(v) => patchPet({ name: v })} /><Field label="Tag ID" value={pet.tagId} onChange={(v) => patchPet({ tagId: v })} /><SelectField label="Species" value={pet.species} options={['Dog','Cat','Bird','Rabbit','Reptile','Other']} onChange={(v) => patchPet({ species: v })} /><Field label="Breed" value={pet.breed} onChange={(v) => patchPet({ breed: v })} /><Field label="Birthday" type="date" value={pet.birthday} hint={`Age: ${petAge}`} onChange={(v) => patchPet({ birthday: v })} /><SelectField label="Sex" value={pet.sex} options={['Male','Female','Neutered male','Spayed female','Unknown']} onChange={(v) => patchPet({ sex: v })} /><SelectField label="Size" value={pet.size} options={sizeBands} onChange={(v) => patchPet({ size: v })} /><SelectField label="Eye color" value={pet.eyeColor} options={eyeColors} onChange={(v) => patchPet({ eyeColor: v })} /><SelectField label="Coat color" value={pet.coatColor} options={coatColors} onChange={(v) => patchPet({ coatColor: v })} /><SelectField label="Coat type" value={pet.coatType} options={coatTypes} onChange={(v) => patchPet({ coatType: v })} /><Field label="Weight (lb)" type="number" min="0" value={pet.weight} onChange={(v) => patchPet({ weight: v })} /><Field label="Height (in)" type="number" min="0" value={pet.height} onChange={(v) => patchPet({ height: v })} /><Field label="Length (in)" type="number" min="0" value={pet.length} onChange={(v) => patchPet({ length: v })} /><Field label="Microchip" value={pet.microchip} onChange={(v) => patchPet({ microchip: v })} /><SelectField label="Service / work status" value={pet.serviceStatus} options={['Family pet','Service animal','Service animal in training','Therapy dog','Emotional support animal','Working dog','Retired service animal']} onChange={(v) => patchPet({ serviceStatus: v })} /><SelectField label="Rescue status" value={pet.rescueStatus} options={['Not set','Rescue','Adopted','Foster','Rehomed','Breeder','Shelter intake']} onChange={(v) => patchPet({ rescueStatus: v })} /><Field label="Home base" value={pet.homeBase} onChange={(v) => patchPet({ homeBase: v })} /><Field label="Photo URL" value={pet.photoUrl} onChange={(v) => patchPet({ photoUrl: v })} /></div><TextArea label="Behavior notes" value={pet.behaviorNotes} onChange={(v) => patchPet({ behaviorNotes: v })} /><TextArea label="Certificates / IDs" value={pet.certifications} onChange={(v) => patchPet({ certifications: v })} /></section><section className="panel"><h3>Pet summary</h3><p>{pet.name} is a {petAge} {pet.breed}.</p><p>{pet.eyeColor} eyes • {pet.coatColor} {pet.coatType} coat</p><p>{pet.size} • {pet.weight} lb • {pet.height} in tall • {pet.length} in long</p><p>{pet.serviceStatus} • {pet.rescueStatus}</p></section></div>}
 
-        {activeTab === 'pets' && <div className="dashboardGrid"><section className="panel wide"><h2>Step-by-step pet profile</h2><p className="formHint">Dropdowns keep profile data clean. Birthday calculates age automatically and every change updates the public profile preview.</p><div className="grid2"><Field label="Name" value={pet.name} onChange={(v) => patchPet({ name: v })} /><Field label="Tag ID" value={pet.tagId} onChange={(v) => patchPet({ tagId: v })} /><SelectField label="Species" value={pet.species} options={['Dog','Cat','Bird','Rabbit','Reptile','Other']} onChange={(v) => patchPet({ species: v })} /><Field label="Breed" value={pet.breed} onChange={(v) => patchPet({ breed: v })} /><Field label="Birthday" type="date" value={pet.birthday} hint={`Age: ${petAge}`} onChange={(v) => patchPet({ birthday: v })} /><SelectField label="Sex" value={pet.sex} options={['Male','Female','Neutered male','Spayed female','Unknown']} onChange={(v) => patchPet({ sex: v })} /><SelectField label="Eye color" value={pet.eyeColor} options={eyeColors} onChange={(v) => patchPet({ eyeColor: v })} /><SelectField label="Coat color" value={pet.coatColor} options={coatColors} onChange={(v) => patchPet({ coatColor: v })} /><SelectField label="Coat type" value={pet.coatType} options={coatTypes} onChange={(v) => patchPet({ coatType: v })} /><SelectField label="Weight" value={pet.weight} options={['Under 10 lb','10-25 lb','26-50 lb','51-75 lb','76-100 lb','100+ lb','58 lb','Custom']} onChange={(v) => patchPet({ weight: v })} /><SelectField label="Height" value={pet.height} options={sizeBands} onChange={(v) => patchPet({ height: v })} /><SelectField label="Length" value={pet.length} options={sizeBands} onChange={(v) => patchPet({ length: v })} /><Field label="Microchip" value={pet.microchip} onChange={(v) => patchPet({ microchip: v })} /><Field label="Photo URL" value={pet.photoUrl} onChange={(v) => patchPet({ photoUrl: v })} /></div><div className="grid2"><Field label="Vet name" value={pet.vetName} onChange={(v) => patchPet({ vetName: v })} /><Field label="Vet phone" value={pet.vetPhone} onChange={(v) => patchPet({ vetPhone: v })} /></div><TextArea label="Vet address / instructions" value={pet.vetAddress} onChange={(v) => patchPet({ vetAddress: v })} /><TextArea label="Public behavior notes" value={pet.behaviorNotes} onChange={(v) => patchPet({ behaviorNotes: v })} /><button className="primary" type="button" onClick={savePetToSupabase}>Save pet profile</button></section><section className="panel"><h3>Pet profile summary</h3><p>{pet.name} is a {petAge} {pet.breed}.</p><p>{pet.eyeColor} eyes • {pet.coatColor} {pet.coatType} coat</p><p>{pet.weight} • {pet.height} height • {pet.length} length</p><p>Vet: {pet.vetName} {pet.vetPhone}</p></section></div>}
-
-        {activeTab === 'walks' && <div className="dashboardGrid"><section className="panel wide"><h2>Walk and route planner</h2><div className="grid2"><SelectField label="End walk by" value={walkEndMode} options={['destination', 'start', 'home', 'custom']} onChange={(v) => setWalkEndMode(v as WalkEndMode)} /><Field label="Custom destination" value={state.settings.customDestination} onChange={(v) => patchSettings({ customDestination: v })} /></div><div className="liveMap topoMap"><svg viewBox="0 0 100 100"><path className="contour c1" d="M8 78 C24 42 40 94 62 54 S82 24 96 38"/><path className="contour c2" d="M4 26 C30 8 42 48 62 20 S84 72 99 58"/><polyline points={pathPoints} /><circle cx={walkPath[0].x} cy={walkPath[0].y} r="3" /><circle cx={lastPoint.x} cy={lastPoint.y} r="4" /><text x={lastPoint.x + 4} y={lastPoint.y - 4}>🐕‍🦺</text></svg></div><div className="routeMeta"><span>Start: {formatCoords(walkStart)}</span><span>End: {formatCoords(walkEnd)}</span></div><div className="actions">{walking ? <button className="primary" type="button" onClick={() => endWalk(walkEndMode)}>End walk</button> : <button className="primary" type="button" onClick={startWalk}>Start walk</button>}<button type="button" onClick={() => setState({ ...state, goals: { ...state.goals, weeklyMiles: state.goals.weeklyMiles + 1 } })}>Raise weekly goal</button><span>{walkMiles.toFixed(2)} mi live</span></div></section>{state.walks.map((walk) => <section className="panel" key={walk.id}><h3>{walk.distance} mi</h3><p>{walk.start} → {walk.end}</p><p>{walk.duration} min • {walk.mode || 'route'} • {walk.notes}</p></section>)}</div>}
+        {activeTab === 'walks' && <div className="dashboardGrid"><section className="panel wide"><h2>Walk and route planner</h2><div className="grid2"><SelectField label="End walk by" value={walkEndMode} options={['destination','start','home','custom']} onChange={(v) => setWalkEndMode(v as WalkEndMode)} /><Field label="Custom destination" value={state.settings.customDestination} onChange={(v) => patchSettings({ customDestination: v })} /></div><div className="realMap"><iframe title="Walk route map" src={walkMapUrl(walkStart, walkEnd)} loading="lazy" /></div><div className="routeMeta"><span>Start: {formatCoords(walkStart)}</span><span>End: {formatCoords(walkEnd)}</span></div><div className="actions">{walking ? <button className="primary" type="button" onClick={() => endWalk(walkEndMode)}>End walk</button> : <button className="primary" type="button" onClick={startWalk}>Start walk</button>}<button type="button" onClick={() => captureLocation('Destination', setWalkEnd)}>Set destination from device</button><button type="button" onClick={() => setState({ ...state, goals: { ...state.goals, weeklyMiles: state.goals.weeklyMiles + 1 } })}>Raise weekly goal</button><span>{walkMiles.toFixed(2)} mi live</span></div></section>{state.walks.map((walk) => <section className="panel" key={walk.id}><h3>{walk.distance} mi</h3><p>{walk.start} → {walk.end}</p><p>{walk.duration} min • {walk.mode || 'route'}</p><p>{walk.notes}</p></section>)}</div>}
 
         {activeTab === 'diet' && <div className="dashboardGrid"><section className="panel wide"><h2>Diet and meal tracker</h2><TextArea label="Feeding plan" value={pet.feeding} onChange={(v) => patchPet({ feeding: v })} /><Field label="Favorite treats" value={pet.favoriteTreats} onChange={(v) => patchPet({ favoriteTreats: v })} /><button className="primary" type="button" onClick={addMeal}>Add meal/snack</button></section>{state.meals.map((meal) => <section className="panel" key={meal.id}><label className="toggleRow"><input type="checkbox" checked={meal.done} onChange={(event) => setState({ ...state, meals: state.meals.map((item) => item.id === meal.id ? { ...item, done: event.target.checked } : item) })} /> Complete</label><Field label="Time" value={meal.time} onChange={(v) => setState({ ...state, meals: state.meals.map((item) => item.id === meal.id ? { ...item, time: v } : item) })} /><SelectField label="Meal" value={meal.meal} options={['Breakfast','Lunch','Dinner','Snack','Medication','Water','Custom']} onChange={(v) => setState({ ...state, meals: state.meals.map((item) => item.id === meal.id ? { ...item, meal: v } : item) })} /><Field label="Amount" value={meal.amount} onChange={(v) => setState({ ...state, meals: state.meals.map((item) => item.id === meal.id ? { ...item, amount: v } : item) })} /></section>)}</div>}
 
-        {activeTab === 'medical' && <div className="dashboardGrid"><section className="panel wide"><h2>Medical and record keeper</h2><TextArea label="Allergies" value={pet.allergies} onChange={(v) => patchPet({ allergies: v })} /><TextArea label="Medications" value={pet.medications} onChange={(v) => patchPet({ medications: v })} /><button className="primary" type="button" onClick={addRecord}>Add record</button></section>{state.records.map((record) => <section className="panel" key={record.id}><Field label="Title" value={record.title} onChange={(v) => setState({ ...state, records: state.records.map((item) => item.id === record.id ? { ...item, title: v } : item) })} /><SelectField label="Kind" value={record.kind} options={recordKinds} onChange={(v) => setState({ ...state, records: state.records.map((item) => item.id === record.id ? { ...item, kind: v } : item) })} /><Field label="Date" type="date" value={record.date} onChange={(v) => setState({ ...state, records: state.records.map((item) => item.id === record.id ? { ...item, date: v } : item) })} /><TextArea label="Notes" value={record.notes} onChange={(v) => setState({ ...state, records: state.records.map((item) => item.id === record.id ? { ...item, notes: v } : item) })} /><label className="toggleRow"><input type="checkbox" checked={record.public} onChange={(event) => setState({ ...state, records: state.records.map((item) => item.id === record.id ? { ...item, public: event.target.checked } : item) })} /> Public-safe</label></section>)}</div>}
+        {activeTab === 'medical' && <div className="dashboardGrid"><section className="panel wide"><h2>Medical, vet, and certificates</h2><p className="formHint">Built around normal pet-care records: vet contact, last/next visit, vaccines, medications, illnesses, allergies, insurance, certificates, service/rescue notes, and emergency instructions.</p><div className="grid2"><Field label="Vet clinic" value={vet.clinic} onChange={(v) => patchVet({ clinic: v })} /><Field label="Vet / doctor" value={vet.doctor} onChange={(v) => patchVet({ doctor: v })} /><Field label="Vet phone" value={vet.phone} onChange={(v) => patchVet({ phone: v })} /><Field label="Emergency clinic" value={vet.emergencyClinic} onChange={(v) => patchVet({ emergencyClinic: v })} /><Field label="Last visit" type="date" value={vet.lastVisit} onChange={(v) => patchVet({ lastVisit: v })} /><Field label="Next visit" type="date" value={vet.nextVisit} onChange={(v) => patchVet({ nextVisit: v })} /></div><TextArea label="Vet address / location" value={vet.address} onChange={(v) => patchVet({ address: v })} /><TextArea label="Vet notes" value={vet.notes} onChange={(v) => patchVet({ notes: v })} /><div className="grid2"><TextArea label="Allergies" value={pet.allergies} onChange={(v) => patchPet({ allergies: v })} /><TextArea label="Illnesses / conditions" value={pet.illnesses} onChange={(v) => patchPet({ illnesses: v })} /><TextArea label="Surgeries / procedures" value={pet.surgeries} onChange={(v) => patchPet({ surgeries: v })} /><TextArea label="Medications" value={pet.medications} onChange={(v) => patchPet({ medications: v })} /><TextArea label="Insurance / policy" value={pet.insurance} onChange={(v) => patchPet({ insurance: v })} /><TextArea label="Medical public note" value={pet.medicalNotes} onChange={(v) => patchPet({ medicalNotes: v })} /></div><button className="primary" type="button" onClick={addRecord}>Add record/certificate</button></section>{state.records.map((record) => <section className="panel" key={record.id}><Field label="Title" value={record.title} onChange={(v) => setState({ ...state, records: state.records.map((item) => item.id === record.id ? { ...item, title: v } : item) })} /><SelectField label="Kind" value={record.kind} options={recordKinds} onChange={(v) => setState({ ...state, records: state.records.map((item) => item.id === record.id ? { ...item, kind: v } : item) })} /><Field label="Date" type="date" value={record.date} onChange={(v) => setState({ ...state, records: state.records.map((item) => item.id === record.id ? { ...item, date: v } : item) })} /><TextArea label="Notes" value={record.notes} onChange={(v) => setState({ ...state, records: state.records.map((item) => item.id === record.id ? { ...item, notes: v } : item) })} /><label className="toggleRow"><input type="checkbox" checked={record.public} onChange={(event) => setState({ ...state, records: state.records.map((item) => item.id === record.id ? { ...item, public: event.target.checked } : item) })} /> Public-safe</label></section>)}</div>}
+
+        {activeTab === 'play' && <div className="dashboardGrid"><section className="panel wide"><h2>Play and enrichment</h2><p>Track favorite toys, safe places, play minutes, games, rewards, and enrichment routines.</p><button className="primary" type="button" onClick={() => setState({ ...state, play: [{ id: Date.now(), activity: 'New play activity', toy: 'Toy', place: 'Place', minutes: 10, favorite: false, notes: 'Editable notes' }, ...state.play] })}>Add play activity</button></section>{state.play.map((item) => <section className="panel" key={item.id}><Field label="Activity" value={item.activity} onChange={(v) => setState({ ...state, play: state.play.map((play) => play.id === item.id ? { ...play, activity: v } : play) })} /><Field label="Toy / reward" value={item.toy} onChange={(v) => setState({ ...state, play: state.play.map((play) => play.id === item.id ? { ...play, toy: v } : play) })} /><Field label="Place" value={item.place} onChange={(v) => setState({ ...state, play: state.play.map((play) => play.id === item.id ? { ...play, place: v } : play) })} /><Field label="Minutes" type="number" value={String(item.minutes)} onChange={(v) => setState({ ...state, play: state.play.map((play) => play.id === item.id ? { ...play, minutes: Number(v) || 0 } : play) })} /><label className="toggleRow"><input type="checkbox" checked={item.favorite} onChange={(event) => setState({ ...state, play: state.play.map((play) => play.id === item.id ? { ...play, favorite: event.target.checked } : play) })} /> Favorite</label><TextArea label="Notes" value={item.notes} onChange={(v) => setState({ ...state, play: state.play.map((play) => play.id === item.id ? { ...play, notes: v } : play) })} /></section>)}</div>}
+
+        {activeTab === 'training' && <div className="dashboardGrid"><section className="panel wide"><h2>Training, tricks, and commands</h2><p>Track commands, cues, proofing level, points, categories, and notes. Useful for basic obedience, CGC-style goals, service tasks, therapy manners, and custom tricks.</p><button className="primary" type="button" onClick={() => setState({ ...state, training: [{ id: Date.now(), command: 'New command', category: 'Custom', cue: 'Cue', status: 'Not started', points: 20, notes: 'Training notes' }, ...state.training] })}>Add command/trick</button></section>{state.training.map((item) => <section className="panel" key={item.id}><Field label="Command / trick" value={item.command} onChange={(v) => setState({ ...state, training: state.training.map((row) => row.id === item.id ? { ...row, command: v } : row) })} /><SelectField label="Category" value={item.category} options={['Basic obedience','Leash manners','Recall','Trick','Service task','Therapy manners','Safety','Custom']} onChange={(v) => setState({ ...state, training: state.training.map((row) => row.id === item.id ? { ...row, category: v } : row) })} /><Field label="Cue" value={item.cue} onChange={(v) => setState({ ...state, training: state.training.map((row) => row.id === item.id ? { ...row, cue: v } : row) })} /><SelectField label="Status" value={item.status} options={trainingStatuses} onChange={(v) => setState({ ...state, training: state.training.map((row) => row.id === item.id ? { ...row, status: v } : row) })} /><Field label="Points" type="number" value={String(item.points)} onChange={(v) => setState({ ...state, training: state.training.map((row) => row.id === item.id ? { ...row, points: Number(v) || 0 } : row) })} /><TextArea label="Notes" value={item.notes} onChange={(v) => setState({ ...state, training: state.training.map((row) => row.id === item.id ? { ...row, notes: v } : row) })} /><button type="button" onClick={() => awardXp(item.points, `${item.command} training logged`)}>Log points</button></section>)}</div>}
 
         {activeTab === 'lost' && <div className="dashboardGrid"><section className="panel wide"><h2>Lost/found notification center</h2><p>Flip lost mode, stage finder reports, and keep owner-approved public return-home information together.</p><div className="actions"><button className="primary" type="button" onClick={() => addLostReport('Open')}>Create lost report</button><button type="button" onClick={() => { patchSettings({ shareLastScan: true }); setMessage('Last scan sharing enabled for lost/found mode.'); }}>Share last scan</button></div></section>{state.lostReports.map((report) => <section className="panel" key={report.id}><SelectField label="Status" value={report.status} options={['Open','Searching','Owner contacted','Resolved','False alarm']} onChange={(v) => setState({ ...state, lostReports: state.lostReports.map((item) => item.id === report.id ? { ...item, status: v } : item) })} /><Field label="Location" value={report.location} onChange={(v) => setState({ ...state, lostReports: state.lostReports.map((item) => item.id === report.id ? { ...item, location: v } : item) })} /><TextArea label="Note" value={report.note} onChange={(v) => setState({ ...state, lostReports: state.lostReports.map((item) => item.id === report.id ? { ...item, note: v } : item) })} /><p>{report.time}</p></section>)}</div>}
 
-        {activeTab === 'pack' && <div className="dashboardGrid"><section className="panel wide"><p className="eyebrow">Dog Pack</p><h2>Friends, walks, park plans, and chat</h2><TextArea label="Message your pack" value={packDraft} onChange={setPackDraft} /><div className="actions"><button className="primary" type="button" onClick={sendPackMessage}>Send message</button><button type="button" onClick={() => setState({ ...state, packFriends: [{ id: Date.now(), name: 'New friend', dog: 'New dog', status: 'Invite sent', activity: 'Waiting for approval' }, ...state.packFriends] })}>Add friend</button></div></section>{state.packFriends.map((friend) => <section className="panel" key={friend.id}><h3>{friend.name} + {friend.dog}</h3><p>{friend.status}</p><p>{friend.activity}</p></section>)}<section className="panel wide"><h3>Pack chat</h3>{state.packMessages.map((chat) => <div className="chatBubble" key={chat.id}><strong>{chat.author}</strong><span>{chat.time}</span><p>{chat.text}</p></div>)}</section></div>}
+        {activeTab === 'pack' && <div className="dashboardGrid"><section className="panel wide"><p className="eyebrow">Dog Pack</p><h2>Friends, groups, park plans, and chat</h2><div className="grid2"><SelectField label="Group" value={packGroup} options={['Park crew','Training buddies','Family','Vet approved','Custom']} onChange={setPackGroup} /><Field label="Message" value={packDraft} onChange={setPackDraft} /></div><div className="actions"><button className="primary" type="button" onClick={sendPackMessage}>Send message</button><button type="button" onClick={() => setState({ ...state, packFriends: [{ id: Date.now(), name: 'New friend', dog: 'New dog', group: packGroup, status: 'Invite sent', activity: 'Waiting for approval' }, ...state.packFriends] })}>Add friend</button></div></section>{state.packFriends.map((friend) => <section className="panel" key={friend.id}><Field label="Friend" value={friend.name} onChange={(v) => setState({ ...state, packFriends: state.packFriends.map((item) => item.id === friend.id ? { ...item, name: v } : item) })} /><Field label="Dog" value={friend.dog} onChange={(v) => setState({ ...state, packFriends: state.packFriends.map((item) => item.id === friend.id ? { ...item, dog: v } : item) })} /><SelectField label="Group" value={friend.group} options={['Park crew','Training buddies','Family','Vet approved','Custom']} onChange={(v) => setState({ ...state, packFriends: state.packFriends.map((item) => item.id === friend.id ? { ...item, group: v } : item) })} /><p>{friend.status} • {friend.activity}</p></section>)}<section className="panel wide"><h3>Pack chat</h3>{state.packMessages.map((chat) => <div className="chatBubble" key={chat.id}><strong>{chat.author}</strong><span>{chat.group} • {chat.time}</span><p>{chat.text}</p><button type="button" onClick={() => setState({ ...state, packMessages: state.packMessages.filter((item) => item.id !== chat.id) })}>Delete message</button></div>)}</section></div>}
 
-        {activeTab === 'goals' && <div className="dashboardGrid"><section className="panel wide"><h2>Goals, levels, and completion loops</h2><div className="grid2"><Field label="Weekly walk distance" type="number" value={String(state.goals.weeklyMiles)} onChange={(v) => setState({ ...state, goals: { ...state.goals, weeklyMiles: Number(v) || 0 } })} /><Field label="Meals per day" type="number" value={String(state.goals.mealsPerDay)} onChange={(v) => setState({ ...state, goals: { ...state.goals, mealsPerDay: Number(v) || 0 } })} /><Field label="Weekly care tasks" type="number" value={String(state.goals.careTasks)} onChange={(v) => setState({ ...state, goals: { ...state.goals, careTasks: Number(v) || 0 } })} /></div><div className="levelBadge">Level {state.goals.level}<div className="progress"><span style={{ width: `${state.goals.currentXp % 250 / 2.5}%` }} /></div>{state.goals.currentXp} XP</div><div className="actions"><button type="button" onClick={() => awardXp(20, 'care task completed')}>Complete care task</button><button type="button" onClick={() => awardXp(35, 'goal streak completed')}>Complete streak</button></div></section></div>}
+        {activeTab === 'goals' && <div className="dashboardGrid"><section className="panel wide"><h2>Goals, points, and achievements</h2><div className="grid2"><Field label="Weekly walk distance" type="number" value={String(state.goals.weeklyMiles)} onChange={(v) => setState({ ...state, goals: { ...state.goals, weeklyMiles: Number(v) || 0 } })} /><Field label="Meals per day" type="number" value={String(state.goals.mealsPerDay)} onChange={(v) => setState({ ...state, goals: { ...state.goals, mealsPerDay: Number(v) || 0 } })} /><Field label="Weekly care tasks" type="number" value={String(state.goals.careTasks)} onChange={(v) => setState({ ...state, goals: { ...state.goals, careTasks: Number(v) || 0 } })} /><Field label="Training sessions" type="number" value={String(state.goals.trainingSessions)} onChange={(v) => setState({ ...state, goals: { ...state.goals, trainingSessions: Number(v) || 0 } })} /><Field label="Play minutes" type="number" value={String(state.goals.playMinutes)} onChange={(v) => setState({ ...state, goals: { ...state.goals, playMinutes: Number(v) || 0 } })} /></div><div className="levelBadge">Level {state.goals.level}<div className="progress"><span style={{ width: `${state.goals.currentXp % 250 / 2.5}%` }} /></div>{state.goals.currentXp + earnedXp} XP including achievements</div><div className="actions"><button type="button" onClick={() => awardXp(20, 'care task completed')}>Complete care task</button><button type="button" onClick={() => awardXp(35, 'goal streak completed')}>Complete streak</button><button type="button" onClick={() => awardXp(25, 'play session logged')}>Log play points</button></div></section>{state.achievements.map((item) => <section className="panel" key={item.id}><h3>{item.title}</h3><p>{item.category} • {item.points} pts</p><p>{item.requirement}</p><label className="toggleRow"><input type="checkbox" checked={item.earned} onChange={(event) => setState({ ...state, achievements: state.achievements.map((row) => row.id === item.id ? { ...row, earned: event.target.checked } : row) })} /> Earned</label></section>)}</div>}
 
-        {activeTab === 'settings' && <div className="dashboardGrid"><section className="panel wide"><h2>Settings, privacy, and app look</h2>{Object.entries(state.settings).map(([key, value]) => typeof value === 'boolean' ? <label className="toggleRow" key={key}><input type="checkbox" checked={value} onChange={(event) => patchSettings({ [key]: event.target.checked } as Partial<typeof state.settings>)} /> {key}</label> : null)}<div className="grid2"><SelectField label="Units" value={state.settings.units} options={['miles','kilometers']} onChange={(v) => patchSettings({ units: v })} /><SelectField label="Privacy mode" value={state.settings.privacyMode} options={['strict','balanced','open during lost mode']} onChange={(v) => patchSettings({ privacyMode: v })} /><SelectField label="Map style" value={state.settings.mapStyle} options={['topographic','satellite-ready','city grid','trail map']} onChange={(v) => patchSettings({ mapStyle: v })} /><SelectField label="Default walk end" value={state.settings.defaultWalkEnd} options={['destination','start','home','custom']} onChange={(v) => patchSettings({ defaultWalkEnd: v as WalkEndMode })} /><SelectField label="App color palette" value={state.palette} options={['forest','ocean','sunset','mono']} onChange={(v) => setState({ ...state, palette: v as Palette })} /><SelectField label="Theme" value={state.theme} options={['dark','light']} onChange={(v) => setState({ ...state, theme: v as Theme })} /></div></section><section className="panel"><h3>Scan URLs</h3><p>NFC/QR:</p><code>{publicUrl}</code><p>Read-only:</p><code>{readOnlyUrl}</code></section></div>}
+        {activeTab === 'settings' && <div className="dashboardGrid"><section className="panel wide"><h2>Settings, privacy, and app look</h2>{Object.entries(state.settings).map(([key, value]) => typeof value === 'boolean' ? <label className="toggleRow" key={key}><input type="checkbox" checked={value} onChange={(event) => patchSettings({ [key]: event.target.checked } as Partial<typeof state.settings>)} /> {key}</label> : null)}<div className="grid2"><SelectField label="Units" value={state.settings.units} options={['miles','kilometers']} onChange={(v) => patchSettings({ units: v })} /><SelectField label="Privacy mode" value={state.settings.privacyMode} options={['strict','balanced','open during lost mode']} onChange={(v) => patchSettings({ privacyMode: v })} /><SelectField label="Map style" value={state.settings.mapStyle} options={['standard map','satellite-ready','city grid','trail map']} onChange={(v) => patchSettings({ mapStyle: v })} /><SelectField label="Default walk end" value={state.settings.defaultWalkEnd} options={['destination','start','home','custom']} onChange={(v) => patchSettings({ defaultWalkEnd: v as WalkEndMode })} /><SelectField label="App color palette" value={state.palette} options={['forest','ocean','sunset','mono']} onChange={(v) => setState({ ...state, palette: v as Palette })} /><SelectField label="Theme" value={state.theme} options={['dark','light']} onChange={(v) => setState({ ...state, theme: v as Theme })} /></div></section><section className="panel"><h3>Scan URLs</h3><p>NFC/QR:</p><code>{publicUrl}</code><p>Read-only:</p><code>{readOnlyUrl}</code></section></div>}
 
-        {activeTab === 'admin' && <div className="dashboardGrid"><section className="panel wide"><h2>Admin console</h2><div className="notificationDock"><span>🔔 3</span><span>📍 1</span><span>🩺 2</span><span>💬 {state.packMessages.length}</span><span>⚙️</span></div><p>Customize app colors/features, switch between admin/user mode, edit users, stage pet profiles, and manage routes. Secret operations still need Supabase Edge Functions before production.</p><div className="grid2"><SelectField label="Global palette" value={state.palette} options={['forest','ocean','sunset','mono']} onChange={(v) => setState({ ...state, palette: v as Palette })} /><SelectField label="Admin account plan" value={state.tier} options={Object.keys(tiers)} onChange={(v) => setState({ ...state, tier: v as keyof typeof tiers })} /><Field label="New user name" value={userDraft.name} onChange={(v) => setUserDraft({ ...userDraft, name: v })} /><Field label="New user email" value={userDraft.email} onChange={(v) => setUserDraft({ ...userDraft, email: v })} /></div><div className="adminActions"><button className="primary" type="button" onClick={() => { patchPet({ tagId: `tag-${Math.random().toString(36).slice(2, 8)}` }); setMessage('New tag code generated locally. Production should mint this server-side.'); }}>Generate tag ID</button><button type="button" onClick={addManagedUser}>Create/invite user</button><button type="button" onClick={() => setState({ ...state, adminMode: !state.adminMode })}>Switch admin/user</button><button type="button" onClick={() => setMessage('Patreon sync requires client secret/creator token on an Edge Function, not in browser.')}>Sync Patreon</button><button type="button" onClick={() => setState(defaultState)}>Reset demo data</button></div></section>{state.managedUsers.map((user) => <section className="panel" key={user.id}><h3>{user.name}</h3><p>{user.role} • {user.status}</p><p>{user.email}</p><SelectField label="Plan" value={user.plan} options={Object.keys(tiers)} onChange={(v) => setState({ ...state, managedUsers: state.managedUsers.map((item) => item.id === user.id ? { ...item, plan: v as keyof typeof tiers } : item) })} /><button type="button" onClick={() => setMessage(`Opened editable admin route for ${user.name}.`)}>Edit account</button></section>)}</div>}
+        {activeTab === 'admin' && <div className="dashboardGrid"><section className="panel wide"><h2>Admin console</h2><div className="notificationDock"><span>🔔 3</span><span>📍 1</span><span>🩺 {state.records.length}</span><span>💬 {state.packMessages.length}</span><span>🏆 {state.achievements.filter((item) => item.earned).length}</span></div><p>Customize app colors/features, switch between admin/user mode, edit users, stage pet profiles, and manage routes. Secret operations still need Supabase Edge Functions before production.</p><div className="grid2"><SelectField label="Global palette" value={state.palette} options={['forest','ocean','sunset','mono']} onChange={(v) => setState({ ...state, palette: v as Palette })} /><SelectField label="Admin account plan" value={state.tier} options={Object.keys(tiers)} onChange={(v) => setState({ ...state, tier: v as keyof typeof tiers })} /><Field label="New user name" value={userDraft.name} onChange={(v) => setUserDraft({ ...userDraft, name: v })} /><Field label="New user email" value={userDraft.email} onChange={(v) => setUserDraft({ ...userDraft, email: v })} /></div><div className="adminActions"><button className="primary" type="button" onClick={() => { patchPet({ tagId: `tag-${Math.random().toString(36).slice(2, 8)}` }); setMessage('New tag code generated locally. Production should mint this server-side.'); }}>Generate tag ID</button><button type="button" onClick={addManagedUser}>Create/invite user</button><button type="button" onClick={() => setState({ ...state, adminMode: !state.adminMode })}>Switch admin/user</button><button type="button" onClick={() => setMessage('Patreon sync requires client secret/creator token on an Edge Function, not in browser.')}>Sync Patreon</button><button type="button" onClick={() => setState(defaultState)}>Reset demo data</button></div></section>{state.managedUsers.map((user) => <section className="panel" key={user.id}><h3>{user.name}</h3><p>{user.role} • {user.status}</p><p>{user.email}</p><SelectField label="Plan" value={user.plan} options={Object.keys(tiers)} onChange={(v) => setState({ ...state, managedUsers: state.managedUsers.map((item) => item.id === user.id ? { ...item, plan: v as keyof typeof tiers } : item) })} /><button type="button" onClick={() => setMessage(`Opened editable admin route for ${user.name}.`)}>Edit account</button></section>)}</div>}
+
+        {sectionNav()}
       </section>
     </main>
   );
