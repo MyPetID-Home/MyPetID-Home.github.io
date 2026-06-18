@@ -24,6 +24,9 @@
   --violet: #6852bd;
   --line: rgba(8,24,14,0.18);
 }
+:root[data-palette="ocean"] { --brand: #57d7ff; --brand2: #73fbd3; --violet: #a7b9ff; }
+:root[data-palette="sunset"] { --brand: #ffce6b; --brand2: #ff7a7a; --violet: #ffd1f1; }
+:root[data-palette="mono"] { --brand: #f5f7ef; --brand2: #b9c2b4; --violet: #ffffff; }
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
 body { margin: 0; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: radial-gradient(circle at 20% 0%, #21402d 0, transparent 32rem), radial-gradient(circle at 90% 10%, #163d47 0, transparent 28rem), var(--bg); color: var(--text); }
@@ -142,6 +145,23 @@ textarea { min-height: 96px; resize: vertical; }
 .authPanel.signedIn { grid-template-columns: 1fr auto; align-items: center; }
 .authPanel h3 { margin: 0; }
 .authPanel .actions { margin-top: 0; }
+.formHint, label small { color: var(--muted); font-size: .9rem; margin: 0; }
+.actions.compact { margin-top: 0; align-items: center; }
+.wizardSteps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 20px 0; }
+.wizardSteps button { border-radius: 18px; text-align: left; }
+.wizardSteps button.active { border-color: rgba(135,224,111,.55); background: rgba(135,224,111,.14); color: var(--brand); }
+.publicPreview { display: grid; grid-template-columns: 220px 1fr; gap: 22px; align-items: start; }
+.publicPreview img { width: 220px; height: 220px; object-fit: cover; border-radius: 34px; border: 1px solid var(--line); }
+.topoMap { background: radial-gradient(circle at 18% 26%, rgba(135,224,111,.22), transparent 13rem), radial-gradient(circle at 82% 68%, rgba(87,215,255,.16), transparent 16rem), linear-gradient(135deg, rgba(255,255,255,.08), rgba(255,255,255,.02)); }
+.liveMap .contour { fill: none; stroke: rgba(255,255,255,.18); stroke-width: 1; stroke-dasharray: none; filter: none; }
+.liveMap .contour.c2 { stroke: rgba(255,206,107,.18); }
+.routeMeta { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; color: var(--muted); font-size: .9rem; }
+.routeMeta span, .chatBubble { border: 1px solid var(--line); border-radius: 18px; background: rgba(255,255,255,.06); padding: 10px 12px; }
+.chatBubble { margin: 10px 0; }
+.chatBubble strong { color: var(--brand); margin-right: 8px; }
+.chatBubble span { color: var(--muted); font-size: .82rem; }
+.notificationDock { display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 18px; }
+.notificationDock span { display: inline-flex; align-items: center; justify-content: center; min-width: 58px; padding: 10px 12px; border-radius: 18px; border: 1px solid var(--line); background: rgba(255,255,255,.08); font-weight: 900; }
 @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(135,224,111,.7); } 70% { box-shadow: 0 0 0 16px rgba(135,224,111,0); } 100% { box-shadow: 0 0 0 0 rgba(135,224,111,0); } }
 @keyframes walkAcross { 0%,100% { transform: translateX(0) translateY(0); } 50% { transform: translateX(85px) translateY(-4px); } }
 @keyframes leashWiggle { 0%,100% { transform: rotate(8deg); } 50% { transform: rotate(-4deg); } }
@@ -150,4 +170,4 @@ textarea { min-height: 96px; resize: vertical; }
 @keyframes bounce { 0%,100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-8px) scale(1.06); } }
 @media (max-width: 1100px) { .appShell { grid-template-columns: 1fr; } .sidebar { position: relative; height: auto; border-right: 0; border-bottom: 1px solid var(--line); } .sideNav { grid-template-columns: repeat(4, 1fr); } .dashboardGrid, .publicGrid { grid-template-columns: repeat(2, 1fr); } .cards { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 900px) { .heroGrid, .splitPanel, .grid2, .scanCard, .appHeader { grid-template-columns: 1fr; } .phoneCard { min-height: auto; } .docGrid { grid-template-columns: 1fr 1fr; } }
-@media (max-width: 620px) { .cards, .dashboardGrid, .publicGrid, .docGrid { grid-template-columns: 1fr; } .panel.wide, .heroPanel { grid-column: span 1; } .heroPanel { display: grid; } .sideNav { grid-template-columns: 1fr 1fr; } h1 { font-size: 2.8rem; } .workspace { padding: 16px; } }
+@media (max-width: 620px) { .cards, .dashboardGrid, .publicGrid, .docGrid, .wizardSteps, .publicPreview, .routeMeta { grid-template-columns: 1fr; } .panel.wide, .heroPanel { grid-column: span 1; } .heroPanel { display: grid; } .sideNav { grid-template-columns: 1fr 1fr; max-height: 260px; overflow: auto; } h1 { font-size: 2.8rem; } .workspace { padding: 16px; } .dashboardStatus { display: grid; } }
