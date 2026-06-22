@@ -148,6 +148,15 @@ textarea { min-height: 96px; resize: vertical; }
 .authPanel.signedIn { grid-template-columns: 1fr auto; align-items: center; }
 .authPanel h3 { margin: 0; }
 .authPanel .actions { margin-top: 0; }
+.supabaseWorkspace { margin: 18px 0 24px; }
+.workspaceTitle { display: flex; justify-content: space-between; gap: 16px; align-items: start; border: 1px solid var(--line); border-radius: 28px; padding: 20px; background: linear-gradient(135deg, rgba(135,224,111,.11), rgba(87,215,255,.08)); margin-bottom: 14px; }
+.workspaceTitle h2 { font-size: clamp(1.6rem, 3vw, 2.4rem); }
+.supabaseGrid { margin-top: 16px; }
+.tagList, .adminMiniGrid { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+.tagList span, .adminMiniGrid small { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; padding: 8px 10px; background: rgba(255,255,255,.07); color: var(--muted); }
+.adminMiniGrid { display: grid; grid-template-columns: 1fr 1fr; }
+.adminMiniGrid div { display: grid; align-content: start; gap: 8px; }
+.activeMini { border-color: rgba(135,224,111,.55); background: rgba(135,224,111,.13); color: var(--brand); }
 .formHint, label small { color: var(--muted); font-size: .9rem; margin: 0; }
 .actions.compact { margin-top: 0; align-items: center; }
 .wizardSteps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 20px 0; }

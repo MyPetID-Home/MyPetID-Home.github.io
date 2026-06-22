@@ -11,6 +11,7 @@ type Pet = {
   photo_url: string | null;
   medical_public: string | null;
   behavior_public: string | null;
+  contact_public?: Record<string, unknown> | null;
   lost_mode: boolean;
   birthday?: string | null;
   eye_color?: string | null;
@@ -27,6 +28,7 @@ const fallbackPet: Pet = {
   photo_url: '/images/dog/Clyde.png',
   medical_public: 'Sensitive stomach. Avoid rich treats unless needed for safety.',
   behavior_public: 'Friendly, loves tug, nervous around loud trucks.',
+  contact_public: { phone: '', email: '' },
   lost_mode: false,
   birthday: '2021-06-01',
   eye_color: 'Brown',
@@ -59,6 +61,7 @@ function localDashboardPet(): Partial<Pet> | null {
       photo_url: saved.pet.photoUrl,
       medical_public: saved.pet.medicalNotes,
       behavior_public: saved.pet.behaviorNotes,
+      contact_public: { phone: saved.account?.phone, email: saved.account?.email },
       birthday: saved.pet.birthday,
       eye_color: saved.pet.eyeColor,
       coat_color: saved.pet.coatColor,
@@ -89,7 +92,7 @@ export function PublicPetProfile() {
       if (!supabase) return;
       const { data, error } = await supabase
         .from('tags')
-        .select('pet:pets(id,name,breed,photo_url,medical_public,behavior_public,lost_mode)')
+        .select('pet:pets(id,name,breed,photo_url,medical_public,behavior_public,contact_public,lost_mode)')
         .eq('tag_code', tag)
         .maybeSingle();
       const loaded = data?.pet;
@@ -97,6 +100,9 @@ export function PublicPetProfile() {
     }
     loadPet();
   }, [tag]);
+
+  const publicPhone = typeof pet.contact_public?.phone === 'string' ? pet.contact_public.phone : '';
+  const publicEmail = typeof pet.contact_public?.email === 'string' ? pet.contact_public.email : '';
 
   return (
     <main className="publicShell">
@@ -117,8 +123,8 @@ export function PublicPetProfile() {
       <section className="publicGrid">
         <article className="panel">
           <h2>Owner-approved info</h2>
-          <dl className="infoList"><dt>Medical</dt><dd>{pet.medical_public}</dd><dt>Behavior</dt><dd>{pet.behavior_public}</dd><dt>Vet route</dt><dd>{pet.vet_name || 'Vet hidden until owner shares it.'}</dd><dt>Contact</dt><dd>Owner contact buttons will appear here once contact preferences are enabled.</dd></dl>
-          <div className="actions"><button className="primary" type="button" onClick={() => setContactStatus('Owner contact request staged. Production will open the owner-approved phone/email/SMS route.')}>Contact owner</button><button type="button" onClick={() => setContactStatus('Lost sighting reports belong on the NFC scan gate so consent + GPS are explicit.')}>Report lost sighting</button></div>
+          <dl className="infoList"><dt>Medical</dt><dd>{pet.medical_public}</dd><dt>Behavior</dt><dd>{pet.behavior_public}</dd><dt>Vet route</dt><dd>{pet.vet_name || 'Vet hidden until owner shares it.'}</dd><dt>Contact</dt><dd>{publicPhone || publicEmail ? [publicPhone, publicEmail].filter(Boolean).join(' • ') : 'Owner contact buttons will appear here once contact preferences are enabled.'}</dd></dl>
+          <div className="actions">{publicPhone ? <a className="button primary" href={`tel:${publicPhone}`}>Call owner</a> : <button className="primary" type="button" onClick={() => setContactStatus('Owner has not published a phone route yet.')}>Contact owner</button>}{publicEmail && <a className="button" href={`mailto:${publicEmail}`}>Email owner</a>}<button type="button" onClick={() => setContactStatus('Lost sighting reports belong on the NFC scan gate so consent + GPS are explicit.')}>Report lost sighting</button></div>
           <p className="notice">{contactStatus}</p>
         </article>
 

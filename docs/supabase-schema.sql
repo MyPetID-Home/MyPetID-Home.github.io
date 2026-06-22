@@ -81,10 +81,27 @@ alter table public.scan_events enable row level security;
 alter table public.profile_links enable row level security;
 
 -- Starter policies. Tighten before public launch.
+-- Admin means an unrestricted CAK3D/tester profile row; never expose service-role keys in the static app.
 create policy "profiles owner read" on public.profiles for select using (auth.uid() = id or exists (select 1 from public.profiles p where p.id = auth.uid() and p.is_admin));
-create policy "profiles owner update" on public.profiles for update using (auth.uid() = id or exists (select 1 from public.profiles p where p.id = auth.uid() and p.is_admin));
+create policy "profiles owner insert" on public.profiles for insert with check (auth.uid() = id);
+create policy "profiles owner update" on public.profiles for update using (auth.uid() = id or exists (select 1 from public.profiles p where p.id = auth.uid() and p.is_admin)) with check (auth.uid() = id or exists (select 1 from public.profiles p where p.id = auth.uid() and p.is_admin));
+
 create policy "pets public read" on public.pets for select using (true);
-create policy "pets owner write" on public.pets for all using (auth.uid() = owner_id or exists (select 1 from public.profiles p where p.id = auth.uid() and p.is_admin));
+create policy "pets owner insert" on public.pets for insert with check (auth.uid() = owner_id or exists (select 1 from public.profiles p where p.id = auth.uid() and p.is_admin));
+create policy "pets owner update" on public.pets for update using (auth.uid() = owner_id or exists (select 1 from public.profiles p where p.id = auth.uid() and p.is_admin)) with check (auth.uid() = owner_id or exists (select 1 from public.profiles p where p.id = auth.uid() and p.is_admin));
+create policy "pets owner delete" on public.pets for delete using (auth.uid() = owner_id or exists (select 1 from public.profiles p where p.id = auth.uid() and p.is_admin));
+
 create policy "tags public read" on public.tags for select using (true);
+create policy "tags admin insert" on public.tags for insert with check (exists (select 1 from public.profiles p where p.id = auth.uid() and p.is_admin));
+create policy "tags owner claim or admin update" on public.tags for update using (pet_id is null or created_by = auth.uid() or exists (select 1 from public.profiles p where p.id = auth.uid() and p.is_admin)) with check (created_by = auth.uid() or exists (select 1 from public.profiles p where p.id = auth.uid() and p.is_admin));
+
+create policy "devices owner read" on public.devices for select using (auth.uid() = profile_id or exists (select 1 from public.profiles p where p.id = auth.uid() and p.is_admin));
+create policy "devices owner insert" on public.devices for insert with check (auth.uid() = profile_id);
+create policy "devices owner update" on public.devices for update using (auth.uid() = profile_id or exists (select 1 from public.profiles p where p.id = auth.uid() and p.is_admin)) with check (auth.uid() = profile_id or exists (select 1 from public.profiles p where p.id = auth.uid() and p.is_admin));
+
 create policy "scan insert public" on public.scan_events for insert with check (true);
 create policy "scan read linked" on public.scan_events for select using (true);
+
+create policy "profile links participant read" on public.profile_links for select using (auth.uid() in (requester_id, receiver_id) or exists (select 1 from public.profiles p where p.id = auth.uid() and p.is_admin));
+create policy "profile links requester insert" on public.profile_links for insert with check (auth.uid() = requester_id);
+create policy "profile links participant update" on public.profile_links for update using (auth.uid() in (requester_id, receiver_id) or exists (select 1 from public.profiles p where p.id = auth.uid() and p.is_admin)) with check (auth.uid() in (requester_id, receiver_id) or exists (select 1 from public.profiles p where p.id = auth.uid() and p.is_admin));

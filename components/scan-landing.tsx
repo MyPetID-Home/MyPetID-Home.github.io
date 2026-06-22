@@ -6,6 +6,7 @@ import { supabase } from '../lib/supabase';
 
 type Pet = {
   id: string;
+  owner_id?: string | null;
   name: string;
   breed: string | null;
   photo_url: string | null;
@@ -46,6 +47,7 @@ export function ScanLanding() {
   const [tagId, setTagId] = useState<string | null>(null);
   const [pet, setPet] = useState<Pet>(fallbackPet);
   const [status, setStatus] = useState('No location has been saved from this visit. Tap the consent button if you want to help update the scan trail.');
+  const [actor, setActor] = useState<'owner' | 'linked_user' | 'stranger'>('stranger');
   const [saving, setSaving] = useState(false);
   const [reportedLost, setReportedLost] = useState(false);
   const profileUrl = useMemo(() => `/pet/?tag=${encodeURIComponent(tag)}`, [tag]);
@@ -56,14 +58,28 @@ export function ScanLanding() {
       if (!supabase) return;
       const { data, error } = await supabase
         .from('tags')
-        .select('id,tag_code,pet:pets(id,name,breed,photo_url,medical_public,behavior_public,lost_mode)')
+        .select('id,tag_code,pet:pets(id,owner_id,name,breed,photo_url,medical_public,behavior_public,lost_mode)')
         .eq('tag_code', tag)
         .maybeSingle();
       if (!error && data) {
         const record = data as TagRecord;
         setTagId(record.id);
         const loaded = Array.isArray(record.pet) ? record.pet[0] : record.pet;
-        if (loaded) setPet(loaded);
+        if (loaded) {
+          setPet(loaded);
+          const { data: auth } = await supabase.auth.getUser();
+          if (auth.user?.id && loaded.owner_id === auth.user.id) {
+            setActor('owner');
+            setStatus('Owner session detected. You can log an owner scan without sharing finder GPS.');
+          } else if (auth.user?.id) {
+            const fingerprint = scannerInstallId();
+            const { data: device } = await supabase.from('devices').select('trusted').eq('profile_id', auth.user.id).eq('device_fingerprint', fingerprint).maybeSingle();
+            if (device?.trusted) {
+              setActor('linked_user');
+              setStatus('Trusted browser detected. Finder GPS still requires an explicit consent tap.');
+            }
+          }
+        }
       }
     }
     loadPet();
@@ -75,7 +91,7 @@ export function ScanLanding() {
     const payload = {
       tag_id: tagId,
       pet_id: pet.id,
-      actor: 'stranger',
+      actor,
       latitude: coords.latitude,
       longitude: coords.longitude,
       accuracy_meters: coords.accuracy,
@@ -120,7 +136,7 @@ export function ScanLanding() {
           <div>
             <p className="eyebrow">NFC/QR scan gate • tag {tag}</p>
             <h1>{pet.name}</h1>
-            <p className="lead">This scan page does not save GPS on load. Location is saved only after the finder taps a consent button and the browser grants permission.</p>
+            <p className="lead">This scan page does not save GPS on load. Location is saved only after the finder taps a consent button and the browser grants permission. Current actor: {actor.replace('_', ' ')}.</p>
             <div className="lostRibbon">{pet.lost_mode ? 'Marked lost — share sighting if safe' : 'Public profile ready — optional scan trail update'}</div>
           </div>
         </div>
