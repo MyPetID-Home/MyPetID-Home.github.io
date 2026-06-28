@@ -1,35 +1,33 @@
 import Link from 'next/link';
+import { AuthPanel } from '../components/auth-panel';
 import { PawPrint, ShieldCheck, MapPinned, Users, QrCode } from '../components/icons';
 
 const features = [
-  { title: 'Scan-safe public profiles', body: 'NFC tags and QR codes open a public pet card with owner-approved contact, medical, behavior, and return-home notes.', Icon: QrCode },
-  { title: 'Consent-based location', body: 'Scanners can share their location to update the most recent scan map and speed up lost-pet recovery.', Icon: MapPinned },
-  { title: 'Owner dashboard', body: 'Owners log in, manage account/profile details, add pets, link tags, preview public pages, and control what strangers see.', Icon: PawPrint },
-  { title: 'Linked helpers', body: 'Trusted users can pair accounts by QR approval so family, walkers, and friends can coordinate walks and lost-pet alerts.', Icon: Users },
-  { title: 'Admin unrestricted testing', body: 'CAK3D admin mode keeps every tier feature open for hands-on testing while normal users follow subscription limits.', Icon: ShieldCheck },
+  { title: 'NFC / QR pet IDs', body: 'Every tag opens a scan-safe public page with only the contact, medical, and return-home details the owner allows.', Icon: QrCode },
+  { title: 'Walks and saved routes', body: 'Plan routes, start walks, save history, and only record location after explicit consent.', Icon: MapPinned },
+  { title: 'Dog profile onboarding', body: 'Breed, service/rescue status, medical records, certificates, routines, play, training, goals, and XP in guided setup sections.', Icon: PawPrint },
+  { title: 'Dog Pack helpers', body: 'Create groups for family, walkers, trainers, vets, and park friends without exposing private admin tools.', Icon: Users },
+  { title: 'Admin controls stay private', body: 'Normal users see their app. CAK3D/admin accounts get unrestricted testing and service monitoring after admin login.', Icon: ShieldCheck },
 ];
 
 export default function HomePage() {
   return (
     <main>
-      <section className="hero shell">
-        <p className="eyebrow">MyPetID-Home rebuild • Clydius lane</p>
+      <section className="hero shell landingHero">
         <div className="heroGrid">
           <div>
             <div className="brandLockup" style={{ marginBottom: 18 }}><img src="/images/logo/MyPetID-Logo_Resized.jpg" alt="MyPetID logo" /><span>MyPetID</span></div>
-            <h1>A full pet command center behind every NFC tag.</h1>
-            <p className="lead">Profiles, lost-pet scans, trusted helpers, walks, feeding reminders, play dates, appointments, medical documents, Patreon tier limits, and admin tag management in one app.</p>
+            <p className="eyebrow">Dog ID, care, and lost-pet command center</p>
+            <h1>Your dog’s profile, tag, walks, reminders, and rescue plan in one place.</h1>
+            <p className="lead">Create an account, set up your dog profile, connect an NFC/QR tag, preview the public scan page, and manage walks, meals, medical documents, training, play, goals, Dog Pack groups, and alerts.</p>
             <div className="actions">
-              <Link className="button primary" href="/dashboard/">Open app dashboard</Link>
-              <Link className="button" href="/pet/?tag=demo-tag-001">Scan demo tag</Link>
+              <Link className="button primary" href="/dashboard/">Open app</Link>
+              <Link className="button" href="/pet/?tag=demo-tag-001">View demo public profile</Link>
             </div>
           </div>
-          <div className="phoneCard" aria-label="Demo public pet card">
-            <div className="petPhoto"><img src="/images/logo/MyPetID-Logo_Resized.jpg" alt="MyPetID" style={{ borderRadius: 28 }} /></div>
-            <h2>Ibby</h2>
-            <p>Friendly, food-motivated, nervous around loud trucks.</p>
-            <div className="status lost">Demo scan page</div>
-            <p className="tiny">Last known scan: awaiting live Supabase data</p>
+          <div className="landingLoginCard">
+            <AuthPanel />
+            <p className="tiny">New users land here first. After login, the app opens the dashboard with a hamburger menu and user-only pages.</p>
           </div>
         </div>
       </section>
@@ -46,15 +44,15 @@ export default function HomePage() {
 
       <section className="shell splitPanel">
         <div>
-          <p className="eyebrow">Subscription-ready, not subscription-blocked</p>
-          <h2>Patreon tiers later; admin freedom now.</h2>
-          <p>Free users can start with one owner and one pet. Higher tiers can unlock more pets, extra linked users, extended scan history, richer galleries, and walk coordination. Admin accounts bypass those limits for testing.</p>
+          <p className="eyebrow">Built for regular owners first</p>
+          <h2>Simple onboarding, private admin tools.</h2>
+          <p>Owners should move through account setup, dog profile, routines, reminders, tag setup, and public profile preview without seeing prototype/admin clutter.</p>
         </div>
         <ul className="checklist">
-          <li>Supabase Auth + Row Level Security planned</li>
-          <li>Device fingerprint saved with owner consent</li>
-          <li>Tag claim flow starts with CAK3D-created tag IDs</li>
-          <li>Public pages never expose private-only profile fields</li>
+          <li>Dog-only breed and profile setup</li>
+          <li>Public NFC preview from inside the pet profile</li>
+          <li>Hamburger dashboard menu after login</li>
+          <li>Admin dashboard hidden from regular users</li>
         </ul>
       </section>
     </main>
