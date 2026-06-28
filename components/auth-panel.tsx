@@ -97,8 +97,8 @@ export function AuthPanel() {
   return (
     <section className="authPanel">
       <div>
-        <p className="eyebrow">Supabase login</p>
-        <h3>{mode === 'sign-in' ? 'Sign in' : 'Create account'}</h3>
+        <p className="eyebrow">MyPetID account</p>
+        <h3>{mode === 'sign-in' ? 'Log in to your account' : 'Create your account'}</h3>
       </div>
       <label>Email<input value={email} onChange={(e) => setEmail(e.target.value)} type="email" placeholder="you@example.com" /></label>
       <label>Password<input value={password} onChange={(e) => setPassword(e.target.value)} type="password" placeholder="••••••••" /></label>

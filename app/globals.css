@@ -106,6 +106,10 @@ textarea { min-height: 96px; resize: vertical; }
 .petAvatarCard { position: relative; border-radius: 38px; padding: 10px; background: linear-gradient(135deg, rgba(135,224,111,.28), rgba(87,215,255,.18)); }
 .petAvatarCard img { width: 140px; height: 140px; border-radius: 32px; object-fit: cover; }
 .pulseDot, .scanPulse { position: absolute; right: 12px; top: 12px; width: 18px; height: 18px; border-radius: 50%; background: var(--brand); box-shadow: 0 0 0 rgba(135,224,111,.7); animation: pulse 1.8s infinite; }
+.profileStatusBadge { position: absolute; left: 8px; bottom: 8px; display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; border: 2px solid rgba(255,255,255,.75); background: linear-gradient(135deg, var(--brand), var(--brand2)); color: #071008; font-size: 1.35rem; box-shadow: 0 12px 28px rgba(0,0,0,.32); }
+.profileStatusBadge.rescue { left: 50px; background: linear-gradient(135deg, var(--warn), var(--violet)); }
+.photoBadgeWrap { position: relative; width: fit-content; }
+.inlineBadges { font-size: .5em; vertical-align: middle; }
 .dashboardGrid, .publicGrid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; align-items: stretch; }
 .panel { min-height: 160px; }
 .panel.wide, .heroPanel { grid-column: span 2; }
@@ -152,8 +156,14 @@ textarea { min-height: 96px; resize: vertical; }
 .workspaceTitle { display: flex; justify-content: space-between; gap: 16px; align-items: start; border: 1px solid var(--line); border-radius: 28px; padding: 20px; background: linear-gradient(135deg, rgba(135,224,111,.11), rgba(87,215,255,.08)); margin-bottom: 14px; }
 .workspaceTitle h2 { font-size: clamp(1.6rem, 3vw, 2.4rem); }
 .supabaseGrid { margin-top: 16px; }
-.tagList, .adminMiniGrid { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
-.tagList span, .adminMiniGrid small { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; padding: 8px 10px; background: rgba(255,255,255,.07); color: var(--muted); }
+.tagList, .adminMiniGrid, .serviceGrid { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+.tagList span, .adminMiniGrid small, .routeCard, .servicePill { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; padding: 8px 10px; background: rgba(255,255,255,.07); color: var(--muted); }
+.routeCard { display: grid; border-radius: 22px; margin: 10px 0; padding: 14px; }
+.servicePill { align-items: center; gap: 8px; font-weight: 900; }
+.servicePill span { width: 12px; height: 12px; border-radius: 50%; background: var(--muted); box-shadow: 0 0 18px currentColor; }
+.servicePill.green span { background: var(--brand); color: var(--brand); }
+.servicePill.yellow span { background: var(--warn); color: var(--warn); }
+.servicePill.red span { background: var(--danger); color: var(--danger); }
 .adminMiniGrid { display: grid; grid-template-columns: 1fr 1fr; }
 .adminMiniGrid div { display: grid; align-content: start; gap: 8px; }
 .activeMini { border-color: rgba(135,224,111,.55); background: rgba(135,224,111,.13); color: var(--brand); }

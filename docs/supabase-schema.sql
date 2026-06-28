@@ -24,7 +24,10 @@ create table public.pets (
   photo_url text,
   medical_public text,
   behavior_public text,
+  service_status text not null default 'Family pet',
+  rescue_status text not null default 'Not set',
   contact_public jsonb not null default '{}'::jsonb,
+  documents jsonb not null default '[]'::jsonb,
   lost_mode boolean not null default false,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
