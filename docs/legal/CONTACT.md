@@ -1,13 +1,14 @@
 # MyPetID Contact and Legal Notices
 
 **App version:** 7.68.5
-**Build:** 202605013220
+**Build:** 26513220
 
 ## Contact
 
-- Support: support@mypetid.com
-- Admin/security/customer service: admin@mypetid.com
-- Email: MyPetID@yahoo.com
+- Support: dev.mypetid-sup@yahoo.com
+- Admin/security/customer service: dev.mypetid-adm@yahoo.com
+- Help: dev.mypetid-help@yahoo.com
+- Main app/setup email: mypetid@yahoo.com
 - Business phone: (207) 613-5454
 
 For lost-pet emergencies, also contact local animal control, nearby shelters, local authorities when appropriate, and trusted people in the area. MyPetID helps organize information but is not an emergency service.

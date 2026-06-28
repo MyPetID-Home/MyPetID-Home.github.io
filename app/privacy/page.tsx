@@ -13,7 +13,7 @@ export default function Page() {
         <div className="legalCopy" dangerouslySetInnerHTML={{ __html: `
 <p>Effective date: June 28, 2026</p>
 <p>App version: 7.68.5</p>
-<p>Build: 202605013220</p>
+<p>Build: 26513220</p>
 
 <p>MyPetID is a pet identification, care, and lost-pet recovery application operated by MyPetID-Home. This policy explains what information the app collects, how it is used, who can access it, and how pet owners and finders can contact us.</p>
 
@@ -88,9 +88,10 @@ export default function Page() {
 <p>For privacy, support, or security questions:</p>
 
 <ul>
-<li>Support: support@mypetid.com</li>
-<li>Admin: admin@mypetid.com</li>
-<li>Email: MyPetID@yahoo.com</li>
+<li>Support: dev.mypetid-sup@yahoo.com</li>
+<li>Help: dev.mypetid-help@yahoo.com</li>
+<li>Admin: dev.mypetid-adm@yahoo.com</li>
+<li>Main app/setup email: mypetid@yahoo.com</li>
 <li>Phone: (207) 613-5454</li>
 </ul>
 

@@ -22,6 +22,7 @@ export function AuthPanel() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   useEffect(() => {
     if (!supabase) return;
@@ -60,6 +61,10 @@ export function AuthPanel() {
   async function submit() {
     if (!supabase) {
       setMessage('Supabase env is not configured in this build yet.');
+      return;
+    }
+    if (mode === 'sign-up' && !acceptedTerms) {
+      setMessage('Please read and agree to the Terms of Service and Privacy Policy before creating an account.');
       return;
     }
     setMessage('Working…');
@@ -103,8 +108,9 @@ export function AuthPanel() {
       </div>
       <label>Email<input value={email} onChange={(e) => setEmail(e.target.value)} type="email" placeholder="you@example.com" /></label>
       <label>Password<input value={password} onChange={(e) => setPassword(e.target.value)} type="password" placeholder="••••••••" /></label>
+      {mode === 'sign-up' && <label className="toggleRow termsAgree"><input type="checkbox" checked={acceptedTerms} onChange={(e) => setAcceptedTerms(e.target.checked)} /> I have read and agree to the <Link href="/terms/">Terms of Service</Link> and <Link href="/privacy/">Privacy Policy</Link>.</label>}
       <div className="actions">
-        <button className="primary" type="button" onClick={submit}>{mode === 'sign-in' ? 'Sign in' : 'Sign up'}</button>
+        <button className="primary" type="button" onClick={submit} disabled={mode === 'sign-up' && !acceptedTerms}>{mode === 'sign-in' ? 'Sign in' : 'Sign up'}</button>
         <button type="button" onClick={google}>Continue with Google</button>
         <button type="button" onClick={() => setMode(mode === 'sign-in' ? 'sign-up' : 'sign-in')}>{mode === 'sign-in' ? 'Need account?' : 'Have account?'}</button>
         <Link className="button" href="/verify/patreon/">Link Patreon</Link>

@@ -2,7 +2,7 @@
 
 **Effective date:** June 28, 2026
 **App version:** 7.68.5
-**Build:** 202605013220
+**Build:** 26513220
 
 MyPetID is a pet identification, care, and lost-pet recovery application operated by MyPetID-Home. This policy explains what information the app collects, how it is used, who can access it, and how pet owners and finders can contact us.
 
@@ -72,9 +72,10 @@ MyPetID uses account authentication, owner-approved public fields, role-based ac
 
 For privacy, support, or security questions:
 
-- Support: support@mypetid.com
-- Admin: admin@mypetid.com
-- Email: MyPetID@yahoo.com
+- Support: dev.mypetid-sup@yahoo.com
+- Help: dev.mypetid-help@yahoo.com
+- Admin: dev.mypetid-adm@yahoo.com
+- Main app/setup email: mypetid@yahoo.com
 - Phone: (207) 613-5454
 
 ## 11. Changes to this policy

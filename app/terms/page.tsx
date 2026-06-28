@@ -13,7 +13,7 @@ export default function Page() {
         <div className="legalCopy" dangerouslySetInnerHTML={{ __html: `
 <p>Effective date: June 28, 2026</p>
 <p>App version: 7.68.5</p>
-<p>Build: 202605013220</p>
+<p>Build: 26513220</p>
 
 <p>These Terms of Service describe the rules for using MyPetID. They are written for transparency and product planning and should be reviewed by counsel before launch with live customers.</p>
 
@@ -82,9 +82,10 @@ export default function Page() {
 <p>For support, legal, privacy, or security concerns:</p>
 
 <ul>
-<li>Support: support@mypetid.com</li>
-<li>Admin: admin@mypetid.com</li>
-<li>Email: MyPetID@yahoo.com</li>
+<li>Support: dev.mypetid-sup@yahoo.com</li>
+<li>Help: dev.mypetid-help@yahoo.com</li>
+<li>Admin: dev.mypetid-adm@yahoo.com</li>
+<li>Main app/setup email: mypetid@yahoo.com</li>
 <li>Phone: (207) 613-5454</li>
 </ul>
 

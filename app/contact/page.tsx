@@ -12,14 +12,15 @@ export default function Page() {
         <h1>Contact & Legal Notices</h1>
         <div className="legalCopy" dangerouslySetInnerHTML={{ __html: `
 <p>App version: 7.68.5</p>
-<p>Build: 202605013220</p>
+<p>Build: 26513220</p>
 
 <h2>Contact</h2>
 
 <ul>
-<li>Support: support@mypetid.com</li>
-<li>Admin/security/customer service: admin@mypetid.com</li>
-<li>Email: MyPetID@yahoo.com</li>
+<li>Support: dev.mypetid-sup@yahoo.com</li>
+<li>Admin/security/customer service: dev.mypetid-adm@yahoo.com</li>
+<li>Help: dev.mypetid-help@yahoo.com</li>
+<li>Main app/setup email: mypetid@yahoo.com</li>
 <li>Business phone: (207) 613-5454</li>
 </ul>
 

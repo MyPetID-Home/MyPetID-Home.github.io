@@ -2,7 +2,7 @@
 
 **Effective date:** June 28, 2026
 **App version:** 7.68.5
-**Build:** 202605013220
+**Build:** 26513220
 
 These Terms of Service describe the rules for using MyPetID. They are written for transparency and product planning and should be reviewed by counsel before launch with live customers.
 
@@ -68,9 +68,10 @@ To the maximum extent allowed by law, MyPetID-Home and its administrators are no
 
 For support, legal, privacy, or security concerns:
 
-- Support: support@mypetid.com
-- Admin: admin@mypetid.com
-- Email: MyPetID@yahoo.com
+- Support: dev.mypetid-sup@yahoo.com
+- Help: dev.mypetid-help@yahoo.com
+- Admin: dev.mypetid-adm@yahoo.com
+- Main app/setup email: mypetid@yahoo.com
 - Phone: (207) 613-5454
 
 ## 14. Changes to terms
