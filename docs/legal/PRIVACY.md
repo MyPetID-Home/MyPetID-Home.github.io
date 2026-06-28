@@ -2,7 +2,7 @@
 
 **Effective date:** June 28, 2026
 **App version:** 7.68.5
-**Build:** 26513220
+**Build:** 26513221
 
 MyPetID is a pet identification, care, and lost-pet recovery application operated by MyPetID-Home. This policy explains what information the app collects, how it is used, who can access it, and how pet owners and finders can contact us.
 

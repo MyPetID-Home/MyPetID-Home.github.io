@@ -2,7 +2,7 @@
 
 **Effective date:** June 28, 2026
 **App version:** 7.68.5
-**Build:** 26513220
+**Build:** 26513221
 
 These Terms of Service describe the rules for using MyPetID. They are written for transparency and product planning and should be reviewed by counsel before launch with live customers.
 
