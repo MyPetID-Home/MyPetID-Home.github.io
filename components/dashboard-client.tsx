@@ -166,11 +166,29 @@ function canUseDirectDistance(start?: Coords, end?: Coords) { return Boolean(sta
 function statusBadge(status: string) { if (status.includes('Service')) return '🦮'; if (status.includes('Therapy')) return '💙'; if (status.includes('Emotional')) return '💚'; if (status.includes('Working')) return '⭐'; return ''; }
 function rescueBadge(status: string) { return status && status !== 'Not set' ? '🏠' : ''; }
 
-export function DashboardClient() {
+const tabRoutes: Record<Tab, string> = {
+  overview: '/dashboard/',
+  walks: '/dashboard/walks/',
+  pets: '/dashboard/pet/',
+  medical: '/dashboard/documents/',
+  lost: '/dashboard/alerts/',
+  pack: '/dashboard/pack/',
+  settings: '/dashboard/settings/',
+  account: '/dashboard/account/',
+  public: '/dashboard/pet/public/',
+  training: '/dashboard/pet/training/',
+  play: '/dashboard/pet/play/',
+  goals: '/dashboard/goals/',
+  diet: '/dashboard/diet/',
+  admin: '/dashboard/admin/',
+};
+function routeForTab(tab: Tab) { return tabRoutes[tab] || '/dashboard/'; }
+
+export function DashboardClient({ initialTab = 'overview' }: { initialTab?: Tab }) {
   const [state, setState] = useState(defaultState);
-  const [activeTab, setActiveTab] = useState<Tab>('overview');
+  const [activeTab, setActiveTab] = useState<Tab>(initialTab);
   const [tabHistory, setTabHistory] = useState<Tab[]>([]);
-  const [message, setMessage] = useState('Ready. Finish one section, then use Next to keep the app flowing section by section.');
+  const [message, setMessage] = useState('Ready. Use the navbar, hamburger, profile picture, or section tabs to open each page.');
   const [walking, setWalking] = useState(false);
   const [walkSeconds, setWalkSeconds] = useState(0);
   const [walkMiles, setWalkMiles] = useState(0);
@@ -243,9 +261,8 @@ export function DashboardClient() {
     if (tab === activeTab) return;
     if (replace) setTabHistory((history) => history);
     else setTabHistory((history) => [...history.slice(-8), activeTab]);
-    setActiveTab(tab);
     setMenuOpen(false);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (typeof window !== 'undefined') window.location.assign(routeForTab(tab));
   }
 
   function patchAccount(next: Partial<AccountProfile>) { setState({ ...state, account: { ...account, ...next } }); }
@@ -255,18 +272,9 @@ export function DashboardClient() {
   function finishSection(next: Tab = nextTab) { navigateTab(next); setMessage(`Saved this section locally. Next up: ${tabLabels[next]}.`); }
   function goBack() {
     const previous = tabHistory.at(-1);
-    if (previous) {
-      setTabHistory((history) => history.slice(0, -1));
-      setActiveTab(previous);
-      setMessage(`Back to ${tabLabels[previous]}.`);
-    } else if (!tabs.includes(activeTab)) {
-      setActiveTab('pets');
-      setMessage('Back to Pet profile hub.');
-    } else {
-      setActiveTab(prevTab);
-      setMessage(`Back to ${tabLabels[prevTab]}.`);
-    }
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (previous) return navigateTab(previous, true);
+    if (!tabs.includes(activeTab)) return navigateTab('pets', true);
+    return navigateTab(prevTab, true);
   }
   function awardXp(points: number, reason: string) { const currentXp = state.goals.currentXp + points; const level = Math.max(state.goals.level, Math.floor(currentXp / 250) + 1); setState({ ...state, goals: { ...state.goals, currentXp, level } }); setMessage(`+${points} XP: ${reason}`); }
   function captureLocation(label: string, callback: (coords: Coords) => void) {
@@ -303,12 +311,11 @@ export function DashboardClient() {
         <div className={`tierBadge ${state.tier === 'admin' ? 'red' : 'green'}`}><span>{state.adminMode ? 'Admin view' : tiers[activeTier].label}</span><strong>{petLimitLabel} pets • {tiers[activeTier].users} users</strong><small>{state.subscription.patreonLinked ? state.subscription.patreonStatus : 'Patreon not linked — Free limits active'}</small></div>
       </aside>
       <section className="workspace">
-        <header className="appHeader"><div><p className="eyebrow">Production command center</p><h1>{state.adminMode ? 'Admin app studio' : `${pet.name}'s life tracker`}</h1><p>Onboard the owner, dog profile, NFC tag, care reminders, lost/found alerts, Patreon tier, and connected storage one step at a time.</p></div><button className="profileTopRight" type="button" onClick={() => navigateTab('account')}><img src={account.avatarUrl || '/images/logo/MyPetID-Logo_Resized.jpg'} alt={account.displayName} /><span>{account.displayName}</span><small>{state.subscription.patreonLinked ? state.subscription.patreonStatus : 'Link Patreon'}</small>{lostAlertCount > 0 && <strong className="redAlert">{lostAlertCount}</strong>}</button></header>
+        <header className="appHeader"><div><p className="eyebrow">Production command center</p><h1>{state.adminMode ? 'Admin app studio' : `${pet.name}'s life tracker`}</h1><p>Open the page you need, edit that section, and keep the dashboard clean without long scroll stacks.</p></div><button className="profileTopRight" type="button" onClick={() => navigateTab('account')}><img src={account.avatarUrl || '/images/logo/MyPetID-Logo_Resized.jpg'} alt={account.displayName} /><span>{account.displayName}</span><small>{state.subscription.patreonLinked ? state.subscription.patreonStatus : 'Link Patreon'}</small>{lostAlertCount > 0 && <strong className="redAlert">{lostAlertCount}</strong>}</button></header>
         {!hasSupabaseConfig && <p className="notice">Demo mode: Supabase public env values are missing from this static build, so edits save locally in this browser and flow through the UI.</p>}
         <AuthPanel />
         <SupabaseWorkspace />
         <div className="dashboardStatus"><span>{message}</span><div className="actions compact"><span className="versionChip">{appReleaseLabel}</span>{state.tier === 'admin' && <button type="button" onClick={() => setState({ ...state, adminMode: !state.adminMode })}>{state.adminMode ? 'Use as user' : 'Switch to admin'}</button>}<button type="button" aria-label="Open settings" onClick={() => navigateTab('settings')}>⚙</button><button type="button" onClick={() => setState({ ...state, theme: state.theme === 'dark' ? 'light' : 'dark' })}>{state.theme === 'dark' ? 'Light mode' : 'Dark mode'}</button></div></div>
-        <section className="flowProgress" aria-label="Onboarding progress"><span className={activeTab === 'overview' ? 'active' : ''}>1 Overview</span><span className={activeTab === 'walks' ? 'active' : ''}>2 Walks</span><span className={petHubTabs.includes(activeTab) ? 'active' : ''}>3 Pet</span><span className={documentHubTabs.includes(activeTab) ? 'active' : ''}>4 Documents</span><span className={activeTab === 'lost' ? 'active' : ''}>5 Alerts</span></section>
         {([...petHubTabs, ...walkHubTabs, ...documentHubTabs, ...settingsHubTabs].includes(activeTab)) && <nav className="detailTabRail" aria-label="Section detail tabs">
           {petHubTabs.includes(activeTab) && <><button className={activeTab === 'pets' ? 'active' : ''} type="button" onClick={() => navigateTab('pets')}>Profile</button><button className={activeTab === 'public' ? 'active' : ''} type="button" onClick={() => navigateTab('public')}>Public</button><button className={activeTab === 'training' ? 'active' : ''} type="button" onClick={() => navigateTab('training')}>Training</button><button className={activeTab === 'play' ? 'active' : ''} type="button" onClick={() => navigateTab('play')}>Play</button><button className={activeTab === 'goals' ? 'active' : ''} type="button" onClick={() => navigateTab('goals')}>Goals</button></>}
           {walkHubTabs.includes(activeTab) && !petHubTabs.includes(activeTab) && <><button className={activeTab === 'walks' ? 'active' : ''} type="button" onClick={() => navigateTab('walks')}>Live Map</button><button className={activeTab === 'goals' ? 'active' : ''} type="button" onClick={() => navigateTab('goals')}>Walk Goals</button></>}
@@ -345,7 +352,6 @@ export function DashboardClient() {
         {activeTab === 'admin' && canSeeAdmin && <div className="dashboardGrid"><section className="panel wide"><h2>Admin console</h2><div className="notificationDock"><span>🔔 3</span><span>📍 1</span><span>🩺 {state.records.length}</span><span>💬 {state.packMessages.length}</span><span>🏆 {state.achievements.filter((item) => item.earned).length}</span></div><p>Customize app colors/features, switch between admin/user mode, edit users, stage pet profiles, and manage routes. Secret operations still need Supabase Edge Functions before production.</p><div className="serviceGrid"><div className={`servicePill ${hasSupabaseConfig ? 'green' : 'yellow'}`}><span />Supabase {hasSupabaseConfig ? 'configured' : 'needs public env'}</div><div className="servicePill green"><span />GitHub Pages static app</div><div className="servicePill green"><span />Local browser storage</div><div className="servicePill yellow"><span />Edge Functions not deployed</div></div><div className="grid2"><SelectField label="Global palette" value={state.palette} options={['forest','ocean','sunset','mono']} onChange={(v) => setState({ ...state, palette: v as Palette })} /><SelectField label="Admin account plan" value={state.tier} options={Object.keys(tiers)} onChange={(v) => setState({ ...state, tier: v as keyof typeof tiers })} /><Field label="New user name" value={userDraft.name} onChange={(v) => setUserDraft({ ...userDraft, name: v })} /><Field label="New user email" value={userDraft.email} onChange={(v) => setUserDraft({ ...userDraft, email: v })} /></div><div className="adminActions"><button className="primary" type="button" onClick={() => { patchPet({ tagId: `tag-${Math.random().toString(36).slice(2, 8)}` }); setMessage('New tag code generated locally. Production should mint this server-side.'); }}>Generate tag ID</button><button type="button" onClick={addManagedUser}>Create/invite user</button><button type="button" onClick={() => setState({ ...state, adminMode: !state.adminMode })}>Switch admin/user</button><button type="button" onClick={() => setMessage('Patreon sync requires client secret/creator token on an Edge Function, not in browser.')}>Sync Patreon</button><button type="button" onClick={() => setState(defaultState)}>Reset demo data</button></div></section>{state.managedUsers.map((user) => <section className="panel" key={user.id}><h3>{user.name}</h3><p>{user.role} • {user.status}</p><p>{user.email}</p><SelectField label="Plan" value={user.plan} options={Object.keys(tiers)} onChange={(v) => setState({ ...state, managedUsers: state.managedUsers.map((item) => item.id === user.id ? { ...item, plan: v as keyof typeof tiers } : item) })} /><button type="button" onClick={() => setMessage(`Opened editable admin route for ${user.name}.`)}>Edit account</button></section>)}</div>}
 
         <nav className="mobileBottomNav" aria-label="Primary mobile navigation"><button type="button" onClick={() => navigateTab('overview')}>⌂<span>Home</span></button><button type="button" onClick={() => navigateTab('walks')}>👣<span>Walks</span></button><button className="scanFab" type="button" onClick={() => navigateTab('pets')}>🐾<span>Pet</span></button><button type="button" onClick={() => navigateTab('medical')}>📄<span>Docs</span></button><button type="button" onClick={() => navigateTab('lost')}>🚨<span>Alerts</span></button></nav>
-        {sectionNav()}
       </section>
     </main>
   );

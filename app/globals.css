@@ -268,9 +268,6 @@ textarea { min-height: 96px; resize: vertical; }
 :root[data-theme="light"] .mobileSectionNav { background: linear-gradient(180deg, rgba(245,248,239,.96), rgba(245,248,239,.78)); }
 
 .versionChip { display: inline-flex; align-items: center; border: 1px solid var(--line); border-radius: 999px; padding: 8px 10px; color: var(--brand2); background: rgba(255,255,255,.06); font-weight: 900; font-size: .84rem; }
-.flowProgress { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; margin: 0 0 16px; padding: 10px; border: 1px solid var(--line); border-radius: 22px; background: linear-gradient(135deg, var(--surface), var(--surface-3)); }
-.flowProgress span { border: 1px solid var(--line); border-radius: 16px; padding: 10px; color: var(--muted); font-weight: 950; text-align: center; background: var(--surface-2); }
-.flowProgress span.active { color: #071008; background: linear-gradient(135deg, var(--brand), var(--brand2)); border-color: transparent; box-shadow: 0 12px 28px var(--shadow); }
 
 .detailTabRail { display: flex; gap: 8px; overflow-x: auto; margin: 0 0 16px; padding: 8px; scrollbar-width: none; border: 1px solid var(--line); border-radius: 22px; background: linear-gradient(135deg, var(--surface), var(--surface-3)); backdrop-filter: blur(16px); }
 .detailTabRail::-webkit-scrollbar { display: none; }
@@ -300,8 +297,7 @@ textarea { min-height: 96px; resize: vertical; }
 @media (max-width: 760px) {
 
   .mobileBottomNav { left: 10px; right: 10px; width: auto; transform: none; bottom: 10px; }
-  .flowProgress { grid-template-columns: repeat(5, minmax(90px, 1fr)); overflow-x: auto; margin: 0 -16px 14px; padding: 8px 16px; scrollbar-width: none; border-left: 0; border-right: 0; border-radius: 0; }
-  .flowProgress::-webkit-scrollbar { display: none; }
+
   .sectionNav { margin-bottom: 92px; }
   .legalFooter { margin-bottom: 96px; border-radius: 22px; }
   .scanCard { grid-template-columns: 1fr; text-align: center; }
