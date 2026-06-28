@@ -217,3 +217,29 @@ textarea { min-height: 96px; resize: vertical; }
 @media (max-width: 1100px) { .appShell { grid-template-columns: 1fr; } .sidebar { top: 76px; } .sideNav { grid-template-columns: repeat(2, 1fr); } .dashboardGrid, .publicGrid { grid-template-columns: repeat(2, 1fr); } .cards { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 900px) { .heroGrid, .splitPanel, .grid2, .scanCard, .appHeader { grid-template-columns: 1fr; } .phoneCard { min-height: auto; } .docGrid { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 620px) { .cards, .dashboardGrid, .publicGrid, .docGrid, .wizardSteps, .publicPreview, .routeMeta { grid-template-columns: 1fr; } .panel.wide, .heroPanel { grid-column: span 1; } .heroPanel { display: grid; } .sideNav { grid-template-columns: 1fr 1fr; max-height: 360px; overflow: auto; } h1 { font-size: 2.8rem; } .workspace { padding: 16px; } .dashboardStatus, .sectionNav { display: grid; } .realMap iframe { height: 300px; } }
+
+.mobileSectionNav { display: none; }
+.gpsStatus { margin: 12px 0 0; border: 1px solid rgba(87,215,255,.32); border-radius: 18px; padding: 10px 12px; background: rgba(87,215,255,.08); color: var(--brand2); font-size: .92rem; }
+.installPill { position: fixed; left: 50%; bottom: 14px; transform: translateX(-50%); z-index: 80; width: min(720px, calc(100% - 24px)); display: flex; align-items: center; gap: 10px; border: 1px solid var(--line); border-radius: 999px; padding: 10px 12px 10px 16px; background: rgba(16,23,18,.94); backdrop-filter: blur(18px); box-shadow: 0 18px 60px rgba(0,0,0,.35); color: var(--text); }
+.installPill span { flex: 1; color: var(--muted); font-weight: 800; }
+.installPill small { color: var(--brand2); font-weight: 800; }
+.installPill button { padding: 8px 12px; }
+:root[data-theme="light"] .installPill { background: rgba(245,248,239,.94); }
+@media (max-width: 620px) {
+  .mobileSectionNav { position: sticky; top: 0; z-index: 12; display: flex; gap: 8px; overflow-x: auto; margin: 0 -16px 14px; padding: 10px 16px; background: linear-gradient(180deg, rgba(16,23,18,.96), rgba(16,23,18,.78)); backdrop-filter: blur(18px); border-bottom: 1px solid var(--line); scrollbar-width: none; }
+  .mobileSectionNav::-webkit-scrollbar { display: none; }
+  .mobileSectionNav button { flex: 0 0 auto; min-height: 42px; padding: 9px 12px; border-radius: 16px; font-size: .85rem; }
+  .mobileSectionNav button.active { background: rgba(135,224,111,.18); border-color: rgba(135,224,111,.55); color: var(--brand); }
+  .appHeader { gap: 10px; margin-bottom: 8px; }
+  .appHeader h1 { font-size: clamp(2rem, 12vw, 3rem); }
+  .appHeader p:not(.eyebrow) { display: none; }
+  .profileTopRight { grid-template-columns: 42px 1fr; justify-self: stretch; justify-items: start; max-width: none; border-radius: 20px; text-align: left; }
+  .profileTopRight img { width: 42px; height: 42px; border-radius: 14px; grid-row: span 2; }
+  .profileTopRight small { font-size: .75rem; }
+  .panel { min-height: auto; padding: 18px; border-radius: 22px; }
+  .authPanel, .supabaseWorkspace, .dashboardStatus { margin: 10px 0; }
+  .realMap { min-height: 220px; }
+  .realMap iframe { height: 230px; }
+  .installPill { border-radius: 22px; align-items: start; }
+}
+:root[data-theme="light"] .mobileSectionNav { background: linear-gradient(180deg, rgba(245,248,239,.96), rgba(245,248,239,.78)); }
