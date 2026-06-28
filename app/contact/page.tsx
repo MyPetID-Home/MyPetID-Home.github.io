@@ -12,7 +12,7 @@ export default function Page() {
         <h1>Contact & Legal Notices</h1>
         <div className="legalCopy" dangerouslySetInnerHTML={{ __html: `
 <p>App version: 7.68.5</p>
-<p>Build: 26513221</p>
+<p>Build: 26513222</p>
 
 <h2>Contact</h2>
 

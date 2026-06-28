@@ -8,7 +8,7 @@ export function AppFooter() {
         <span>{appReleaseLabel}</span>
         <span>© 2026 MyPetID-Home. All rights reserved.</span>
       </div>
-      <small>Legal links are available during signup and in More → Settings.</small>
+      <small>Legal links are available during signup, Settings, and Contact.</small>
     </footer>
   );
 }
