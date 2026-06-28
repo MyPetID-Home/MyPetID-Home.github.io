@@ -1,5 +1,7 @@
 -- MyPetID-Home starter Supabase schema.
 -- Run in Supabase SQL editor after project creation. Review RLS before production.
+-- NOTE: The live project is extended by docs/migrations/2026-06-admin-audit-storage.sql
+-- for storage buckets, verification/calendar extensions, audit history, and admin lookup.
 
 create type public.user_tier as enum ('free', 'basic', 'silver', 'gold', 'diamond', 'admin');
 create type public.scan_actor as enum ('owner', 'linked_user', 'stranger');

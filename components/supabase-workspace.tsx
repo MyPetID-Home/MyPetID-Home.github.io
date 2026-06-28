@@ -64,6 +64,37 @@ type DeviceRow = {
   created_at: string;
 };
 
+type AdminDebugRow = {
+  profile_id: string;
+  email: string | null;
+  display_name: string | null;
+  phone: string | null;
+  tier: string;
+  is_admin: boolean;
+  pet_count: number;
+  tag_count: number;
+  scan_count: number;
+  device_count: number;
+  document_count: number;
+  care_event_count: number;
+  calendar_event_count: number;
+  verification_count: number;
+  last_activity_at: string | null;
+};
+
+type ActivityLogRow = {
+  id: string;
+  event_time: string;
+  actor_email: string | null;
+  target_profile_id: string | null;
+  target_pet_id: string | null;
+  target_table: string;
+  target_record_id: string | null;
+  action: string;
+  changed_fields: string[] | null;
+  note: string | null;
+};
+
 type PetDraft = {
   id?: string;
   name: string;
@@ -154,6 +185,9 @@ export function SupabaseWorkspace() {
   const [scans, setScans] = useState<ScanRow[]>([]);
   const [devices, setDevices] = useState<DeviceRow[]>([]);
   const [adminProfiles, setAdminProfiles] = useState<Profile[]>([]);
+  const [adminDebugRows, setAdminDebugRows] = useState<AdminDebugRow[]>([]);
+  const [activityRows, setActivityRows] = useState<ActivityLogRow[]>([]);
+  const [adminSearch, setAdminSearch] = useState('');
   const [petDraft, setPetDraft] = useState<PetDraft>(emptyPetDraft);
   const [tagCode, setTagCode] = useState('demo-tag-001');
   const [newTagCode, setNewTagCode] = useState('');
@@ -166,6 +200,16 @@ export function SupabaseWorkspace() {
   const selectedPetTags = useMemo(() => tags.filter((tag) => tag.pet_id === selectedPet?.id), [selectedPet?.id, tags]);
   const selectedPetScans = useMemo(() => scans.filter((scan) => !selectedPet?.id || scan.pet_id === selectedPet.id).slice(0, 6), [scans, selectedPet?.id]);
   const tierLine = profile ? `${profile.tier}${profile.is_admin ? ' • unrestricted admin bypass' : ''}` : 'not signed in';
+  const filteredAdminDebugRows = useMemo(() => {
+    const needle = adminSearch.trim().toLowerCase();
+    if (!needle) return adminDebugRows.slice(0, 12);
+    return adminDebugRows.filter((row) => [row.email, row.display_name, row.phone, row.profile_id].some((value) => String(value || '').toLowerCase().includes(needle))).slice(0, 12);
+  }, [adminDebugRows, adminSearch]);
+  const filteredActivityRows = useMemo(() => {
+    const ids = new Set(filteredAdminDebugRows.map((row) => row.profile_id));
+    if (!adminSearch.trim()) return activityRows.slice(0, 10);
+    return activityRows.filter((row) => (row.target_profile_id && ids.has(row.target_profile_id)) || String(row.actor_email || '').toLowerCase().includes(adminSearch.trim().toLowerCase())).slice(0, 12);
+  }, [activityRows, filteredAdminDebugRows, adminSearch]);
 
   const loadWorkspace = useCallback(async (activeSession: Session | null = session) => {
     if (!supabase || !activeSession?.user) return;
@@ -200,8 +244,18 @@ export function SupabaseWorkspace() {
         const { data: profileData, error: profileError } = await supabase.from('profiles').select('*').order('created_at', { ascending: false }).limit(100);
         if (profileError) throw profileError;
         setAdminProfiles((profileData || []) as Profile[]);
+
+        const { data: debugData, error: debugError } = await supabase.from('admin_account_debug_view').select('*').order('last_activity_at', { ascending: false, nullsFirst: false }).limit(100);
+        if (debugError) throw debugError;
+        setAdminDebugRows((debugData || []) as AdminDebugRow[]);
+
+        const { data: activityData, error: activityError } = await supabase.from('account_activity_log').select('id,event_time,actor_email,target_profile_id,target_pet_id,target_table,target_record_id,action,changed_fields,note').order('event_time', { ascending: false }).limit(100);
+        if (activityError) throw activityError;
+        setActivityRows((activityData || []) as ActivityLogRow[]);
       } else {
         setAdminProfiles([]);
+        setAdminDebugRows([]);
+        setActivityRows([]);
       }
       setMessage(`Loaded Supabase workspace for ${activeSession.user.email}.`);
     } catch (error) {
@@ -431,13 +485,25 @@ export function SupabaseWorkspace() {
         </article>
 
         {isAdmin && <article className="panel wide adminLivePanel">
-          <h3>Admin dashboard: live inventory</h3>
-          <p>Admin bypass remains unrestricted for CAK3D testing. Private admin-only work such as invite emails, Patreon sync, and service-role operations still belongs behind Edge Functions/server code.</p>
-          <div className="grid2"><label>New physical tag code<input placeholder="tag-cak3d-001" value={newTagCode} onChange={(event) => setNewTagCode(event.target.value)} /></label><label>Admin count<input readOnly value={`${adminProfiles.length} profiles • ${tags.length} tags • ${scans.length} scans`} /></label></div>
-          <div className="actions"><button className="primary" type="button" disabled={busy} onClick={mintTag}>Mint admin tag</button></div>
-          <div className="adminMiniGrid">
-            <div><strong>Profiles</strong>{adminProfiles.slice(0, 5).map((row) => <small key={row.id}>{row.email || row.id} • {row.tier}</small>)}</div>
-            <div><strong>Tags</strong>{tags.slice(0, 5).map((row) => <small key={row.id}>{row.tag_code} • {row.pet_id ? 'claimed' : 'unclaimed'}</small>)}</div>
+          <h3>Admin dashboard: live lookup + audit trail</h3>
+          <p>Admin bypass remains unrestricted for CAK3D testing. Use lookup to connect an account to pets, tags, scans, documents, calendar events, verification requests, and recent edits.</p>
+          <div className="grid2"><label>Search account, email, phone, or profile ID<input placeholder="dev.mypetid-adm@yahoo.com" value={adminSearch} onChange={(event) => setAdminSearch(event.target.value)} /></label><label>Admin count<input readOnly value={`${adminProfiles.length} profiles • ${tags.length} tags • ${scans.length} scans • ${activityRows.length} audit events`} /></label></div>
+          <div className="actions"><button className="primary" type="button" disabled={busy} onClick={mintTag}>Mint admin tag</button><button type="button" disabled={busy} onClick={() => loadWorkspace()}>Refresh lookup</button></div>
+          <div className="adminLookupGrid">
+            {filteredAdminDebugRows.length === 0 ? <p>No matching accounts loaded.</p> : filteredAdminDebugRows.map((row) => <button className="adminLookupCard" type="button" key={row.profile_id} onClick={() => setAdminSearch(row.email || row.profile_id)}>
+              <strong>{row.email || row.profile_id}</strong>
+              <small>{row.display_name || 'No display name'} • {row.tier}{row.is_admin ? ' • admin' : ''}</small>
+              <span>{row.pet_count} pets • {row.tag_count} tags • {row.scan_count} scans</span>
+              <span>{row.document_count} docs • {row.care_event_count} care • {row.calendar_event_count} calendar • {row.verification_count} verifications</span>
+              <small>Last activity: {fmtDate(row.last_activity_at)}</small>
+            </button>)}
+          </div>
+          <div className="auditTimeline">
+            <strong>Recent account history</strong>
+            {filteredActivityRows.length === 0 ? <p>No audit events loaded yet. New inserts/updates/deletes are tracked from the migration forward.</p> : filteredActivityRows.map((row) => <p key={row.id}>
+              <span>{row.action.toUpperCase()} {row.target_table}</span><br />
+              <small>{fmtDate(row.event_time)} • {row.actor_email || 'system/service'} • fields: {(row.changed_fields || []).join(', ') || 'record'} • #{row.target_record_id || 'n/a'}</small>
+            </p>)}
           </div>
         </article>}
       </div>

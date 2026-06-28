@@ -198,6 +198,14 @@ textarea { min-height: 96px; resize: vertical; }
 .servicePill.red span { background: var(--danger); color: var(--danger); }
 .adminMiniGrid { display: grid; grid-template-columns: 1fr 1fr; }
 .adminMiniGrid div { display: grid; align-content: start; gap: 8px; }
+.adminLookupGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 14px; }
+.adminLookupCard { text-align: left; display: grid; gap: 6px; align-content: start; border-radius: 22px; padding: 14px; background: linear-gradient(145deg, var(--surface-2), var(--surface-3)); }
+.adminLookupCard strong { color: var(--text); overflow-wrap: anywhere; }
+.adminLookupCard span, .adminLookupCard small { color: var(--muted); font-size: .86rem; }
+.auditTimeline { margin-top: 16px; border: 1px solid var(--line); border-radius: 22px; padding: 14px; background: color-mix(in srgb, var(--surface) 82%, var(--brand2) 18%); display: grid; gap: 10px; }
+.auditTimeline p { margin: 0; border-top: 1px solid var(--line); padding-top: 10px; }
+.auditTimeline span { color: var(--brand); font-weight: 950; }
+.auditTimeline small { color: var(--muted); overflow-wrap: anywhere; }
 .activeMini { border-color: rgba(135,224,111,.55); background: rgba(135,224,111,.13); color: var(--brand); }
 .formHint, label small { color: var(--muted); font-size: .9rem; margin: 0; }
 .actions.compact { margin-top: 0; align-items: center; }
