@@ -90,13 +90,15 @@ textarea { min-height: 96px; resize: vertical; }
 
 .brandLockup { display: inline-flex; align-items: center; gap: 12px; text-decoration: none; font-weight: 950; letter-spacing: -.03em; }
 .brandLockup img { width: 48px; height: 48px; object-fit: cover; border-radius: 14px; }
-.hamburger { display: none; width: 100%; justify-content: center; }
+.hamburger { display: inline-flex; width: auto; justify-content: center; }
+.hamburger.topLeft { position: fixed; left: 16px; top: 16px; z-index: 30; min-width: 48px; min-height: 48px; padding: 12px 14px; }
 .userLockup { display: grid; gap: 6px; text-align: left; border-radius: 22px; padding: 14px; }
 .userLockup img { width: 64px; height: 64px; object-fit: cover; border-radius: 20px; border: 1px solid var(--line); }
 .userLockup span { font-weight: 950; }
 .userLockup small { color: var(--muted); }
-.appShell { display: grid; grid-template-columns: 250px 1fr; min-height: 100vh; }
-.sidebar { position: sticky; top: 0; height: 100vh; overflow-y: auto; padding: 24px; border-right: 1px solid var(--line); background: rgba(0,0,0,.18); backdrop-filter: blur(18px); display: grid; align-content: start; gap: 24px; }
+.appShell { display: block; min-height: 100vh; }
+.sidebar { position: fixed; left: 16px; top: 76px; bottom: 16px; z-index: 25; width: min(320px, calc(100vw - 32px)); overflow-y: auto; padding: 18px; border: 1px solid var(--line); border-radius: 28px; background: rgba(16,23,18,.94); backdrop-filter: blur(18px); display: none; align-content: start; gap: 18px; box-shadow: 0 24px 80px rgba(0,0,0,.4); }
+.sidebar.open { display: grid; }
 .sideNav { display: grid; gap: 10px; }
 .sideNav button { width: 100%; text-transform: capitalize; text-align: left; border-radius: 18px; }
 .sideNav button.active { background: rgba(135,224,111,.16); border-color: rgba(135,224,111,.5); color: var(--brand); }
@@ -107,8 +109,13 @@ textarea { min-height: 96px; resize: vertical; }
 .tierBadge.gold { box-shadow: inset 0 0 0 1px rgba(255,206,107,.28); }
 .tierBadge.violet { box-shadow: inset 0 0 0 1px rgba(185,156,255,.28); }
 .tierBadge.red { box-shadow: inset 0 0 0 1px rgba(255,122,122,.28); }
-.workspace { padding: 28px; }
-.appHeader { display: grid; grid-template-columns: 1fr 160px; gap: 24px; align-items: center; margin-bottom: 18px; }
+.workspace { padding: 28px 28px 28px 88px; }
+.appHeader { display: grid; grid-template-columns: 1fr minmax(160px, 220px); gap: 24px; align-items: center; margin-bottom: 18px; }
+.profileTopRight { position: relative; justify-self: end; display: grid; gap: 4px; justify-items: center; border-radius: 28px; padding: 12px; max-width: 220px; }
+.profileTopRight img { width: 76px; height: 76px; border-radius: 22px; object-fit: cover; border: 1px solid var(--line); }
+.profileTopRight small { color: var(--muted); }
+.redAlert, .alertDot { display: inline-grid; place-items: center; min-width: 24px; height: 24px; border-radius: 999px; background: var(--danger); color: #fff; font-size: .8rem; font-weight: 950; }
+.profileTopRight .redAlert { position: absolute; right: 4px; top: 4px; }
 .appHeader h1 { font-size: clamp(2.4rem, 5vw, 4.8rem); }
 .petAvatarCard { position: relative; border-radius: 38px; padding: 10px; background: linear-gradient(135deg, rgba(135,224,111,.28), rgba(87,215,255,.18)); }
 .petAvatarCard img { width: 140px; height: 140px; border-radius: 32px; object-fit: cover; }
@@ -163,8 +170,11 @@ textarea { min-height: 96px; resize: vertical; }
 .workspaceTitle { display: flex; justify-content: space-between; gap: 16px; align-items: start; border: 1px solid var(--line); border-radius: 28px; padding: 20px; background: linear-gradient(135deg, rgba(135,224,111,.11), rgba(87,215,255,.08)); margin-bottom: 14px; }
 .workspaceTitle h2 { font-size: clamp(1.6rem, 3vw, 2.4rem); }
 .supabaseGrid { margin-top: 16px; }
-.tagList, .adminMiniGrid, .serviceGrid { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
-.tagList span, .adminMiniGrid small, .routeCard, .servicePill { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; padding: 8px 10px; background: rgba(255,255,255,.07); color: var(--muted); }
+.tagList, .adminMiniGrid, .serviceGrid, .tierMatrix, .permissionList { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+.tagList span, .adminMiniGrid small, .routeCard, .servicePill, .tierCard, .permissionList span { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; padding: 8px 10px; background: rgba(255,255,255,.07); color: var(--muted); }
+.tierCard { display: grid; align-content: start; border-radius: 22px; min-width: 170px; }
+.tierCard.active { border-color: rgba(135,224,111,.65); background: rgba(135,224,111,.14); color: var(--text); }
+.permissionList span { border-radius: 16px; }
 .routeCard { display: grid; border-radius: 22px; margin: 10px 0; padding: 14px; }
 .servicePill { align-items: center; gap: 8px; font-weight: 900; }
 .servicePill span { width: 12px; height: 12px; border-radius: 50%; background: var(--muted); box-shadow: 0 0 18px currentColor; }
@@ -191,6 +201,8 @@ textarea { min-height: 96px; resize: vertical; }
 .chatBubble span { color: var(--muted); font-size: .82rem; }
 .notificationDock { display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 18px; }
 .notificationDock span { display: inline-flex; align-items: center; justify-content: center; min-width: 58px; padding: 10px 12px; border-radius: 18px; border: 1px solid var(--line); background: rgba(255,255,255,.08); font-weight: 900; }
+.alertBanner { border: 1px solid rgba(255,122,122,.5); border-radius: 22px; background: rgba(255,122,122,.12); padding: 14px; display: grid; gap: 6px; margin: 12px 0; }
+.dangerButton { background: linear-gradient(135deg, var(--danger), var(--warn)) !important; }
 .realMap { position: relative; min-height: 320px; border-radius: 28px; overflow: hidden; border: 1px solid var(--line); background: rgba(0,0,0,.2); }
 .realMap iframe { width: 100%; height: 360px; border: 0; display: block; filter: saturate(1.05) contrast(1.03); }
 .sectionNav { position: sticky; bottom: 16px; z-index: 5; display: flex; justify-content: space-between; gap: 12px; margin: 24px 0 8px; padding: 12px; border: 1px solid var(--line); border-radius: 24px; background: rgba(16,23,18,.86); backdrop-filter: blur(18px); box-shadow: 0 18px 60px rgba(0,0,0,.28); }
@@ -202,6 +214,6 @@ textarea { min-height: 96px; resize: vertical; }
 @keyframes rotateSlow { to { transform: rotate(360deg); } }
 @keyframes pawMove { 0%,100% { transform: translate(0,0) rotate(-12deg); } 50% { transform: translate(68vw,20px) rotate(12deg); } }
 @keyframes bounce { 0%,100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-8px) scale(1.06); } }
-@media (max-width: 1100px) { .appShell { grid-template-columns: 1fr; } .sidebar { position: sticky; z-index: 10; height: auto; border-right: 0; border-bottom: 1px solid var(--line); } .hamburger { display: inline-flex; } .sidebar:not(.open) .sideNav, .sidebar:not(.open) .tierBadge { display: none; } .sideNav { grid-template-columns: repeat(4, 1fr); } .dashboardGrid, .publicGrid { grid-template-columns: repeat(2, 1fr); } .cards { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 1100px) { .appShell { grid-template-columns: 1fr; } .sidebar { top: 76px; } .sideNav { grid-template-columns: repeat(2, 1fr); } .dashboardGrid, .publicGrid { grid-template-columns: repeat(2, 1fr); } .cards { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 900px) { .heroGrid, .splitPanel, .grid2, .scanCard, .appHeader { grid-template-columns: 1fr; } .phoneCard { min-height: auto; } .docGrid { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 620px) { .cards, .dashboardGrid, .publicGrid, .docGrid, .wizardSteps, .publicPreview, .routeMeta { grid-template-columns: 1fr; } .panel.wide, .heroPanel { grid-column: span 1; } .heroPanel { display: grid; } .sideNav { grid-template-columns: 1fr 1fr; max-height: 360px; overflow: auto; } h1 { font-size: 2.8rem; } .workspace { padding: 16px; } .dashboardStatus, .sectionNav { display: grid; } .realMap iframe { height: 300px; } }

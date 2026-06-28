@@ -11,6 +11,11 @@ create table public.profiles (
   phone text,
   tier public.user_tier not null default 'free',
   is_admin boolean not null default false,
+  patreon_linked boolean not null default false,
+  patreon_tier text,
+  google_photos_linked boolean not null default false,
+  google_drive_linked boolean not null default false,
+  google_calendar_linked boolean not null default false,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -63,6 +68,33 @@ create table public.scan_events (
   accuracy_meters double precision,
   note text,
   reported_lost boolean not null default false,
+  finder_contact text,
+  finder_note text,
+  owner_alert_status text not null default 'new',
+  created_at timestamptz not null default now()
+);
+
+create table public.verification_requests (
+  id uuid primary key default gen_random_uuid(),
+  profile_id uuid references public.profiles(id) on delete cascade,
+  provider text not null check (provider in ('patreon', 'google')),
+  requested_scopes text[] not null default '{}',
+  status text not null check (status in ('pending', 'approved', 'denied', 'verified', 'failed')) default 'pending',
+  provider_subject text,
+  verified_tier text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table public.calendar_events (
+  id uuid primary key default gen_random_uuid(),
+  profile_id uuid not null references public.profiles(id) on delete cascade,
+  pet_id uuid references public.pets(id) on delete cascade,
+  title text not null,
+  category text not null,
+  starts_at timestamptz not null,
+  source text not null default 'mypetid',
+  google_event_id text,
   created_at timestamptz not null default now()
 );
 
@@ -81,6 +113,8 @@ alter table public.pets enable row level security;
 alter table public.tags enable row level security;
 alter table public.devices enable row level security;
 alter table public.scan_events enable row level security;
+alter table public.verification_requests enable row level security;
+alter table public.calendar_events enable row level security;
 alter table public.profile_links enable row level security;
 
 -- Starter policies. Tighten before public launch.
@@ -104,6 +138,14 @@ create policy "devices owner update" on public.devices for update using (auth.ui
 
 create policy "scan insert public" on public.scan_events for insert with check (true);
 create policy "scan read linked" on public.scan_events for select using (true);
+
+create policy "verification owner read" on public.verification_requests for select using (auth.uid() = profile_id or exists (select 1 from public.profiles p where p.id = auth.uid() and p.is_admin));
+create policy "verification owner insert" on public.verification_requests for insert with check (auth.uid() = profile_id);
+create policy "verification owner update" on public.verification_requests for update using (auth.uid() = profile_id or exists (select 1 from public.profiles p where p.id = auth.uid() and p.is_admin)) with check (auth.uid() = profile_id or exists (select 1 from public.profiles p where p.id = auth.uid() and p.is_admin));
+
+create policy "calendar owner read" on public.calendar_events for select using (auth.uid() = profile_id or exists (select 1 from public.profiles p where p.id = auth.uid() and p.is_admin));
+create policy "calendar owner insert" on public.calendar_events for insert with check (auth.uid() = profile_id);
+create policy "calendar owner update" on public.calendar_events for update using (auth.uid() = profile_id or exists (select 1 from public.profiles p where p.id = auth.uid() and p.is_admin)) with check (auth.uid() = profile_id or exists (select 1 from public.profiles p where p.id = auth.uid() and p.is_admin));
 
 create policy "profile links participant read" on public.profile_links for select using (auth.uid() in (requester_id, receiver_id) or exists (select 1 from public.profiles p where p.id = auth.uid() and p.is_admin));
 create policy "profile links requester insert" on public.profile_links for insert with check (auth.uid() = requester_id);

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import { isAdminEmail, supabase } from '../lib/supabase';
@@ -106,6 +107,7 @@ export function AuthPanel() {
         <button className="primary" type="button" onClick={submit}>{mode === 'sign-in' ? 'Sign in' : 'Sign up'}</button>
         <button type="button" onClick={google}>Continue with Google</button>
         <button type="button" onClick={() => setMode(mode === 'sign-in' ? 'sign-up' : 'sign-in')}>{mode === 'sign-in' ? 'Need account?' : 'Have account?'}</button>
+        <Link className="button" href="/verify/patreon/">Link Patreon</Link>
       </div>
       {message && <p className="notice">{message}</p>}
     </section>

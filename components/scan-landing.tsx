@@ -50,6 +50,8 @@ export function ScanLanding() {
   const [actor, setActor] = useState<'owner' | 'linked_user' | 'stranger'>('stranger');
   const [saving, setSaving] = useState(false);
   const [reportedLost, setReportedLost] = useState(false);
+  const [finderNote, setFinderNote] = useState('I found this dog here.');
+  const [finderContact, setFinderContact] = useState('');
   const profileUrl = useMemo(() => `/pet/?tag=${encodeURIComponent(tag)}`, [tag]);
   const dashboardUrl = useMemo(() => `/dashboard/?tag=${encodeURIComponent(tag)}`, [tag]);
 
@@ -96,7 +98,7 @@ export function ScanLanding() {
       longitude: coords.longitude,
       accuracy_meters: coords.accuracy,
       reported_lost: reportedLost,
-      note: `${note} install=${installId}`,
+      note: `${note}; finder_note=${finderNote || 'none'}; finder_contact=${finderContact || 'not provided'}; install=${installId}`,
     };
     if (!supabase) {
       setStatus(`Demo only: ${coords.latitude.toFixed(5)}, ${coords.longitude.toFixed(5)} would be saved after Supabase config loads.`);
@@ -104,7 +106,7 @@ export function ScanLanding() {
     }
     const { error } = await supabase.from('scan_events').insert(payload);
     if (error) setStatus(`Location captured, but Supabase blocked the save: ${error.message}`);
-    else setStatus(`Saved scan location: ${coords.latitude.toFixed(5)}, ${coords.longitude.toFixed(5)}. Thank you for helping ${pet.name}.`);
+    else setStatus(reportedLost ? `🔴 Lost/found report sent with location: ${coords.latitude.toFixed(5)}, ${coords.longitude.toFixed(5)}. The owner dashboard can show this as a red alert.` : `Saved scan location: ${coords.latitude.toFixed(5)}, ${coords.longitude.toFixed(5)}. Thank you for helping ${pet.name}.`);
   }
 
   function requestLocation(note: string) {
@@ -146,7 +148,9 @@ export function ScanLanding() {
         <article className="panel wide consentPanel">
           <h2>Help update the scan trail</h2>
           <p>Accidental opens, refreshes, previews, and owner checks should not pollute the last-location history. That is why the NFC tag should point here first, while the normal profile remains read-only.</p>
-          <label className="toggleRow"><input type="checkbox" checked={reportedLost} onChange={(event) => setReportedLost(event.target.checked)} /> I am reporting a lost-pet sighting</label>
+          <label className="toggleRow"><input type="checkbox" checked={reportedLost} onChange={(event) => setReportedLost(event.target.checked)} /> I found this dog / I am reporting a lost-pet sighting</label>
+          <label>Finder note<textarea value={finderNote} onChange={(event) => setFinderNote(event.target.value)} /></label>
+          <label>Optional finder contact<input value={finderContact} onChange={(event) => setFinderContact(event.target.value)} placeholder="phone or email, optional" /></label>
           <div className="actions">
             <button className="primary" type="button" disabled={saving} onClick={() => requestLocation(reportedLost ? 'Finder reported lost sighting from scan gate' : 'Finder consented from scan gate')}>{saving ? 'Requesting…' : 'Share my scan location'}</button>
             <Link className="button" href={profileUrl}>View profile without sharing location</Link>
