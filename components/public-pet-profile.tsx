@@ -115,14 +115,14 @@ export function PublicPetProfile() {
             <h1>{pet.name}</h1>
             <p className="lead">{pet.behavior_public}</p>
             <div className="chipCloud"><span>{ageFromBirthday(pet.birthday)}</span><span>{pet.weight}</span><span>{pet.eye_color} eyes</span><span>{pet.coat_color} {pet.coat_type} coat</span></div>
-            <div className="lostRibbon">{pet.lost_mode ? 'Marked lost — contact owner now' : 'Not marked lost — public profile view'}</div>
+            <div className="lostRibbon">{pet.lost_mode ? 'Marked lost — contact owner now' : 'Not marked lost — public profile view'}</div><div className="publicProfileActions">{publicPhone ? <a className="button primary" href={`tel:${publicPhone}`}>Call owner</a> : <button className="primary" type="button" onClick={() => setContactStatus('Owner has not published a phone route yet.')}>Contact owner</button>}<Link className="button" href={`/scan/?tag=${encodeURIComponent(tag)}`}>Share scan location</Link></div>
           </div>
         </div>
       </section>
 
       <section className="publicGrid">
-        <article className="panel">
-          <h2>Owner-approved info</h2>
+        <article className="panel publicInfoCard">
+          <div className="panelTitleRow"><h2>Owner-approved info</h2><span>🐾</span></div>
           <dl className="infoList"><dt>Medical</dt><dd>{pet.medical_public}</dd><dt>Behavior</dt><dd>{pet.behavior_public}</dd><dt>Vet route</dt><dd>{pet.vet_name || 'Vet hidden until owner shares it.'}</dd><dt>Contact</dt><dd>{publicPhone || publicEmail ? [publicPhone, publicEmail].filter(Boolean).join(' • ') : 'Owner contact buttons will appear here once contact preferences are enabled.'}</dd></dl>
           <div className="actions">{publicPhone ? <a className="button primary" href={`tel:${publicPhone}`}>Call owner</a> : <button className="primary" type="button" onClick={() => setContactStatus('Owner has not published a phone route yet.')}>Contact owner</button>}{publicEmail && <a className="button" href={`mailto:${publicEmail}`}>Email owner</a>}<button type="button" onClick={() => setContactStatus('Lost sighting reports belong on the NFC scan gate so consent + GPS are explicit.')}>Report lost sighting</button></div>
           <p className="notice">{contactStatus}</p>
@@ -140,13 +140,13 @@ export function PublicPetProfile() {
           <p>This view shows the previous eligible scan. It never replaces that location just because someone opened, refreshed, previewed, or accidentally scanned the profile.</p>
         </article>
 
-        <article className="panel careStrip">
+        <article className="panel careStrip tappableCare">
           <span className="bouncer">🍖</span><div><strong>Feeding</strong><p>Breakfast 7 AM • Dinner 6 PM</p></div>
         </article>
-        <article className="panel careStrip">
+        <article className="panel careStrip tappableCare">
           <span className="bouncer">🐕‍🦺</span><div><strong>Walks</strong><p>Morning loop • evening sniff break</p></div>
         </article>
-        <article className="panel careStrip">
+        <article className="panel careStrip tappableCare">
           <span className="bouncer">🎾</span><div><strong>Play</strong><p>Tug toy and backyard fetch</p></div>
         </article>
       </section>

@@ -243,3 +243,47 @@ textarea { min-height: 96px; resize: vertical; }
   .installPill { border-radius: 22px; align-items: start; }
 }
 :root[data-theme="light"] .mobileSectionNav { background: linear-gradient(180deg, rgba(245,248,239,.96), rgba(245,248,239,.78)); }
+
+.versionChip { display: inline-flex; align-items: center; border: 1px solid var(--line); border-radius: 999px; padding: 8px 10px; color: var(--brand2); background: rgba(255,255,255,.06); font-weight: 900; font-size: .84rem; }
+.quickActionDock { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; margin: 0 0 18px; }
+.quickActionDock button, .quickActionDock a { min-height: 104px; border: 1px solid var(--line); border-radius: 24px; background: linear-gradient(160deg, var(--panel), rgba(255,255,255,.04)); color: var(--text); text-decoration: none; display: grid; place-items: center; align-content: center; gap: 4px; padding: 12px; box-shadow: 0 16px 42px rgba(0,0,0,.18); }
+.quickActionDock span { font-size: 1.6rem; }
+.quickActionDock strong { font-size: .95rem; }
+.quickActionDock small { color: var(--muted); font-weight: 800; }
+.detailTabRail { display: flex; gap: 8px; overflow-x: auto; margin: 0 0 16px; padding: 6px 0 10px; scrollbar-width: none; }
+.detailTabRail::-webkit-scrollbar { display: none; }
+.detailTabRail button, .detailTabRail .button { flex: 0 0 auto; border-radius: 16px; padding: 10px 14px; }
+.detailTabRail .active { background: rgba(135,224,111,.16); color: var(--brand); border-color: rgba(135,224,111,.55); }
+.mobileBottomNav { display: none; }
+.legalFooter { width: min(1180px, calc(100% - 32px)); margin: 28px auto; border: 1px solid var(--line); border-radius: 28px; background: rgba(255,255,255,.06); padding: 18px; display: grid; gap: 12px; color: var(--muted); }
+.legalFooter div, .legalFooter nav { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.legalFooter strong { color: var(--text); }
+.legalFooter a { color: var(--brand2); font-weight: 900; text-decoration: none; }
+.legalPage { width: min(1040px, calc(100% - 32px)); margin: 0 auto; padding: 32px 0 80px; }
+.legalDocument { margin-top: 24px; border: 1px solid var(--line); border-radius: 32px; background: linear-gradient(160deg, var(--panel), rgba(255,255,255,.04)); padding: clamp(22px, 4vw, 44px); box-shadow: 0 24px 80px rgba(0,0,0,.28); }
+.legalDocument h1 { font-size: clamp(2.2rem, 6vw, 4.4rem); }
+.legalCopy h2 { margin-top: 28px; padding-top: 18px; border-top: 1px solid var(--line); font-size: clamp(1.35rem, 3vw, 2rem); }
+.legalCopy p, .legalCopy li { color: var(--muted); line-height: 1.7; }
+.legalCopy li { margin: 8px 0 8px 22px; }
+.publicProfileActions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 18px; }
+.panelTitleRow { display: flex; align-items: center; justify-content: space-between; gap: 12px; border-bottom: 2px solid var(--line); padding-bottom: 12px; margin-bottom: 12px; }
+.panelTitleRow h2 { margin: 0; }
+.panelTitleRow span { color: var(--brand); font-size: 1.8rem; }
+.publicInfoCard .infoList dt, .publicInfoCard .infoList dd { padding: 8px 0; border-bottom: 1px solid var(--line); }
+.tappableCare { grid-template-columns: 58px 1fr auto; }
+.tappableCare::after { content: '›'; color: var(--brand2); font-size: 2rem; font-weight: 900; }
+@media (max-width: 760px) {
+  .quickActionDock { grid-template-columns: repeat(5, minmax(76px, 1fr)); overflow-x: auto; margin: 0 -16px 14px; padding: 0 16px 6px; scrollbar-width: none; }
+  .quickActionDock::-webkit-scrollbar { display: none; }
+  .quickActionDock button, .quickActionDock a { min-height: 88px; border-radius: 20px; }
+  .mobileBottomNav { position: fixed; left: 10px; right: 10px; bottom: 10px; z-index: 65; display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; border: 1px solid var(--line); border-radius: 26px; padding: 8px; background: rgba(16,23,18,.92); backdrop-filter: blur(18px); box-shadow: 0 18px 60px rgba(0,0,0,.4); }
+  .mobileBottomNav button, .mobileBottomNav a { min-height: 48px; border: 0; background: transparent; color: var(--muted); display: grid; place-items: center; gap: 2px; text-decoration: none; padding: 6px; font-weight: 950; }
+  .mobileBottomNav span { font-size: .68rem; }
+  .mobileBottomNav .scanFab { margin-top: -24px; min-height: 68px; border-radius: 24px; background: linear-gradient(135deg, var(--brand), var(--brand2)); color: #071008; box-shadow: 0 16px 42px rgba(0,0,0,.36); }
+  .sectionNav { margin-bottom: 92px; }
+  .legalFooter { margin-bottom: 96px; border-radius: 22px; }
+  .scanCard { grid-template-columns: 1fr; text-align: center; }
+  .scanPhotoWrap { width: min(230px, 70vw); margin: 0 auto; border-radius: 999px; }
+  .scanPhotoWrap img { aspect-ratio: 1; height: auto; border-radius: 999px; }
+}
+:root[data-theme="light"] .mobileBottomNav { background: rgba(245,248,239,.92); }
