@@ -20,7 +20,7 @@ MyPetID is intended to be a full pet profile, activity, health, diet, distance, 
 ## Customer commerce modules
 
 - `/shop/` — customer-facing NFC tag purchase process and Stripe checkout entry point.
-- `/subscribe/` — Stripe/Patreon membership explanation and tag selection path.
+- `/subscribe/` — Stripe/Patreon membership explanation and tag selection path. Stripe monthly checkout is live for Basic/Silver/Gold/Diamond; Patreon remains pending credentials.
 - `/payment/success/` — confirms Stripe checkout sessions and updates Supabase order status on Vercel.
 - `/payment/cancel/` — safe checkout cancellation page.
 
@@ -34,7 +34,8 @@ MyPetID is intended to be a full pet profile, activity, health, diet, distance, 
 ## Production backend now used
 
 - Vercel API routes handle provider-secret flows that GitHub Pages cannot run:
-  - Stripe checkout/session confirmation
+  - Stripe checkout/session confirmation and Stripe webhooks
+  - Stripe monthly subscription checkout for Basic/Silver/Gold/Diamond
   - Google OAuth connect/callback for upload sync
   - Supabase-backed upload handling
   - Dog Pack invite creation
@@ -44,11 +45,12 @@ MyPetID is intended to be a full pet profile, activity, health, diet, distance, 
 
 Before wider live customer use, the following need more hardening:
 
-- Stripe webhook reconciliation and order fulfillment dashboard.
-- Patreon OAuth/webhook tier sync and subscription-limit enforcement.
+- Stripe order fulfillment dashboard and webhook edge-case hardening.
+- Patreon OAuth/webhook tier sync after credentials are available.
+- Email verification-code sending from the MyPetID admin/setup email system.
 - Final scan-event writes with active-tag, owner/trusted-device, abuse, and rate-limit checks.
 - Invite acceptance and role/permission management for Dog Pack users.
-- Push/email/SMS notification delivery.
+- Push/email notification delivery.
 - Upload retry queue and owner file-management UI.
 
 ## UI direction

@@ -17,8 +17,9 @@ A pet owner logs in, creates an account profile, creates one or more pet profile
 ## Confirmed business rules
 - A free account can create one user profile and one pet profile.
 - Physical Pet ID tags cost $10 and one tag is required per pet for scanning/tracking.
-- Location scanning/tracking is subscription-gated. Accounts without a linked Patreon subscription can have profiles but location scanning remains disabled until activated.
-- Patreon-linked users should show Patreon status on the user profile.
+- Location scanning/tracking is subscription-gated. Accounts can subscribe through Stripe monthly memberships or, later, link Patreon membership once Patreon credentials/webhooks are finished.
+- Patreon-linked users should show Patreon status on the user profile when Patreon sync is finished.
+- Stripe subscription users should show Stripe membership status on the user profile and receive the same tier limits as the matching Patreon tier.
 - Patreon members get updates/tutorials/support and a 15% coupon for the first Pet ID tag purchase.
 - Admin accounts bypass all tier limits for active testing.
 
@@ -32,10 +33,10 @@ A pet owner logs in, creates an account profile, creates one or more pet profile
 | Tier | Price | NFC tag/pet allowance | User profile allowance | Notes |
 | --- | ---: | --- | --- | --- |
 | Free app account | $0 | 0 active scan-enabled tags | 1 user + 1 pet profile | Location scanning disabled until subscription/tag activation. |
-| Basic Membership | $3/month | 1 NFC tag | 1 user account | 7-day free trial; support/tutorials. |
-| Silver Membership | $4/month | 1 NFC tag | 2 user accounts | Support/tutorials. |
-| Gold Membership | $6/month | 2 NFC tags | 1 user account | Support/tutorials. |
-| Diamond Membership | $10/month | Either 2 NFC tags + 2 users, or 3 NFC tags + 1 user | See tag allowance | Support/tutorials. |
+| Basic Membership | $3/month | 1 NFC tag | 1 user account | Stripe monthly subscription now; Patreon equivalent later. |
+| Silver Membership | $4/month | 1 NFC tag | 2 user accounts | Stripe monthly subscription now; Patreon equivalent later. |
+| Gold Membership | $6/month | 2 NFC tags | 1 user account | Stripe monthly subscription now; Patreon equivalent later. |
+| Diamond Membership | $10/month | Either 2 NFC tags + 2 users, or 3 NFC tags + 1 user | See tag allowance | Stripe monthly subscription now; Patreon equivalent later. |
 | Admin | internal | Unlimited | Unlimited | CAK3D testing/management bypass. |
 
 ## Key flows

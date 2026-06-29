@@ -46,4 +46,4 @@
 
 - Restore useful legacy database chunks selectively, not old auth/storage internals.
 - Add background jobs for webhooks, upload retry, notifications, and order fulfillment status.
-- Add native/SMS provider if phone PIN verification becomes required.
+- Add email verification-code flow using the MyPetID admin/setup email system; no automated SMS/phone PIN verification is planned.

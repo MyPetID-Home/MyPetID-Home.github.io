@@ -9,7 +9,7 @@ export default function SubscribePage() {
       <section className="hero shell">
         <p className="eyebrow">Membership options</p>
         <h1>Subscribe with Stripe or Patreon, then order the tag style that fits your dog.</h1>
-        <p className="lead">Stripe checkout handles one-time NFC tag purchases and future payment plans. Patreon remains available for membership linking and creator-support tiers while MyPetID maps Patreon status into app access.</p>
+        <p className="lead">Stripe now supports both one-time NFC tag purchases and monthly MyPetID memberships. Patreon remains available as an alternate membership/support path once Patreon credentials are finished.</p>
         <div className="actions"><Link className="button primary" href="/shop/">Choose NFC tag</Link><Link className="button" href="/verify/patreon/">Link Patreon</Link></div>
       </section>
       <ProductPurchaseClient compact />

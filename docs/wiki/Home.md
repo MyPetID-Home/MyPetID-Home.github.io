@@ -5,7 +5,7 @@ This folder is the source-of-truth fallback for the GitHub Wiki until the `.wiki
 ## Current app direction
 
 - Next.js app with two deployment modes:
-  - Vercel functional app host for API routes and provider callbacks.
+  - Vercel functional app host for API routes, Stripe checkout/webhooks, subscription checkout, and provider callbacks.
   - GitHub Pages static export for public/static fallback.
 - Supabase handles Auth, profile/pet/tag data, QR records, orders, upload events, storage metadata, and public scan reads/writes.
 - NFC/QR tags should open `/scan/?tag=<tag_code>` for consent-aware scan writes.
@@ -20,7 +20,7 @@ This folder is the source-of-truth fallback for the GitHub Wiki until the `.wiki
 | Basic NFC Tag | `$10.00` | Blank NFC tag card with QR-code sticker pointing at the saved public pet profile. |
 | ID NFC Tag Card | `$15.00` | License-style MyPetID card with NFC tap plus printed QR fallback. |
 
-Both products are represented in Supabase `tag_products` and Stripe price/product metadata. Patreon is presented as an alternate membership/support path while deeper Patreon OAuth/webhook sync remains follow-up work.
+Both physical tag products are represented in Supabase `tag_products` and Stripe price/product metadata. Monthly Basic/Silver/Gold/Diamond memberships are represented in Supabase `membership_tiers` and Stripe recurring prices. Patreon is presented as an alternate membership/support path while Patreon OAuth/webhook credentials remain follow-up work.
 
 ## Purchase/fulfillment flow
 

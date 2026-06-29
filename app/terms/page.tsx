@@ -37,11 +37,11 @@ export default function Page() {
 
 <h2>5. Accounts and security</h2>
 
-<p>Users must keep login credentials secure and should report suspected account compromise. Password resets, email changes, and future verification workflows may require email confirmation, PIN verification, or other security checks.</p>
+<p>Users must keep login credentials secure and should report suspected account compromise. Password resets, email changes, and verification workflows may require email confirmation codes sent from the MyPetID admin/setup email system.</p>
 
-<h2>6. SMS, email, and verification</h2>
+<h2>6. Email and verification</h2>
 
-<p>MyPetID may use email and, if configured with an approved provider, SMS or phone-based verification to help confirm signups, password changes, email changes, and account recovery requests. Automated SMS from the listed business phone requires an approved messaging provider or API integration before it can be used in production.</p>
+<p>MyPetID may use email verification codes and confirmation links from the MyPetID admin/setup email system to help confirm signups, password changes, email changes, and account recovery requests. MyPetID is not planning automated SMS or phone PIN verification at this time.</p>
 
 <h2>7. Subscription and admin access</h2>
 

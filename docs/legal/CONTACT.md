@@ -15,7 +15,7 @@ For lost-pet emergencies, also contact local animal control, nearby shelters, lo
 
 ## Verification and messaging
 
-MyPetID can support email-based account confirmation and password recovery through Supabase Auth. Six-digit SMS PIN verification from the listed business number requires a supported messaging provider/API, such as Twilio, Telnyx, Vonage, or another production SMS provider. Google Voice/business numbers generally do not provide a simple public API for app-triggered OTP messages, so SMS PIN automation should be added only after a proper provider is selected and configured.
+MyPetID will use email-based account confirmation, password recovery, and verification codes sent from the MyPetID admin/setup email system. Phone numbers may still be stored as optional owner contact details, but MyPetID is not planning automated SMS/PIN verification at this time.
 
 ## Trademark notice
 
