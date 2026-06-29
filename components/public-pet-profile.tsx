@@ -140,13 +140,13 @@ export function PublicPetProfile() {
           <p>This view shows the previous eligible scan. It never replaces that location just because someone opened, refreshed, previewed, or accidentally scanned the profile.</p>
         </article>
 
-        <article className="panel careStrip tappableCare">
+        <article className="panel careStrip">
           <span className="bouncer">🍖</span><div><strong>Feeding</strong><p>Breakfast 7 AM • Dinner 6 PM</p></div>
         </article>
-        <article className="panel careStrip tappableCare">
+        <article className="panel careStrip">
           <span className="bouncer">🐕‍🦺</span><div><strong>Walks</strong><p>Morning loop • evening sniff break</p></div>
         </article>
-        <article className="panel careStrip tappableCare">
+        <article className="panel careStrip">
           <span className="bouncer">🎾</span><div><strong>Play</strong><p>Tug toy and backyard fetch</p></div>
         </article>
       </section>

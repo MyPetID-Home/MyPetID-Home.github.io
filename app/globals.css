@@ -200,8 +200,17 @@ textarea { min-height: 96px; resize: vertical; }
 .adminMiniGrid div { display: grid; align-content: start; gap: 8px; }
 .adminLookupGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 14px; }
 .adminLookupCard { text-align: left; display: grid; gap: 6px; align-content: start; border-radius: 22px; padding: 14px; background: linear-gradient(145deg, var(--surface-2), var(--surface-3)); }
-.adminLookupCard strong { color: var(--text); overflow-wrap: anywhere; }
-.adminLookupCard span, .adminLookupCard small { color: var(--muted); font-size: .86rem; }
+.adminLookupCard strong { color: var(--brand); font-size: 1.5rem; }
+.activeMini { border-color: rgba(135,224,111,.55); background: rgba(135,224,111,.12); }
+.installSettingsCard, .awardRulePanel, .handSignalBadge { display: grid; gap: 10px; }
+.installSettingsCard { border: 1px solid var(--line); border-radius: 20px; padding: 14px; background: linear-gradient(145deg, var(--surface-2), var(--surface-3)); }
+.installSettingsCard small { color: var(--muted); }
+.handSignalBadge { grid-template-columns: 54px 1fr; align-items: center; border: 1px solid var(--line); border-radius: 18px; padding: 12px; background: color-mix(in srgb, var(--surface) 76%, var(--brand) 24%); }
+.handSignalBadge span { grid-row: span 2; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 16px; background: var(--surface-2); font-size: 1.55rem; }
+.handSignalBadge small { color: var(--muted); }
+.awardRulePanel { margin-top: 16px; border: 1px solid var(--line); border-radius: 24px; padding: 16px; background: color-mix(in srgb, var(--surface) 82%, var(--brand) 18%); }
+.awardRuleList { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+.awardRuleCard { border: 1px solid var(--line); border-radius: 20px; padding: 12px; background: var(--surface-2); }
 .auditTimeline { margin-top: 16px; border: 1px solid var(--line); border-radius: 22px; padding: 14px; background: color-mix(in srgb, var(--surface) 82%, var(--brand2) 18%); display: grid; gap: 10px; }
 .auditTimeline p { margin: 0; border-top: 1px solid var(--line); padding-top: 10px; }
 .auditTimeline span { color: var(--brand); font-weight: 950; }
