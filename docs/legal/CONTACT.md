@@ -1,7 +1,7 @@
 # MyPetID Contact and Legal Notices
 
 **App version:** 7.68.5
-**Build:** 26513224
+**Build:** 26513225
 
 ## Contact
 

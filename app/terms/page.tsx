@@ -13,7 +13,7 @@ export default function Page() {
         <div className="legalCopy" dangerouslySetInnerHTML={{ __html: `
 <p>Effective date: June 28, 2026</p>
 <p>App version: 7.68.5</p>
-<p>Build: 26513224</p>
+<p>Build: 26513225</p>
 
 <p>These Terms of Service describe the rules for using MyPetID. They are written for transparency and product planning and should be reviewed by counsel before launch with live customers.</p>
 
