@@ -44,7 +44,7 @@ If verifying static export manually, copy to a temporary directory and remove `a
 
 - Stripe product/price IDs are stored privately in env and mirrored in Supabase `tag_products` / `membership_tiers`.
 - Stripe webhook secret and endpoint ID are stored privately in env/Vercel; webhook route verifies Stripe signatures before updating Supabase.
-- Patreon tokens stay private; app currently links customers to Patreon path while tier sync remains follow-up.
+- Patreon credentials are stored privately; OAuth link/callback is wired through Vercel API routes. Add `PATREON_WEBHOOK_SECRET` from the Patreon app dashboard to enable signed webhook delivery.
 - Google OAuth/upload sync routes are implemented but require Google-side OAuth/redirect completion before production verification.
 - Supabase Storage is authoritative for uploaded pet photos and documents; Google sync is a secondary copy.
 

@@ -63,14 +63,14 @@ Prices/products are also configured in Stripe and mirrored into Vercel env for c
 
 ## Stripe subscription tiers
 
-`membership_tiers` now stores Stripe monthly product/price IDs for the paid app tiers:
+`membership_tiers` now stores Stripe monthly product/price IDs and Patreon campaign tier IDs for the paid app tiers:
 
 | tier | price | max tags | max users | provider |
 | --- | ---: | ---: | ---: | --- |
-| `basic` | `$3.00/mo` | 1 | 1 | Stripe monthly subscription |
-| `silver` | `$4.00/mo` | 1 | 2 | Stripe monthly subscription |
-| `gold` | `$6.00/mo` | 2 | 1 | Stripe monthly subscription |
-| `diamond` | `$10.00/mo` | 3 | 2 | Stripe monthly subscription |
+| `basic` | `$3.00/mo` | 1 | 1 | Stripe monthly + Patreon tier |
+| `silver` | `$4.00/mo` | 1 | 2 | Stripe monthly + Patreon tier |
+| `gold` | `$6.00/mo` | 2 | 1 | Stripe monthly + Patreon tier |
+| `diamond` | `$10.00/mo` | 3 | 2 | Stripe monthly + Patreon tier |
 
 The Vercel webhook route verifies Stripe signatures and reconciles subscription checkout, subscription status, invoice, and refund events into `membership_events`, `profiles.tier`, and `tag_orders`.
 

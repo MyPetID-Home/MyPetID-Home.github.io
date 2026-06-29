@@ -33,7 +33,7 @@
 - Vercel checkout API creates Stripe Checkout sessions and Supabase `tag_orders`.
 - Payment success route confirms Stripe sessions and marks paid orders.
 - Patreon remains visible as a membership/support path.
-- Remaining: Stripe webhook reconciliation, Patreon OAuth/webhook tier sync, subscription-tier enforcement, and admin fulfillment dashboard polish.
+- Remaining: Patreon webhook secret/delivery test, subscription-tier enforcement, email verification-code sending, and admin fulfillment dashboard polish.
 
 ## Phase 5: Uploads and Google sync — partially implemented
 

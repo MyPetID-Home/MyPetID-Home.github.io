@@ -45,7 +45,7 @@ Copy `.env.example` to `.env.local` and add only browser-safe public values loca
 
 - **Supabase:** live project `ryyaefxszkmibcnngnfg` is source of truth for auth/data/storage.
 - **Stripe:** Basic NFC Tag and ID NFC Tag Card products/prices are configured; Basic/Silver/Gold/Diamond monthly subscription prices are configured; checkout/session confirmation/webhook APIs are implemented for Vercel.
-- **Patreon:** customer-facing Patreon path remains linked/documented; Patreon credentials were not completed yet, so deeper Patreon OAuth/webhook tier sync remains follow-up work.
+- **Patreon:** OAuth link/callback is wired with private Patreon credentials; live campaign tier IDs are mirrored into Supabase. Webhook route exists and will verify signatures once `PATREON_WEBHOOK_SECRET` is added from the Patreon app dashboard.
 - **Google:** upload-sync API and OAuth callback routes are in place, but CAK3D is still finishing Google OAuth/provider setup; do not treat Google login/sync as fully production verified until credentials/redirects are completed.
 - **Email verification:** MyPetID will use email verification codes/links from the MyPetID admin/setup email system. Automated SMS/phone PIN verification is not planned.
 
