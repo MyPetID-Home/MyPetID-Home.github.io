@@ -1,37 +1,53 @@
 # MyPetID-Home
 
-Fresh Clydius rebuild for the MyPetID NFC/QR pet profile and tracker app.
+Clydius-maintained rebuild for the MyPetID NFC/QR pet profile, tracker, Dog Pack, and customer tag-purchase app.
 
 ## What works now
-- Static-export Next.js app suitable for GitHub Pages.
-- Marketing/home page explaining the product.
-- Demo owner dashboard with pet/tag form and QR generation.
-- Real Supabase dashboard workspace for signed-in account profile edits, pet create/update, physical tag claim, trusted browser records, owner scan logging, scan history, and admin tag/profile inventory.
-- Demo public pet scan page at `/pet/?tag=demo-tag-001`.
-- Geolocation permission flow stub for scan reporting.
-- Supabase schema draft in `docs/supabase-schema.sql`.
-- Product rules and Patreon tier notes in `docs/product-brief.md`.
+
+- Dual-host Next.js app:
+  - **Vercel mode** keeps server API routes for Stripe checkout, checkout confirmation, Google upload sync, uploads, and Dog Pack invite creation.
+  - **GitHub Pages mode** uses `BUILD_STATIC_EXPORT=1` and deploys a static export through `.github/workflows/deploy-pages.yml`.
+- Marketing/home page explaining the MyPetID product and linking customers to `/shop/`.
+- `/shop/` and `/subscribe/` explain the purchase/subscription process and show the two physical tag products:
+  - **Basic NFC Tag** — `$10.00`, blank NFC card plus QR-code sticker.
+  - **ID NFC Tag Card** — `$15.00`, license-style ID card with NFC + QR-code camera fallback.
+- Stripe products/prices are created and saved in Supabase `tag_products`; Vercel API checkout creates `tag_orders` and returns secure Stripe Checkout sessions.
+- Payment success page confirms the Stripe Checkout session and marks matching Supabase orders paid when running on Vercel.
+- Supabase Auth and dashboard workspace for signed-in account profile edits, pet create/update, physical tag claim, trusted browser records, owner scan logging, scan history, and admin tag/profile inventory.
+- Saving a dog profile creates QR destination records for:
+  - the public pet profile (`pet_qr_codes`), and
+  - account/Dog Pack sharing (`account_qr_codes`).
+- Public profile supports `/pet/?tag=<tag_code>` and `/pet/?pet=<pet_id>`.
+- Customer upload controls send pet photos/documents to Supabase Storage; when Google is connected on Vercel, pet photos sync to Google Photos and documents sync to Google Drive.
+- Dog Pack invite API creates shareable invite links.
+- Demo public pet scan page at `/pet/?tag=demo-tag-001` and scan consent gate at `/scan/?tag=demo-tag-001`.
+- Supabase migration for commerce/QR/uploads/provider credentials: `docs/migrations/2026-06-commerce-qr-uploads.sql`.
 
 ## Local setup
+
 ```bash
 pnpm install
-pnpm build
+pnpm build                  # Vercel/server API mode
+BUILD_STATIC_EXPORT=1 pnpm build  # GitHub Pages/static mode; app/api must be absent or moved for static export
 ```
 
-Copy `.env.example` to `.env.local` and add browser-safe Supabase values when ready.
-
-## Confirmed roadmap
-1. Fresh Supabase project `MyPetID-Home` has been created and the starter schema has been applied.
-2. Enable/configure Google OAuth after Google Cloud OAuth credentials are available.
-3. Admin user has been created and seeded as unrestricted admin.
-4. Build real account, pet, tag, scan, trusted-device, and admin-dashboard flows. First browser-side Supabase slice is in place for account profile edits, pet create/update, physical tag claiming, trusted device registration, owner scan logging, scan history, and admin tag/profile inventory.
-5. Restore useful chunks from the imported old database backup.
-6. Integrate Patreon membership linking and tier limits.
+Copy `.env.example` to `.env.local` and add only browser-safe public values locally. Private provider secrets belong in deployment/profile env stores, never in the repo.
 
 ## Deployment
-`next.config.mjs` uses `output: 'export'`, producing the static `out/` directory. GitHub Pages builds and deploys the export through `.github/workflows/deploy-pages.yml`.
+
+- Vercel project `mypetid` is the functional app host for server routes and provider callbacks.
+- GitHub Pages remains a static export fallback/marketing host.
+- `.github/workflows/deploy-pages.yml` temporarily moves `app/api` during the GitHub Pages static build and restores it afterward.
+
+## Provider status
+
+- **Supabase:** live project `ryyaefxszkmibcnngnfg` is source of truth for auth/data/storage.
+- **Stripe:** Basic NFC Tag and ID NFC Tag Card products/prices are configured; checkout/session confirmation APIs are implemented for Vercel.
+- **Patreon:** customer-facing Patreon path remains linked/documented; deeper Patreon OAuth/webhook tier sync still belongs in follow-up work.
+- **Google:** upload-sync API and OAuth callback routes are in place, but CAK3D is still finishing Google OAuth/provider setup; do not treat Google login/sync as fully production verified until credentials/redirects are completed.
 
 ## Security notes
-- Never commit `.env`, service-role keys, PATs, Mongo URLs, OAuth secrets, passwords, or Supabase access tokens.
-- Supabase anon keys are public by design, but RLS must enforce access.
-- Patreon webhooks and private admin tasks should move to Vercel/Supabase Edge Functions later.
+
+- Never commit `.env`, service-role keys, PATs, Stripe keys, Patreon tokens, Google OAuth secrets, Mongo URLs, passwords, or Supabase access tokens.
+- Supabase anon/publishable keys are public by design, but RLS must enforce access.
+- Admin/CAK3D accounts should retain unrestricted app access for testing independent of future subscription limits.

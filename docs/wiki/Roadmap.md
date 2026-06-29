@@ -1,24 +1,49 @@
 # Roadmap
 
-## Phase 1: App shell and Pages deployment
-- Fresh Next static-export app.
+## Phase 1: App shell and Pages deployment — complete
+
+- Fresh Next app.
 - Logo/assets restored from the original repo.
-- Full app-like dashboard with tabs for overview, walks, care, documents, appointments, data, and admin.
+- Full dashboard with overview, account, pet, walks, diet, documents, play, training, lost/found, Dog Pack, goals, settings, and admin areas.
+- GitHub Pages static export workflow.
 
-## Phase 2: Supabase wiring
-- Supabase project `MyPetID-Home` created.
-- Apply schema and RLS.
-- Add email/password and Google login.
-- Create/admin-mark CAK3D account from env-held credentials.
+## Phase 2: Supabase wiring — mostly complete
 
-## Phase 3: Tag and scan flows
-- Admin creates physical tag IDs.
-- Customer claims tag and links it to a pet.
-- Scans open the public pet profile.
-- If Patreon scan access is active, location consent can save scan events.
+- Supabase project `MyPetID-Home` created and active at ref `ryyaefxszkmibcnngnfg`.
+- Core schema, RLS, storage buckets, audit/storage extension, XP/award/found-flow migration, and commerce/QR/upload migration applied.
+- Email/password auth and live dashboard workspace are wired.
+- Admin bypass exists for CAK3D/admin testing accounts.
+- Saving pets creates live QR destination rows in `pet_qr_codes` and `account_qr_codes`.
+- Remaining: finish Google OAuth provider setup/redirect verification once CAK3D completes Google-side credentials.
 
-## Phase 4: Patreon and commerce
-- OAuth/link Patreon membership.
-- Tier limits: Basic/Silver/Gold/Diamond.
-- Generate 15% first-tag coupon for linked members.
-- Track $10 pet ID tag purchases.
+## Phase 3: Tag, QR, scan, and Dog Pack flows — in progress
+
+- Admin can mint/claim physical tag codes.
+- Public pet profile supports tag-code and direct pet-id URLs.
+- Scan gate keeps location writes behind explicit consent.
+- Dog Pack invite API creates shareable invite links.
+- Remaining: production-grade invite acceptance flow, owner/trusted-device scan classification, and scan write hardening behind server-side checks.
+
+## Phase 4: Commerce, subscriptions, and fulfillment — in progress
+
+- Stripe products/prices configured:
+  - Basic NFC Tag — `$10.00` blank NFC card + QR-code sticker.
+  - ID NFC Tag Card — `$15.00` license-style NFC/QR ID card.
+- `/shop/` and `/subscribe/` explain customer purchase/subscription process.
+- Vercel checkout API creates Stripe Checkout sessions and Supabase `tag_orders`.
+- Payment success route confirms Stripe sessions and marks paid orders.
+- Patreon remains visible as a membership/support path.
+- Remaining: Stripe webhook reconciliation, Patreon OAuth/webhook tier sync, subscription-tier enforcement, and admin fulfillment dashboard polish.
+
+## Phase 5: Uploads and Google sync — partially implemented
+
+- Pet photos/documents upload through Vercel API to Supabase Storage.
+- Private medical docs create `pet_documents` records.
+- When Google is connected, photos sync to Google Photos and docs sync to Google Drive.
+- Remaining: complete Google OAuth app/provider setup, verify scopes in production, add retry queue for failed syncs, and add owner file management UI.
+
+## Phase 6: Legacy restore and production hardening — pending
+
+- Restore useful legacy database chunks selectively, not old auth/storage internals.
+- Add background jobs for webhooks, upload retry, notifications, and order fulfillment status.
+- Add native/SMS provider if phone PIN verification becomes required.

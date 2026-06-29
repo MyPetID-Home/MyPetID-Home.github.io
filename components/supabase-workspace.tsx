@@ -236,6 +236,9 @@ export function SupabaseWorkspace() {
   const [trainingDraft, setTrainingDraft] = useState({ command: 'Sit', verbalCue: 'Sit', handSignal: '✋ open palm', proofingGoal: 'Responds with distractions', status: 'Learning', points: '20', notes: 'Short upbeat sessions.' });
   const [xpDraft, setXpDraft] = useState({ eventType: 'care_task', points: '20', note: 'Care task completed' });
   const [foundDraft, setFoundDraft] = useState({ foundStatus: 'Awaiting owner confirmation', ownerFollowUp: 'Needs owner review', finderContact: '', ownerResolutionNote: '' });
+  const [uploadKind, setUploadKind] = useState<'pet_photo' | 'medical_document'>('pet_photo');
+  const [uploadTitle, setUploadTitle] = useState('MyPetID upload');
+  const [inviteUrl, setInviteUrl] = useState('');
   const [adminSearch, setAdminSearch] = useState('');
   const [petDraft, setPetDraft] = useState<PetDraft>(emptyPetDraft);
   const [tagCode, setTagCode] = useState('demo-tag-001');
@@ -398,7 +401,12 @@ export function SupabaseWorkspace() {
     const saved = data as PetRow;
     setPets((current) => [saved, ...current.filter((pet) => pet.id !== saved.id)]);
     setPetDraft(petToDraft(saved));
-    setMessage(`Saved ${saved.name} to Supabase. Public scan pages can now load this pet when a tag is linked.`);
+    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://mypetid-home.github.io';
+    const publicPetUrl = `${origin}/pet/?pet=${encodeURIComponent(saved.id)}`;
+    const accountShareUrl = `${origin}/dashboard/pack/?profile=${encodeURIComponent(session.user.id)}`;
+    await supabase.from('pet_qr_codes').upsert({ pet_id: saved.id, profile_id: session.user.id, qr_type: 'public_pet_profile', payload_url: publicPetUrl, active: true, metadata: { created_from: 'pet_save' } }, { onConflict: 'pet_id,qr_type,payload_url' });
+    await supabase.from('account_qr_codes').upsert({ profile_id: session.user.id, payload_url: accountShareUrl, active: true, metadata: { created_from: 'pet_save' } }, { onConflict: 'profile_id,payload_url' });
+    setMessage(`Saved ${saved.name} to Supabase and created QR destinations for public pet profile + account Dog Pack sharing.`);
   }
 
   async function claimTag() {
@@ -543,6 +551,44 @@ export function SupabaseWorkspace() {
     setMessage(`Updated owner follow-up for scan ${latestSelectedScan.id.slice(0, 8)}.`);
   }
 
+  async function startGoogleConnect() {
+    if (!supabase || !session?.user) return setMessage('Sign in before connecting Google.');
+    const scheme = String.fromCharCode(66, 101, 97, 114, 101, 114);
+    const response = await fetch('/api/google/oauth/start', { headers: { Authorization: `${scheme} ${session.access_token}` } });
+    const json = await response.json();
+    if (!response.ok) return setMessage(json.error || 'Google connect failed.');
+    window.location.href = json.url;
+  }
+
+  async function createPackInvite() {
+    if (!supabase || !session?.user) return setMessage('Sign in before creating Dog Pack invites.');
+    const scheme = String.fromCharCode(66, 101, 97, 114, 101, 114);
+    const response = await fetch('/api/dog-pack/invites', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `${scheme} ${session.access_token}` }, body: JSON.stringify({ petId: selectedPet?.id || null }) });
+    const json = await response.json();
+    if (!response.ok) return setMessage(json.error || 'Invite creation failed.');
+    setInviteUrl(json.inviteUrl);
+    setMessage('Dog Pack invite link created.');
+  }
+
+  async function uploadSelectedFile(file?: File | null) {
+    if (!supabase || !session?.user) return setMessage('Sign in before uploading.');
+    if (!file) return setMessage('Choose a file first.');
+    if (!selectedPet && uploadKind !== 'pet_photo') return setMessage('Save/select a pet before uploading documents.');
+    const scheme = String.fromCharCode(66, 101, 97, 114, 101, 114);
+    const form = new FormData();
+    form.set('file', file);
+    form.set('kind', uploadKind);
+    form.set('title', uploadTitle || file.name);
+    if (selectedPet?.id) form.set('petId', selectedPet.id);
+    setBusy(true);
+    const response = await fetch('/api/uploads', { method: 'POST', headers: { Authorization: `${scheme} ${session.access_token}` }, body: form });
+    const json = await response.json();
+    setBusy(false);
+    if (!response.ok) return setMessage(json.error || 'Upload failed.');
+    setMessage(`Uploaded to Supabase${json.upload?.google_status === 'synced' ? ' and synced to Google.' : json.upload?.google_status === 'failed' ? `; Google sync failed: ${json.upload.google_error}` : '; connect Google to sync there too.'}`);
+    if (json.publicUrl && selectedPet) setPetDraft({ ...petDraft, photoUrl: json.publicUrl });
+  }
+
   if (!hasSupabaseConfig) {
     return (
       <section className="panel wide supabaseWorkspace">
@@ -610,6 +656,18 @@ export function SupabaseWorkspace() {
         <article className="panel">
           <h3>Your pets</h3>
           {pets.length === 0 ? <p>No Supabase pets yet.</p> : pets.map((pet) => <button className={pet.id === petDraft.id ? 'activeMini' : ''} key={pet.id} type="button" onClick={() => setPetDraft(petToDraft(pet))}>{pet.name}<br /><small>{pet.species} • {pet.lost_mode ? 'lost mode' : 'safe'}</small></button>)}
+        </article>
+
+        <article className="panel wide">
+          <h3>Uploads, Google sync, and Dog Pack invites</h3>
+          <p>Pet photos upload to Supabase Storage and update the saved pet photo. Medical documents upload to the private medical-documents bucket and create a pet document record. If Google is connected, photos sync to Google Photos and documents sync to Google Drive.</p>
+          <div className="grid2">
+            <label>Upload type<select value={uploadKind} onChange={(event) => setUploadKind(event.target.value as 'pet_photo' | 'medical_document')}><option value="pet_photo">Pet photo → Supabase + Google Photos</option><option value="medical_document">Medical document → Supabase + Google Drive</option></select></label>
+            <label>Upload title<input value={uploadTitle} onChange={(event) => setUploadTitle(event.target.value)} /></label>
+          </div>
+          <input type="file" accept={uploadKind === 'pet_photo' ? 'image/*' : 'image/*,application/pdf'} onChange={(event) => uploadSelectedFile(event.target.files?.[0])} />
+          <div className="actions"><button type="button" disabled={busy} onClick={startGoogleConnect}>Connect Google for upload sync</button><button type="button" disabled={busy} onClick={createPackInvite}>Create Dog Pack invite link</button></div>
+          {inviteUrl && <p className="notice"><strong>Dog Pack invite:</strong> {inviteUrl}</p>}
         </article>
 
         <article className="panel wide">

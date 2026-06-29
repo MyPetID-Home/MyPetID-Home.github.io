@@ -7,7 +7,8 @@
 - Project ref: `ryyaefxszkmibcnngnfg`
 - Region: `us-east-2`
 - App URL: `https://ryyaefxszkmibcnngnfg.supabase.co`
-- Public frontend: `https://mypetid-home.github.io/`
+- Static frontend: `https://mypetid-home.github.io/`
+- Vercel functional app: `https://mypetid.vercel.app` once deployment alias is active
 
 Older/import refs may appear in historical backups, but current MyPetID app operations should target `ryyaefxszkmibcnngnfg` only.
 
@@ -32,6 +33,34 @@ Verification/calendar/admin-debug tables added by `docs/migrations/2026-06-admin
 - `account_activity_log`
 - `admin_account_debug_view`
 
+XP/awards/found-flow tables added by `docs/migrations/2026-06-xp-awards-found-flow.sql`:
+
+- `xp_events`
+- `award_rules`
+- scan/found-report follow-up columns on `scan_events`
+
+Commerce/QR/upload/provider tables added by `docs/migrations/2026-06-commerce-qr-uploads.sql`:
+
+- `tag_products`
+- `tag_orders`
+- `pet_qr_codes`
+- `account_qr_codes`
+- `dog_pack_invites`
+- `provider_credentials`
+- `upload_events`
+- `membership_events`
+
+## Current physical tag products
+
+`tag_products` has two active public-readable products:
+
+| slug | name | price | Stripe purpose |
+| --- | --- | ---: | --- |
+| `basic-nfc-tag` | Basic NFC Tag | `$10.00` | Blank NFC card plus QR-code sticker. |
+| `id-nfc-tag-card` | ID NFC Tag Card | `$15.00` | License-style ID card with NFC + QR fallback. |
+
+Prices/products are also configured in Stripe and mirrored into Vercel env for checkout.
+
 ## Storage buckets
 
 Buckets created for app media/document flows:
@@ -43,9 +72,16 @@ Buckets created for app media/document flows:
 
 Private bucket object paths should start with the owner profile UUID so RLS can match `auth.uid()` against `storage.foldername(name)[1]`.
 
+## Upload behavior
+
+- Pet photos upload to `pet-photos`, create an `upload_events` row, and update the selected pet photo when a pet is selected.
+- Medical documents upload to `medical-documents`, create a `pet_documents` row, and create an `upload_events` row.
+- If the user has active Google credentials in `provider_credentials`, Vercel API attempts Google Photos sync for pet photos and Google Drive sync for medical docs.
+- Supabase remains source of truth even if Google sync fails; failures are recorded in `upload_events.google_status/google_error`.
+
 ## Admin audit/history
 
-The live DB now has `account_activity_log` and row triggers for:
+The live DB has `account_activity_log` and row triggers for:
 
 - `profiles`
 - `pets`

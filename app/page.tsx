@@ -22,6 +22,7 @@ export default function HomePage() {
             <p className="lead">Create an account, set up your dog profile, connect an NFC/QR tag, preview the public scan page, and manage walks, meals, medical documents, training, play, goals, Dog Pack groups, and alerts.</p>
             <div className="actions">
               <Link className="button primary" href="/dashboard/">Open app</Link>
+              <Link className="button" href="/shop/">Buy NFC tag</Link>
               <Link className="button" href="/pet/?tag=demo-tag-001">View demo public profile</Link>
             </div>
           </div>

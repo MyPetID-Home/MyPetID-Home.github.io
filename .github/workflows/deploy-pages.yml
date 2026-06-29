@@ -35,10 +35,20 @@ jobs:
           pnpm approve-builds --all || true
       - name: Build static site
         env:
+          BUILD_STATIC_EXPORT: '1'
           NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
           NEXT_PUBLIC_ADMIN_EMAILS: ${{ vars.NEXT_PUBLIC_ADMIN_EMAILS }}
-        run: pnpm build
+          NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${{ vars.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY }}
+          NEXT_PUBLIC_STRIPE_BASIC_NFC_PRICE_ID: ${{ vars.NEXT_PUBLIC_STRIPE_BASIC_NFC_PRICE_ID }}
+          NEXT_PUBLIC_STRIPE_ID_NFC_PRICE_ID: ${{ vars.NEXT_PUBLIC_STRIPE_ID_NFC_PRICE_ID }}
+        run: |
+          set -euo pipefail
+          trap 'if [ -d .app-api-vercel-only ]; then rm -rf app/api; mv .app-api-vercel-only app/api; fi' EXIT
+          mv app/api .app-api-vercel-only
+          pnpm build
+          mv .app-api-vercel-only app/api
+          trap - EXIT
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:

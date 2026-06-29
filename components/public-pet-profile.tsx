@@ -79,8 +79,14 @@ function readTag() {
   return new URLSearchParams(window.location.search).get('tag') || 'demo-tag-001';
 }
 
+function readPetId() {
+  if (typeof window === 'undefined') return '';
+  return new URLSearchParams(window.location.search).get('pet') || '';
+}
+
 export function PublicPetProfile() {
   const tag = readTag();
+  const petId = readPetId();
   const [pet, setPet] = useState<Pet>(fallbackPet);
   const [contactStatus, setContactStatus] = useState('Choose a contact action. Nothing writes location data from this public view.');
   const demoMap = useMemo(() => 'https://maps.google.com/maps?q=44.097371370963934,-70.16535158888728&z=13&output=embed', []);
@@ -90,6 +96,17 @@ export function PublicPetProfile() {
     if (localPet) setPet((current) => ({ ...current, ...localPet }));
     async function loadPet() {
       if (!supabase) return;
+      if (petId) {
+        const { data: directPet, error: directError } = await supabase
+          .from('pets')
+          .select('id,name,breed,photo_url,medical_public,behavior_public,contact_public,lost_mode')
+          .eq('id', petId)
+          .maybeSingle();
+        if (!directError && directPet) {
+          setPet((current) => ({ ...current, ...directPet }));
+          return;
+        }
+      }
       const { data, error } = await supabase
         .from('tags')
         .select('pet:pets(id,name,breed,photo_url,medical_public,behavior_public,contact_public,lost_mode)')
@@ -99,7 +116,7 @@ export function PublicPetProfile() {
       if (!error && loaded) setPet((current) => ({ ...current, ...(Array.isArray(loaded) ? loaded[0] : loaded) }));
     }
     loadPet();
-  }, [tag]);
+  }, [tag, petId]);
 
   const publicPhone = typeof pet.contact_public?.phone === 'string' ? pet.contact_public.phone : '';
   const publicEmail = typeof pet.contact_public?.email === 'string' ? pet.contact_public.email : '';

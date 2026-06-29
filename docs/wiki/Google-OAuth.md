@@ -6,13 +6,15 @@ Supabase project:
 
 - `ryyaefxszkmibcnngnfg`
 
-Current Supabase Auth status from management API:
+Current app implementation status:
 
-- Google provider enabled: `false`
-- Google client ID present in Supabase: `false`
-- Site URL: `https://mypetid-home.github.io`
-
-Clydius does not currently have a Google OAuth **client secret** in the private profile env, so the agent cannot safely enable Google login yet. A browser API key or GitHub secret named `GOOGLE_API_KEY` is not enough for Supabase Auth Google login.
+- Supabase email/password auth is wired.
+- Google login button exists in the auth panel.
+- Vercel API routes now exist for app-level Google connection and upload sync:
+  - `/api/google/oauth/start`
+  - `/api/google/oauth/callback`
+  - `/api/uploads` uses Google Photos for pet photos and Google Drive for documents after Google is connected.
+- CAK3D is still finishing Google OAuth/provider setup, so do not mark Google login/upload sync fully production verified until Google credentials, redirect URIs, and Supabase Auth provider settings are confirmed live.
 
 ## Google Cloud OAuth Client ID
 
@@ -20,18 +22,15 @@ Client ID supplied by CAK3D:
 
 - `126805153488-mgmkt24vqgtuoc2f7191o6o0sm4ido7b.apps.googleusercontent.com`
 
-To enable Supabase Google login, also copy the matching Google OAuth client secret from:
-
-Google Cloud Console → APIs & Services → Credentials → Web OAuth client details.
-
-Store the secret only in a secure env/secret store. Do not commit it.
+Store the matching OAuth client secret only in secure env/secret stores. Do not commit it.
 
 ## Google Cloud Authorized JavaScript origins
 
-Add these to the Google OAuth web client:
+Add active frontend origins:
 
 - `https://mypetid-home.github.io`
-- `https://mypetid-b0t2wjpx4-my-pet-id.vercel.app` if the Vercel deployment becomes public/active
+- `https://mypetid.vercel.app`
+- Vercel preview URL(s), only while testing previews
 - `http://localhost:3000`
 - `http://127.0.0.1:3000`
 
@@ -41,13 +40,13 @@ For Supabase Auth Google login, use the Supabase callback URI:
 
 - `https://ryyaefxszkmibcnngnfg.supabase.co/auth/v1/callback`
 
-The app may redirect users after login to:
+For MyPetID app-level Google upload sync on Vercel, allow:
 
-- `https://mypetid-home.github.io/dashboard/`
-- `https://mypetid-b0t2wjpx4-my-pet-id.vercel.app/dashboard/` if Vercel is public/active
-- `http://localhost:3000/dashboard/`
+- `https://mypetid.vercel.app/api/google/oauth/callback`
+- active Vercel preview callback URLs only while testing previews
+- `http://localhost:3000/api/google/oauth/callback` for local development
 
-Those dashboard URLs are app redirect destinations / allow-list values, not places to store a Google client secret.
+The app redirects users after login/connect back to dashboard/settings routes.
 
 ## Supabase Auth settings to apply once secret is available
 
@@ -61,6 +60,7 @@ Also keep Site URL and redirect allow-list aligned with the active frontend host
 
 ## Notes
 
-- Supabase Auth should own the Google OAuth provider callback while the app is static on GitHub Pages.
+- Supabase Auth should own the Google login provider flow.
+- Vercel API owns the app-level Google Photos/Drive connection used for upload sync.
 - Do not commit Google client secrets.
-- When Google is enabled in Supabase, verify from the live Pages `/dashboard/` Google button.
+- When Google is enabled, verify both login and upload sync from the live Vercel app.
