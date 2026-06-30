@@ -32,8 +32,9 @@
 - `/shop/` and `/subscribe/` explain customer purchase/subscription process.
 - Vercel checkout API creates Stripe Checkout sessions and Supabase `tag_orders`.
 - Payment success route confirms Stripe sessions and marks paid orders.
+- Admin fulfillment queue lists paid/manual-review tag orders and supports queued/printing/shipped/delivered/cancelled/refunded/manual-review status changes.
 - Patreon remains visible as a membership/support path.
-- Remaining: email verification-code sending, invite acceptance/role management, final scan anti-abuse checks, and admin fulfillment dashboard polish.
+- Remaining: email verification-code sending, invite acceptance/role management, final scan anti-abuse checks, shipping/tracking notification automation, and fulfillment edge-case polish.
 
 ## Phase 5: Uploads and Google sync — partially implemented
 

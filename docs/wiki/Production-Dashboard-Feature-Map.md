@@ -15,7 +15,7 @@ MyPetID is intended to be a full pet profile, activity, health, diet, distance, 
 - Goals: weekly distance, meals/day, care tasks, XP, levels, task completion buttons.
 - Settings: public-field toggles, alerts, units, privacy mode, theme, Google upload-sync connect button.
 - Uploads: pet photos and medical docs upload to Supabase; Google Photos/Drive sync is attempted when connected.
-- Admin: tag ID generation, profile/tag/search views, XP/award rule controls, found-report review, unrestricted CAK3D access.
+- Admin: tag ID generation, paid tag fulfillment queue, profile/tag/search views, XP/award rule controls, found-report review, unrestricted CAK3D access.
 
 ## Customer commerce modules
 
@@ -39,14 +39,14 @@ MyPetID is intended to be a full pet profile, activity, health, diet, distance, 
   - Google OAuth connect/callback for upload sync
   - Supabase-backed upload handling
   - Dog Pack invite creation with membership slot checks
-  - membership summary, tag activation, and Stripe Billing Portal routes
+  - membership summary, tag activation, Stripe Billing Portal routes, and admin tag-order fulfillment API
 - Supabase remains source of truth for auth, profiles, pets, tags, scans, QR records, orders, upload events, provider credentials, documents, and storage.
 
 ## Production backend still needed
 
 Before wider live customer use, the following need more hardening:
 
-- Stripe order fulfillment dashboard and webhook edge-case hardening.
+- Stripe order fulfillment queue is live in the admin dashboard; remaining work is shipping-notification automation, tracking links, and webhook edge-case hardening.
 - Patreon OAuth/webhook tier sync is wired; keep monitoring real dashboard deliveries and edge cases.
 - Email verification-code sending from `mypetid@yahoo.com` for signup/verification; keep support/admin/help mailboxes separate.
 - Final scan-event writes with active-tag, owner/trusted-device, abuse, and rate-limit checks.

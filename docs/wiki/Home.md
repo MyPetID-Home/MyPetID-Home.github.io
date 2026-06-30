@@ -30,8 +30,9 @@ Both physical tag products are represented in Supabase `tag_products` and Stripe
 4. Customer selects Basic NFC Tag or ID NFC Tag Card.
 5. Vercel API starts Stripe Checkout and creates a Supabase `tag_orders` row.
 6. Stripe success return confirms the session and marks the order paid.
-7. CAK3D prints/programs the NFC tag/card with the saved pet public QR URL and ships it.
-8. Account QR/share links let trusted users join a Dog Pack.
+7. Admin dashboard fulfillment queue lists paid/manual-review tag orders with customer, pet, shipping, QR/NFC payload, Stripe IDs, and status controls.
+8. CAK3D prints/programs the NFC tag/card with the saved pet public QR URL, packages it, marks queued/printing/shipped/delivered, and ships it.
+9. Account QR/share links let trusted users join a Dog Pack.
 
 ## Important production boundary
 
@@ -40,6 +41,6 @@ GitHub Pages is static. Anything involving secrets or trusted server-side decisi
 - Stripe Checkout/session confirmation, signed webhooks, Billing Portal, membership summaries, and tier-gated tag activation
 - Patreon OAuth callbacks, signed webhooks, and tier reconciliation are wired on Vercel.
 - Google OAuth client secret handling and upload sync
-- admin-only tag minting and user invites
+- admin-only tag minting, fulfillment queue status changes, and user invites
 - final scan-event tier checks and anti-abuse filtering
 - private document upload/signing rules

@@ -35,7 +35,7 @@ If verifying static export manually, copy to a temporary directory and remove `a
 
 ## Deployment lanes
 
-- **Vercel**: functional app host for API routes (`/api/checkout`, `/api/uploads`, `/api/account/membership`, `/api/tags/activate`, `/api/subscriptions/portal`, `/api/google/oauth/*`, Dog Pack invite creation) and webhooks/jobs.
+- **Vercel**: functional app host for API routes (`/api/checkout`, `/api/uploads`, `/api/account/membership`, `/api/tags/activate`, `/api/subscriptions/portal`, `/api/admin/tag-orders`, `/api/google/oauth/*`, Dog Pack invite creation) and webhooks/jobs.
 - **GitHub Pages**: static export host for public/static fallback pages.
 
 `next.config.mjs` only sets `output: 'export'` when `BUILD_STATIC_EXPORT=1`.

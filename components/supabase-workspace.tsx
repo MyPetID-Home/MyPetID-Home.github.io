@@ -149,6 +149,28 @@ type XpEventRow = {
   created_at: string;
 };
 
+type FulfillmentOrder = {
+  id: string;
+  profile_id: string | null;
+  pet_id: string | null;
+  tag_product_id: string | null;
+  provider: string;
+  provider_checkout_id: string | null;
+  provider_payment_id: string | null;
+  status: string;
+  amount_cents: number | null;
+  currency: string | null;
+  public_pet_url: string | null;
+  qr_payload: string | null;
+  ship_to: Record<string, any> | null;
+  metadata: Record<string, any> | null;
+  created_at: string;
+  updated_at: string;
+  product?: { name?: string | null; slug?: string | null; tag_type?: string | null; price_cents?: number | null } | null;
+  profile?: { email?: string | null; display_name?: string | null; phone?: string | null; tier?: string | null } | null;
+  pet?: { name?: string | null; species?: string | null; breed?: string | null; photo_url?: string | null; lost_mode?: boolean | null } | null;
+};
+
 type PetDraft = {
   id?: string;
   name: string;
@@ -187,6 +209,13 @@ function installId() {
 }
 function authValue(token: string) { return [String.fromCharCode(66, 101, 97, 114, 101, 114), token].join(' '); }
 function limitLabel(value: number | null) { return value === null ? 'Unlimited' : String(value); }
+function money(cents?: number | null, currency = 'usd') { return cents == null ? 'n/a' : new Intl.NumberFormat(undefined, { style: 'currency', currency: currency || 'usd' }).format(cents / 100); }
+function shippingSummary(shipTo?: Record<string, any> | null) {
+  const details = shipTo || {};
+  const address = details.address || {};
+  return [details.name, address.line1, address.line2, address.city, address.state, address.postal_code].filter(Boolean).join(', ') || 'No shipping address yet';
+}
+const fulfillmentStatuses = ['paid', 'queued', 'printing', 'shipped', 'delivered', 'manual_review', 'cancelled', 'refunded'];
 
 function petToDraft(pet: PetRow): PetDraft {
   const contact = pet.contact_public || {};
@@ -241,6 +270,10 @@ export function SupabaseWorkspace() {
   const [adminDebugRows, setAdminDebugRows] = useState<AdminDebugRow[]>([]);
   const [activityRows, setActivityRows] = useState<ActivityLogRow[]>([]);
   const [awardRules, setAwardRules] = useState<AwardRuleRow[]>([]);
+  const [fulfillmentOrders, setFulfillmentOrders] = useState<FulfillmentOrder[]>([]);
+  const [fulfillmentSearch, setFulfillmentSearch] = useState('');
+  const [fulfillmentFilter, setFulfillmentFilter] = useState('all');
+  const [fulfillmentNote, setFulfillmentNote] = useState('');
   const [trainingCommands, setTrainingCommands] = useState<TrainingCommandRow[]>([]);
   const [xpEvents, setXpEvents] = useState<XpEventRow[]>([]);
   const [trainingDraft, setTrainingDraft] = useState({ command: 'Sit', verbalCue: 'Sit', handSignal: '✋ open palm', proofingGoal: 'Responds with distractions', status: 'Learning', points: '20', notes: 'Short upbeat sessions.' });
@@ -264,6 +297,7 @@ export function SupabaseWorkspace() {
   const selectedPetTraining = useMemo(() => trainingCommands.filter((item) => item.pet_id === selectedPet?.id).slice(0, 6), [trainingCommands, selectedPet?.id]);
   const selectedPetXp = useMemo(() => xpEvents.filter((item) => !selectedPet?.id || item.pet_id === selectedPet.id).slice(0, 6), [xpEvents, selectedPet?.id]);
   const latestSelectedScan = selectedPetScans[0] || null;
+  const fulfillmentCounts = useMemo(() => fulfillmentOrders.reduce((acc, order) => ({ ...acc, [order.status]: (acc[order.status] || 0) + 1 }), {} as Record<string, number>), [fulfillmentOrders]);
   const tierLine = membership ? `${membership.effective_tier} via ${membership.provider} • ${membership.status}${profile?.is_admin ? ' • unrestricted admin bypass' : ''}` : profile ? `${profile.tier}${profile.is_admin ? ' • unrestricted admin bypass' : ''}` : 'not signed in';
   const filteredAdminDebugRows = useMemo(() => {
     const needle = adminSearch.trim().toLowerCase();
@@ -339,10 +373,19 @@ export function SupabaseWorkspace() {
         const { data: activityData, error: activityError } = await supabase.from('account_activity_log').select('id,event_time,actor_email,target_profile_id,target_pet_id,target_table,target_record_id,action,changed_fields,note').order('event_time', { ascending: false }).limit(100);
         if (activityError) throw activityError;
         setActivityRows((activityData || []) as ActivityLogRow[]);
+
+        const orderParams = new URLSearchParams();
+        if (fulfillmentFilter !== 'all') orderParams.set('status', fulfillmentFilter);
+        if (fulfillmentSearch.trim()) orderParams.set('search', fulfillmentSearch.trim());
+        const ordersResponse = await fetch(`/api/admin/tag-orders/?${orderParams.toString()}`, { headers: { Authorization: authValue(activeSession.access_token) } });
+        const ordersJson = await ordersResponse.json();
+        if (ordersResponse.ok) setFulfillmentOrders((ordersJson.orders || []) as FulfillmentOrder[]);
+        else setFulfillmentOrders([]);
       } else {
         setAdminProfiles([]);
         setAdminDebugRows([]);
         setActivityRows([]);
+        setFulfillmentOrders([]);
       }
       setMessage(`Loaded Supabase workspace for ${activeSession.user.email}.`);
     } catch (error) {
@@ -350,7 +393,7 @@ export function SupabaseWorkspace() {
     } finally {
       setBusy(false);
     }
-  }, [session]);
+  }, [session, fulfillmentFilter, fulfillmentSearch]);
 
   useEffect(() => {
     if (!supabase) return;
@@ -371,6 +414,7 @@ export function SupabaseWorkspace() {
         setAdminProfiles([]);
         setAdminDebugRows([]);
         setActivityRows([]);
+        setFulfillmentOrders([]);
         setAwardRules([]);
         setTrainingCommands([]);
         setXpEvents([]);
@@ -413,6 +457,21 @@ export function SupabaseWorkspace() {
     setBusy(false);
     if (!response.ok) return setMessage(json.error || 'Stripe billing portal is not available for this account.');
     window.location.href = json.url;
+  }
+
+  async function updateOrderStatus(order: FulfillmentOrder, status: string) {
+    if (!session?.user) return setMessage('Sign in first.');
+    setBusy(true);
+    const response = await fetch('/api/admin/tag-orders/', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', Authorization: authValue(session.access_token) },
+      body: JSON.stringify({ id: order.id, status, note: fulfillmentNote }),
+    });
+    const json = await response.json();
+    setBusy(false);
+    if (!response.ok) return setMessage(json.error || 'Order status update failed.');
+    setFulfillmentOrders((orders) => orders.map((item) => item.id === order.id ? { ...item, ...json.order } : item));
+    setMessage(`Order ${order.id.slice(0, 8)} moved to ${status}.`);
   }
 
   async function savePet() {
@@ -763,6 +822,32 @@ export function SupabaseWorkspace() {
           <label>Owner resolution note<textarea value={foundDraft.ownerResolutionNote} onChange={(event) => setFoundDraft({ ...foundDraft, ownerResolutionNote: event.target.value })} /></label>
           <div className="actions"><button className="primary" type="button" disabled={busy || !latestSelectedScan} onClick={saveFoundFollowup}>Save owner follow-up</button></div>
         </article>
+
+        {isAdmin && <article className="panel wide adminLivePanel fulfillmentQueue">
+          <h3>Physical tag fulfillment queue</h3>
+          <p>Paid Stripe tag orders land here for CAK3D to print/program QR or NFC payloads, package, ship, and mark delivered. Use status changes as the shop floor checklist.</p>
+          <div className="grid2">
+            <label>Search order, customer, pet, Stripe ID, or address<input placeholder="email, Clyde, pi_..., shipped" value={fulfillmentSearch} onChange={(event) => setFulfillmentSearch(event.target.value)} /></label>
+            <label>Status filter<select value={fulfillmentFilter} onChange={(event) => setFulfillmentFilter(event.target.value)}><option value="all">All statuses</option>{fulfillmentStatuses.map((status) => <option key={status} value={status}>{status}</option>)}</select></label>
+          </div>
+          <label>Fulfillment note for next status change<input placeholder="Printed QR, programmed NFC, tracking #, package note..." value={fulfillmentNote} onChange={(event) => setFulfillmentNote(event.target.value)} /></label>
+          <div className="tagList">{fulfillmentStatuses.map((status) => <span key={status}>{status}: {fulfillmentCounts[status] || 0}</span>)}</div>
+          <div className="actions"><button className="primary" type="button" disabled={busy} onClick={() => loadWorkspace()}>{busy ? 'Refreshing…' : 'Refresh orders'}</button></div>
+          <div className="fulfillmentGrid">
+            {fulfillmentOrders.length === 0 ? <p>No tag orders match this view yet. New paid Stripe tag checkouts will appear here after checkout/webhook confirmation.</p> : fulfillmentOrders.map((order) => <div className="fulfillmentCard" key={order.id}>
+              <div className="fulfillmentHead"><strong>{order.product?.name || 'Physical MyPetID tag'}</strong><span className={`fulfillmentStatus ${order.status}`}>{order.status}</span></div>
+              <small>{money(order.amount_cents, order.currency || 'usd')} • {order.provider} • ordered {fmtDate(order.created_at)}</small>
+              <p><strong>Customer:</strong> {order.profile?.email || order.profile?.display_name || order.profile_id || 'unknown'}{order.profile?.phone ? ` • ${order.profile.phone}` : ''}</p>
+              <p><strong>Pet:</strong> {order.pet?.name || 'not linked yet'}{order.pet?.breed ? ` • ${order.pet.breed}` : ''}{order.pet?.lost_mode ? ' • LOST MODE' : ''}</p>
+              <p><strong>Ship to:</strong> {shippingSummary(order.ship_to)}</p>
+              <p><strong>QR/NFC payload:</strong> <code>{order.qr_payload || order.public_pet_url || 'Pending pet profile link'}</code></p>
+              <small>Order #{order.id.slice(0, 8)} • checkout {order.provider_checkout_id || 'n/a'} • payment {order.provider_payment_id || 'n/a'}</small>
+              {order.metadata?.fulfillment_note && <p className="notice"><strong>Last note:</strong> {String(order.metadata.fulfillment_note)}</p>}
+              {order.metadata?.tracking_url && <p><a href={String(order.metadata.tracking_url)} target="_blank" rel="noreferrer">Tracking link</a></p>}
+              <div className="actions compact">{fulfillmentStatuses.map((status) => <button key={status} type="button" disabled={busy || status === order.status} onClick={() => updateOrderStatus(order, status)}>{status}</button>)}</div>
+            </div>)}
+          </div>
+        </article>}
 
         {isAdmin && <article className="panel wide adminLivePanel">
           <h3>Admin award rules</h3>
