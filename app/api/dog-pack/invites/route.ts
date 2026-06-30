@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { appBaseUrl, serverSupabase, userFromBearer } from '../../../../lib/server-integrations';
+import { assertHelperAllowance, getMembershipSummary } from '../../../../lib/membership';
 
 export const dynamic = 'force-dynamic';
 
@@ -8,6 +9,8 @@ export async function POST(request: NextRequest) {
     const { user } = await userFromBearer(request.headers.get('authorization'));
     const body = await request.json() as { petId?: string; maxUses?: number };
     const supabase = serverSupabase();
+    const summary = await getMembershipSummary(supabase, user.id);
+    assertHelperAllowance(summary, body.maxUses || 1);
     const { data, error } = await supabase.from('dog_pack_invites').insert({
       inviter_profile_id: user.id,
       inviter_pet_id: body.petId || null,

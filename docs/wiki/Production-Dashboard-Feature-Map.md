@@ -20,7 +20,7 @@ MyPetID is intended to be a full pet profile, activity, health, diet, distance, 
 ## Customer commerce modules
 
 - `/shop/` — customer-facing NFC tag purchase process and Stripe checkout entry point.
-- `/subscribe/` — Stripe/Patreon membership explanation and tag selection path. Stripe monthly checkout is live for Basic/Silver/Gold/Diamond; Patreon OAuth is wired and webhook delivery needs the Patreon webhook secret.
+- `/subscribe/` — Stripe/Patreon membership explanation and tag selection path. Stripe monthly checkout is live for Basic/Silver/Gold/Diamond; Patreon OAuth and signed webhook verification are wired on Vercel.
 - `/payment/success/` — confirms Stripe checkout sessions and updates Supabase order status on Vercel.
 - `/payment/cancel/` — safe checkout cancellation page.
 
@@ -38,7 +38,8 @@ MyPetID is intended to be a full pet profile, activity, health, diet, distance, 
   - Stripe monthly subscription checkout for Basic/Silver/Gold/Diamond
   - Google OAuth connect/callback for upload sync
   - Supabase-backed upload handling
-  - Dog Pack invite creation
+  - Dog Pack invite creation with membership slot checks
+  - membership summary, tag activation, and Stripe Billing Portal routes
 - Supabase remains source of truth for auth, profiles, pets, tags, scans, QR records, orders, upload events, provider credentials, documents, and storage.
 
 ## Production backend still needed
@@ -46,8 +47,8 @@ MyPetID is intended to be a full pet profile, activity, health, diet, distance, 
 Before wider live customer use, the following need more hardening:
 
 - Stripe order fulfillment dashboard and webhook edge-case hardening.
-- Patreon OAuth/webhook tier sync: OAuth is wired; add Patreon webhook secret from dashboard and test delivery.
-- Email verification-code sending from the MyPetID admin/setup email system.
+- Patreon OAuth/webhook tier sync is wired; keep monitoring real dashboard deliveries and edge cases.
+- Email verification-code sending from `mypetid@yahoo.com` for signup/verification; keep support/admin/help mailboxes separate.
 - Final scan-event writes with active-tag, owner/trusted-device, abuse, and rate-limit checks.
 - Invite acceptance and role/permission management for Dog Pack users.
 - Push/email notification delivery.

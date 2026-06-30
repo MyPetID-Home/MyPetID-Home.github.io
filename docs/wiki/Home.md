@@ -20,7 +20,7 @@ This folder is the source-of-truth fallback for the GitHub Wiki until the `.wiki
 | Basic NFC Tag | `$10.00` | Blank NFC tag card with QR-code sticker pointing at the saved public pet profile. |
 | ID NFC Tag Card | `$15.00` | License-style MyPetID card with NFC tap plus printed QR fallback. |
 
-Both physical tag products are represented in Supabase `tag_products` and Stripe price/product metadata. Monthly Basic/Silver/Gold/Diamond memberships are represented in Supabase `membership_tiers`, Stripe recurring prices, and live Patreon campaign tier IDs. Patreon OAuth is wired; Patreon webhook delivery still needs the app webhook secret from Patreon.
+Both physical tag products are represented in Supabase `tag_products` and Stripe price/product metadata. Monthly Basic/Silver/Gold/Diamond memberships are represented in Supabase `membership_tiers`, Stripe recurring prices, and live Patreon campaign tier IDs. Patreon OAuth and signed webhook verification are wired on Vercel.
 
 ## Purchase/fulfillment flow
 
@@ -37,8 +37,8 @@ Both physical tag products are represented in Supabase `tag_products` and Stripe
 
 GitHub Pages is static. Anything involving secrets or trusted server-side decisions belongs in Vercel API routes, Supabase Auth/Storage/RLS, Supabase Edge Functions, or future backend jobs:
 
-- Stripe Checkout/session confirmation and future webhook reconciliation
-- Patreon OAuth callbacks, webhooks, and tier enforcement: OAuth/callback is wired; webhook route exists but requires the Patreon webhook secret before live webhook delivery.
+- Stripe Checkout/session confirmation, signed webhooks, Billing Portal, membership summaries, and tier-gated tag activation
+- Patreon OAuth callbacks, signed webhooks, and tier reconciliation are wired on Vercel.
 - Google OAuth client secret handling and upload sync
 - admin-only tag minting and user invites
 - final scan-event tier checks and anti-abuse filtering

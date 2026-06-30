@@ -12,7 +12,7 @@ Clydius-maintained rebuild for the MyPetID NFC/QR pet profile, tracker, Dog Pack
   - **Basic NFC Tag** — `$10.00`, blank NFC card plus QR-code sticker.
   - **ID NFC Tag Card** — `$15.00`, license-style ID card with NFC + QR-code camera fallback.
 - Stripe products/prices are created and saved in Supabase `tag_products`; Vercel API checkout creates `tag_orders` and returns secure Stripe Checkout sessions.
-- Stripe monthly memberships are created for Basic/Silver/Gold/Diamond and mirrored in Supabase `membership_tiers`.
+- Stripe monthly memberships are created for Basic/Silver/Gold/Diamond and mirrored in Supabase `membership_tiers`; Vercel APIs now expose membership summaries, Stripe Billing Portal sessions, server-side tag activation checks, and Dog Pack invite limit checks.
 - Stripe webhook endpoint reconciles Checkout, subscription, invoice, and refund events into Supabase orders/membership records.
 - Payment success page confirms the Stripe Checkout session and marks matching Supabase orders paid when running on Vercel.
 - Supabase Auth and dashboard workspace for signed-in account profile edits, pet create/update, physical tag claim, trusted browser records, owner scan logging, scan history, and admin tag/profile inventory.
@@ -44,13 +44,13 @@ Copy `.env.example` to `.env.local` and add only browser-safe public values loca
 ## Provider status
 
 - **Supabase:** live project `ryyaefxszkmibcnngnfg` is source of truth for auth/data/storage.
-- **Stripe:** Basic NFC Tag and ID NFC Tag Card products/prices are configured; Basic/Silver/Gold/Diamond monthly subscription prices are configured; checkout/session confirmation/webhook APIs are implemented for Vercel.
-- **Patreon:** OAuth link/callback is wired with private Patreon credentials; live campaign tier IDs are mirrored into Supabase. Webhook route exists and will verify signatures once `PATREON_WEBHOOK_SECRET` is added from the Patreon app dashboard.
+- **Stripe:** Basic NFC Tag and ID NFC Tag Card products/prices are configured; Basic/Silver/Gold/Diamond monthly subscription prices are configured; checkout/session confirmation/webhook/Billing Portal APIs are implemented for Vercel.
+- **Patreon:** OAuth link/callback is wired with private Patreon credentials; live campaign tier IDs are mirrored into Supabase; signed Vercel webhook verification is configured and live.
 - **Google:** upload-sync API and OAuth callback routes are in place, but CAK3D is still finishing Google OAuth/provider setup; do not treat Google login/sync as fully production verified until credentials/redirects are completed.
-- **Email verification:** MyPetID will use email verification codes/links from the MyPetID admin/setup email system. Automated SMS/phone PIN verification is not planned.
+- **Email verification:** MyPetID will use email verification codes/links from `mypetid@yahoo.com` for signup and verification. Support/admin/help addresses remain separate. Automated SMS/phone PIN verification is not planned.
 
 ## Security notes
 
 - Never commit `.env`, service-role keys, PATs, Stripe keys, Patreon tokens, Google OAuth secrets, Mongo URLs, passwords, or Supabase access tokens.
 - Supabase anon/publishable keys are public by design, but RLS must enforce access.
-- Admin/CAK3D accounts should retain unrestricted app access for testing independent of future subscription limits.
+- MyPetID now uses server-side Vercel membership checks for tag activation and Dog Pack invite slot limits. Admin/CAK3D accounts remain unrestricted for active testing.

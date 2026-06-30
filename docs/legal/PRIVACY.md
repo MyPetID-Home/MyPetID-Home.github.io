@@ -52,7 +52,7 @@ No outside users should have access to private account data unless the pet owner
 
 ## 6. Sharing and third-party services
 
-MyPetID does not sell pet owner data. Data may be processed by services used to operate the app, such as hosting, authentication, database, storage, email, analytics, payment, membership, or OAuth providers. Examples may include Supabase, GitHub Pages, Vercel, Google services, Stripe, Patreon, and email providers used by the MyPetID admin/setup email system.
+MyPetID does not sell pet owner data. Data may be processed by services used to operate the app, such as hosting, authentication, database, storage, email, analytics, payment, membership, or OAuth providers. Examples may include Supabase, GitHub Pages, Vercel, Google services, Stripe, Patreon, and email providers used to send signup/verification messages from `mypetid@yahoo.com`.
 
 Sensitive server-side credentials, service-role keys, OAuth secrets, webhook secrets, and payment secrets must remain in private environment or provider secret stores and must not be included in public source code.
 

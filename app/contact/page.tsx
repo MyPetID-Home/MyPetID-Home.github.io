@@ -28,7 +28,7 @@ export default function Page() {
 
 <h2>Verification and messaging</h2>
 <h2>Email verification</h2>
-<p>MyPetID will use email-based account confirmation, password recovery, and verification codes sent from the MyPetID admin/setup email system. Phone numbers may still be stored as optional owner contact details, but MyPetID is not planning automated SMS/PIN verification at this time.</p>
+<p>MyPetID will use email-based account confirmation, password recovery, and verification codes sent from <code>mypetid@yahoo.com</code> for signup and verification. Support/admin/help mailboxes remain separate. Phone numbers may still be stored as optional owner contact details, but MyPetID is not planning automated SMS/PIN verification at this time.</p>
 
 <h2>Trademark notice</h2>
 

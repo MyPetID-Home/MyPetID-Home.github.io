@@ -35,7 +35,7 @@ If verifying static export manually, copy to a temporary directory and remove `a
 
 ## Deployment lanes
 
-- **Vercel**: functional app host for API routes (`/api/checkout`, `/api/uploads`, `/api/google/oauth/*`, Dog Pack invite creation) and future webhooks/jobs.
+- **Vercel**: functional app host for API routes (`/api/checkout`, `/api/uploads`, `/api/account/membership`, `/api/tags/activate`, `/api/subscriptions/portal`, `/api/google/oauth/*`, Dog Pack invite creation) and webhooks/jobs.
 - **GitHub Pages**: static export host for public/static fallback pages.
 
 `next.config.mjs` only sets `output: 'export'` when `BUILD_STATIC_EXPORT=1`.
@@ -43,8 +43,8 @@ If verifying static export manually, copy to a temporary directory and remove `a
 ## Provider operations
 
 - Stripe product/price IDs are stored privately in env and mirrored in Supabase `tag_products` / `membership_tiers`.
-- Stripe webhook secret and endpoint ID are stored privately in env/Vercel; webhook route verifies Stripe signatures before updating Supabase.
-- Patreon credentials are stored privately; OAuth link/callback is wired through Vercel API routes. Add `PATREON_WEBHOOK_SECRET` from the Patreon app dashboard to enable signed webhook delivery.
+- Stripe webhook secret and endpoint ID are stored privately in env/Vercel; webhook route verifies Stripe signatures before updating Supabase. Patreon webhook secret is also stored privately and live signed webhook verification has passed.
+- Patreon credentials are stored privately; OAuth link/callback and signed webhook verification are wired through Vercel API routes.
 - Google OAuth/upload sync routes are implemented but require Google-side OAuth/redirect completion before production verification.
 - Supabase Storage is authoritative for uploaded pet photos and documents; Google sync is a secondary copy.
 

@@ -15,7 +15,7 @@ For lost-pet emergencies, also contact local animal control, nearby shelters, lo
 
 ## Verification and messaging
 
-MyPetID will use email-based account confirmation, password recovery, and verification codes sent from the MyPetID admin/setup email system. Phone numbers may still be stored as optional owner contact details, but MyPetID is not planning automated SMS/PIN verification at this time.
+MyPetID will use email-based account confirmation, password recovery, and verification codes sent from `mypetid@yahoo.com` for signup and verification. Support/admin/help mailboxes remain separate. Phone numbers may still be stored as optional owner contact details, but MyPetID is not planning automated SMS/PIN verification at this time.
 
 ## Trademark notice
 

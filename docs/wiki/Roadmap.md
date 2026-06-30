@@ -33,7 +33,7 @@
 - Vercel checkout API creates Stripe Checkout sessions and Supabase `tag_orders`.
 - Payment success route confirms Stripe sessions and marks paid orders.
 - Patreon remains visible as a membership/support path.
-- Remaining: Patreon webhook secret/delivery test, subscription-tier enforcement, email verification-code sending, and admin fulfillment dashboard polish.
+- Remaining: email verification-code sending, invite acceptance/role management, final scan anti-abuse checks, and admin fulfillment dashboard polish.
 
 ## Phase 5: Uploads and Google sync — partially implemented
 
@@ -46,4 +46,4 @@
 
 - Restore useful legacy database chunks selectively, not old auth/storage internals.
 - Add background jobs for webhooks, upload retry, notifications, and order fulfillment status.
-- Add email verification-code flow using the MyPetID admin/setup email system; no automated SMS/phone PIN verification is planned.
+- Add email verification-code flow using `mypetid@yahoo.com` for signup/verification; keep support/admin/help mailboxes separate; no automated SMS/phone PIN verification is planned.

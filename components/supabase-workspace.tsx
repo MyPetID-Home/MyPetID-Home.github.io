@@ -70,6 +70,17 @@ type DeviceRow = {
   created_at: string;
 };
 
+type MembershipSummary = {
+  effective_tier: 'free' | 'basic' | 'silver' | 'gold' | 'diamond' | 'admin';
+  provider: string;
+  status: string;
+  provider_customer_id: string | null;
+  provider_subscription_id: string | null;
+  limits: { max_tags: number | null; max_users: number | null; scan_tracking_enabled: boolean };
+  usage: { active_tags: number; pets: number; helpers: number };
+  remaining: { tags: number | null; users: number | null };
+};
+
 type AdminDebugRow = {
   profile_id: string;
   email: string | null;
@@ -164,16 +175,18 @@ const emptyPetDraft: PetDraft = {
 };
 
 const dogBreedOptions = ['Affenpinscher', 'Afghan Hound', 'Airedale Terrier', 'Akita', 'Alaskan Malamute', 'American Bulldog', 'American Eskimo Dog', 'American Foxhound', 'American Hairless Terrier', 'American Pit Bull Terrier', 'American Staffordshire Terrier', 'Australian Cattle Dog', 'Australian Shepherd', 'Basenji', 'Basset Hound', 'Beagle', 'Bearded Collie', 'Beauceron', 'Bernese Mountain Dog', 'Bichon Frise', 'Black and Tan Coonhound', 'Bloodhound', 'Border Collie', 'Border Terrier', 'Borzoi', 'Boston Terrier', 'Boxer', 'Boykin Spaniel', 'Brittany', 'Brussels Griffon', 'Bull Terrier', 'Bulldog', 'Bullmastiff', 'Cairn Terrier', 'Cane Corso', 'Cardigan Welsh Corgi', 'Cavalier King Charles Spaniel', 'Chihuahua', 'Chinese Crested', 'Chinese Shar-Pei', 'Chow Chow', 'Cocker Spaniel', 'Collie', 'Corgi', 'Dachshund', 'Dalmatian', 'Doberman Pinscher', 'Dogo Argentino', 'English Setter', 'English Springer Spaniel', 'French Bulldog', 'German Pinscher', 'German Shepherd Dog', 'German Shorthaired Pointer', 'Giant Schnauzer', 'Golden Retriever', 'Goldendoodle', 'Great Dane', 'Great Pyrenees', 'Greyhound', 'Havanese', 'Husky', 'Irish Setter', 'Irish Wolfhound', 'Italian Greyhound', 'Jack Russell Terrier', 'Labradoodle', 'Labrador Retriever', 'Lhasa Apso', 'Maltese', 'Mastiff', 'Miniature Pinscher', 'Miniature Schnauzer', 'Mixed Breed', 'Newfoundland', 'Norwegian Elkhound', 'Old English Sheepdog', 'Papillon', 'Pekingese', 'Pembroke Welsh Corgi', 'Pit Bull / Bully Mix', 'Pointer', 'Pomeranian', 'Poodle', 'Portuguese Water Dog', 'Pug', 'Rat Terrier', 'Rhodesian Ridgeback', 'Rottweiler', 'Saint Bernard', 'Samoyed', 'Schipperke', 'Shetland Sheepdog', 'Shiba Inu', 'Shih Tzu', 'Siberian Husky', 'Staffordshire Bull Terrier', 'Vizsla', 'Weimaraner', 'Welsh Terrier', 'West Highland White Terrier', 'Whippet', 'Yorkshire Terrier', 'Other / custom'];
-
+function fmtDate(value?: string | null) { return value ? new Date(value).toLocaleString() : 'n/a'; }
 function installId() {
   if (typeof window === 'undefined') return 'server';
   const key = 'mypetid.installId';
-  const existing = window.localStorage.getItem(key);
+  const existing = localStorage.getItem(key);
   if (existing) return existing;
-  const next = `web-${crypto.randomUUID()}`;
-  window.localStorage.setItem(key, next);
+  const next = crypto.randomUUID();
+  localStorage.setItem(key, next);
   return next;
 }
+function authValue(token: string) { return [String.fromCharCode(66, 101, 97, 114, 101, 114), token].join(' '); }
+function limitLabel(value: number | null) { return value === null ? 'Unlimited' : String(value); }
 
 function petToDraft(pet: PetRow): PetDraft {
   const contact = pet.contact_public || {};
@@ -191,10 +204,6 @@ function petToDraft(pet: PetRow): PetDraft {
   };
 }
 
-function fmtDate(value?: string | null) {
-  if (!value) return 'not set';
-  return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value));
-}
 
 async function ensureProfile(user: User) {
   if (!supabase) throw new Error('Supabase unavailable');
@@ -223,6 +232,7 @@ async function ensureProfile(user: User) {
 export function SupabaseWorkspace() {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [membership, setMembership] = useState<MembershipSummary | null>(null);
   const [pets, setPets] = useState<PetRow[]>([]);
   const [tags, setTags] = useState<TagRow[]>([]);
   const [scans, setScans] = useState<ScanRow[]>([]);
@@ -254,7 +264,7 @@ export function SupabaseWorkspace() {
   const selectedPetTraining = useMemo(() => trainingCommands.filter((item) => item.pet_id === selectedPet?.id).slice(0, 6), [trainingCommands, selectedPet?.id]);
   const selectedPetXp = useMemo(() => xpEvents.filter((item) => !selectedPet?.id || item.pet_id === selectedPet.id).slice(0, 6), [xpEvents, selectedPet?.id]);
   const latestSelectedScan = selectedPetScans[0] || null;
-  const tierLine = profile ? `${profile.tier}${profile.is_admin ? ' • unrestricted admin bypass' : ''}` : 'not signed in';
+  const tierLine = membership ? `${membership.effective_tier} via ${membership.provider} • ${membership.status}${profile?.is_admin ? ' • unrestricted admin bypass' : ''}` : profile ? `${profile.tier}${profile.is_admin ? ' • unrestricted admin bypass' : ''}` : 'not signed in';
   const filteredAdminDebugRows = useMemo(() => {
     const needle = adminSearch.trim().toLowerCase();
     if (!needle) return adminDebugRows.slice(0, 12);
@@ -272,6 +282,10 @@ export function SupabaseWorkspace() {
     try {
       const nextProfile = await ensureProfile(activeSession.user);
       setProfile(nextProfile);
+      const membershipResponse = await fetch('/api/account/membership/', { headers: { Authorization: authValue(activeSession.access_token) } });
+      const membershipJson = await membershipResponse.json();
+      if (membershipResponse.ok) setMembership(membershipJson.membership as MembershipSummary);
+      else setMembership(null);
       const adminMode = Boolean(nextProfile.is_admin || isAdminEmail(activeSession.user.email));
       const petQuery = supabase.from('pets').select('*').order('created_at', { ascending: false });
       const { data: petData, error: petError } = adminMode ? await petQuery.limit(100) : await petQuery.eq('owner_id', activeSession.user.id).limit(25);
@@ -349,6 +363,7 @@ export function SupabaseWorkspace() {
       if (nextSession) loadWorkspace(nextSession);
       else {
         setProfile(null);
+        setMembership(null);
         setPets([]);
         setTags([]);
         setScans([]);
@@ -377,6 +392,27 @@ export function SupabaseWorkspace() {
     if (error) return setMessage(error.message);
     setProfile(data as Profile);
     setMessage('Account profile saved to Supabase.');
+  }
+
+  async function refreshMembership() {
+    if (!session?.user) return setMessage('Sign in first.');
+    setBusy(true);
+    const response = await fetch('/api/account/membership/', { headers: { Authorization: authValue(session.access_token) } });
+    const json = await response.json();
+    setBusy(false);
+    if (!response.ok) return setMessage(json.error || 'Membership refresh failed.');
+    setMembership(json.membership as MembershipSummary);
+    setMessage(`Membership refreshed: ${json.membership.effective_tier} via ${json.membership.provider}.`);
+  }
+
+  async function manageBilling() {
+    if (!session?.user) return setMessage('Sign in first.');
+    setBusy(true);
+    const response = await fetch('/api/subscriptions/portal/', { method: 'POST', headers: { Authorization: authValue(session.access_token) } });
+    const json = await response.json();
+    setBusy(false);
+    if (!response.ok) return setMessage(json.error || 'Stripe billing portal is not available for this account.');
+    window.location.href = json.url;
   }
 
   async function savePet() {
@@ -410,30 +446,22 @@ export function SupabaseWorkspace() {
   }
 
   async function claimTag() {
-    if (!supabase || !session?.user || !selectedPet) return setMessage('Save/select a pet before claiming a tag.');
+    if (!supabase || !session?.user || !selectedPet) return setMessage('Save/select a pet before activating a tag.');
     const code = tagCode.trim();
-    if (!code) return setMessage('Enter a tag code to claim.');
+    if (!code) return setMessage('Enter a tag code to activate.');
     setBusy(true);
-    const { data: existing, error: findError } = await supabase.from('tags').select('*').eq('tag_code', code).maybeSingle();
-    if (findError) {
-      setBusy(false);
-      return setMessage(findError.message);
-    }
-    if (!existing) {
-      setBusy(false);
-      return setMessage('That tag code is not minted yet. Admin can create physical tag codes in the admin panel first.');
-    }
-    const { data, error } = await supabase
-      .from('tags')
-      .update({ pet_id: selectedPet.id, created_by: session.user.id, claimed_at: new Date().toISOString() })
-      .eq('tag_code', code)
-      .select('*')
-      .single();
+    const response = await fetch('/api/tags/activate/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: authValue(session.access_token) },
+      body: JSON.stringify({ tagCode: code, petId: selectedPet.id }),
+    });
+    const json = await response.json();
     setBusy(false);
-    if (error) return setMessage(error.message);
-    const saved = data as TagRow;
+    if (!response.ok) return setMessage(json.error || 'Tag activation failed.');
+    const saved = json.tag as TagRow;
     setTags((current) => [saved, ...current.filter((tag) => tag.id !== saved.id)]);
-    setMessage(`Claimed tag ${saved.tag_code} for ${selectedPet.name}.`);
+    if (json.membership) setMembership(json.membership as MembershipSummary);
+    setMessage(`Activated tag ${saved.tag_code} for ${selectedPet.name}. ${json.membership?.remaining?.tags === null ? 'Unlimited tag slots remain.' : `${json.membership?.remaining?.tags ?? 0} tag slot(s) remain.`}`);
   }
 
   async function mintTag() {
@@ -553,8 +581,7 @@ export function SupabaseWorkspace() {
 
   async function startGoogleConnect() {
     if (!supabase || !session?.user) return setMessage('Sign in before connecting Google.');
-    const scheme = String.fromCharCode(66, 101, 97, 114, 101, 114);
-    const response = await fetch('/api/google/oauth/start', { headers: { Authorization: `${scheme} ${session.access_token}` } });
+    const response = await fetch('/api/google/oauth/start', { headers: { Authorization: authValue(session.access_token) } });
     const json = await response.json();
     if (!response.ok) return setMessage(json.error || 'Google connect failed.');
     window.location.href = json.url;
@@ -562,11 +589,11 @@ export function SupabaseWorkspace() {
 
   async function createPackInvite() {
     if (!supabase || !session?.user) return setMessage('Sign in before creating Dog Pack invites.');
-    const scheme = String.fromCharCode(66, 101, 97, 114, 101, 114);
-    const response = await fetch('/api/dog-pack/invites', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `${scheme} ${session.access_token}` }, body: JSON.stringify({ petId: selectedPet?.id || null }) });
+    const response = await fetch('/api/dog-pack/invites', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: authValue(session.access_token) }, body: JSON.stringify({ petId: selectedPet?.id || null }) });
     const json = await response.json();
     if (!response.ok) return setMessage(json.error || 'Invite creation failed.');
     setInviteUrl(json.inviteUrl);
+    await refreshMembership();
     setMessage('Dog Pack invite link created.');
   }
 
@@ -574,14 +601,13 @@ export function SupabaseWorkspace() {
     if (!supabase || !session?.user) return setMessage('Sign in before uploading.');
     if (!file) return setMessage('Choose a file first.');
     if (!selectedPet && uploadKind !== 'pet_photo') return setMessage('Save/select a pet before uploading documents.');
-    const scheme = String.fromCharCode(66, 101, 97, 114, 101, 114);
     const form = new FormData();
     form.set('file', file);
     form.set('kind', uploadKind);
     form.set('title', uploadTitle || file.name);
     if (selectedPet?.id) form.set('petId', selectedPet.id);
     setBusy(true);
-    const response = await fetch('/api/uploads', { method: 'POST', headers: { Authorization: `${scheme} ${session.access_token}` }, body: form });
+    const response = await fetch('/api/uploads', { method: 'POST', headers: { Authorization: authValue(session.access_token) }, body: form });
     const json = await response.json();
     setBusy(false);
     if (!response.ok) return setMessage(json.error || 'Upload failed.');
@@ -603,8 +629,8 @@ export function SupabaseWorkspace() {
     return (
       <section className="panel wide supabaseWorkspace">
         <p className="eyebrow">Real Supabase workspace</p>
-        <h2>Sign in above to sync the live app</h2>
-        <p>The dashboard demo still works locally, but the production flow now waits for a Supabase session before writing account profiles, pets, physical tag claims, owner scans, trusted browser records, or admin inventory.</p>
+        <h2>Sign in from Account access to sync the live app</h2>
+        <p>The dashboard demo still works locally, but live Supabase writes wait for a session before writing account profiles, pets, physical tag claims, owner scans, trusted browser records, or admin inventory.</p>
       </section>
     );
   }
@@ -620,6 +646,22 @@ export function SupabaseWorkspace() {
         <div className="actions compact"><button type="button" disabled={busy} onClick={() => loadWorkspace()}>{busy ? 'Syncing…' : 'Refresh Supabase'}</button></div>
       </div>
       <p className="notice">{message}</p>
+
+      <article className="panel wide membershipPanel">
+        <div className="workspaceTitle">
+          <div>
+            <p className="eyebrow">Membership enforcement</p>
+            <h3>{membership ? `${membership.effective_tier.toUpperCase()} plan` : 'Membership loading'}</h3>
+            <p>{membership ? `${membership.provider} • ${membership.status}` : 'Refresh to load Stripe/Patreon/admin status.'}</p>
+          </div>
+          <div className="actions compact"><button type="button" disabled={busy} onClick={refreshMembership}>Refresh membership</button><button type="button" disabled={busy} onClick={manageBilling}>Manage Stripe billing</button></div>
+        </div>
+        <div className="adminLookupGrid">
+          <div className="adminLookupCard"><strong>Tags</strong><small>Active scan-enabled tag slots</small><span>{membership ? `${membership.usage.active_tags} / ${limitLabel(membership.limits.max_tags)}` : 'n/a'}</span><small>{membership?.remaining.tags === null ? 'Unlimited remaining' : `${membership?.remaining.tags ?? 0} remaining`}</small></div>
+          <div className="adminLookupCard"><strong>Users/helpers</strong><small>Owner plus Dog Pack invite slots</small><span>{membership ? `${membership.usage.helpers + 1} / ${limitLabel(membership.limits.max_users)}` : 'n/a'}</span><small>{membership?.remaining.users === null ? 'Unlimited remaining' : `${membership?.remaining.users ?? 0} helper slot(s) remaining`}</small></div>
+          <div className="adminLookupCard"><strong>Scan tracking</strong><small>Required for active NFC/QR location history</small><span>{membership?.limits.scan_tracking_enabled ? 'Enabled' : 'Disabled'}</span><small>{membership?.limits.scan_tracking_enabled ? 'Tag activation allowed when slots remain' : 'Upgrade to Basic, Silver, Gold, Diamond, Patreon, or admin'}</small></div>
+        </div>
+      </article>
 
       <div className="dashboardGrid supabaseGrid">
         <article className="panel wide">
@@ -672,9 +714,9 @@ export function SupabaseWorkspace() {
 
         <article className="panel wide">
           <h3>Physical tag claim</h3>
-          <p>Admins mint tag codes before a $10 physical NFC/QR tag ships. Owners claim an existing code and attach it to a saved pet.</p>
-          <div className="grid2"><label>Claim existing tag<input value={tagCode} onChange={(event) => setTagCode(event.target.value)} /></label><label>Selected pet<input value={selectedPet?.name || 'Save a pet first'} readOnly /></label></div>
-          <div className="actions"><button className="primary" type="button" disabled={busy || !selectedPet} onClick={claimTag}>Claim tag for pet</button><button type="button" disabled={busy || !selectedPet} onClick={markOwnerScan}>Log owner scan</button></div>
+          <p>Admins mint tag codes before a physical NFC/QR tag ships. Owners activate an existing code and attach it to a saved pet. Activation is server-checked against the current Stripe/Patreon/admin tier allowance.</p>
+          <div className="grid2"><label>Activate existing tag<input value={tagCode} onChange={(event) => setTagCode(event.target.value)} /></label><label>Selected pet<input value={selectedPet?.name || 'Save a pet first'} readOnly /></label></div>
+          <div className="actions"><button className="primary" type="button" disabled={busy || !selectedPet} onClick={claimTag}>Activate tag for pet</button><button type="button" disabled={busy || !selectedPet} onClick={markOwnerScan}>Log owner scan</button></div>
           <div className="tagList">{selectedPetTags.length === 0 ? <span>No tags linked to this pet.</span> : selectedPetTags.map((tag) => <span key={tag.id}>#{tag.tag_code}</span>)}</div>
         </article>
 

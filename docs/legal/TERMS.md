@@ -26,11 +26,11 @@ Users must not submit false reports, harass owners, misuse finder contact tools,
 
 ## 5. Accounts and security
 
-Users must keep login credentials secure and should report suspected account compromise. Password resets, email changes, and verification workflows may require email confirmation codes sent from the MyPetID admin/setup email system.
+Users must keep login credentials secure and should report suspected account compromise. Password resets, email changes, and verification workflows may require email confirmation codes sent from `mypetid@yahoo.com`.
 
 ## 6. Email and verification
 
-MyPetID may use email verification codes and confirmation links from the MyPetID admin/setup email system to help confirm signups, password changes, email changes, and account recovery requests. MyPetID is not planning automated SMS or phone PIN verification at this time.
+MyPetID may use email verification codes and confirmation links from `mypetid@yahoo.com` to help confirm signups, password changes, email changes, and account recovery requests. MyPetID is not planning automated SMS or phone PIN verification at this time.
 
 ## 7. Subscription and admin access
 
