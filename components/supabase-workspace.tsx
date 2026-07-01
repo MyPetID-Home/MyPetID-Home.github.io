@@ -13,6 +13,7 @@ type Profile = {
   is_admin: boolean;
   patreon_linked?: boolean;
   patreon_tier?: string | null;
+  email_verified_at?: string | null;
   public_contact?: Record<string, unknown> | null;
 };
 
@@ -279,6 +280,7 @@ export function SupabaseWorkspace() {
   const [trainingDraft, setTrainingDraft] = useState({ command: 'Sit', verbalCue: 'Sit', handSignal: '✋ open palm', proofingGoal: 'Responds with distractions', status: 'Learning', points: '20', notes: 'Short upbeat sessions.' });
   const [xpDraft, setXpDraft] = useState({ eventType: 'care_task', points: '20', note: 'Care task completed' });
   const [foundDraft, setFoundDraft] = useState({ foundStatus: 'Awaiting owner confirmation', ownerFollowUp: 'Needs owner review', finderContact: '', ownerResolutionNote: '' });
+  const [emailCode, setEmailCode] = useState('');
   const [uploadKind, setUploadKind] = useState<'pet_photo' | 'medical_document'>('pet_photo');
   const [uploadTitle, setUploadTitle] = useState('MyPetID upload');
   const [inviteUrl, setInviteUrl] = useState('');
@@ -422,6 +424,28 @@ export function SupabaseWorkspace() {
     });
     return () => listener.subscription.unsubscribe();
   }, [loadWorkspace]);
+
+  async function sendEmailCode() {
+    if (!session?.user || !profile?.email) return setMessage('Sign in first.');
+    setBusy(true);
+    const response = await fetch('/api/email/send-code/', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: authValue(session.access_token) }, body: JSON.stringify({ purpose: 'signup' }) });
+    const json = await response.json();
+    setBusy(false);
+    if (!response.ok) return setMessage(json.error || 'Email code could not be sent.');
+    setMessage(json.alreadyVerified ? 'Email is already verified.' : `Verification code sent to ${json.email} from ${json.sender}.`);
+  }
+
+  async function verifyEmailCode() {
+    if (!session?.user) return setMessage('Sign in first.');
+    setBusy(true);
+    const response = await fetch('/api/email/verify-code/', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: authValue(session.access_token) }, body: JSON.stringify({ purpose: 'signup', code: emailCode }) });
+    const json = await response.json();
+    setBusy(false);
+    if (!response.ok) return setMessage(json.error || 'Email verification failed.');
+    setProfile(json.profile as Profile);
+    setEmailCode('');
+    setMessage(`Email verified for ${json.email}.`);
+  }
 
   async function saveProfile() {
     if (!supabase || !session?.user || !profile) return;
@@ -730,6 +754,16 @@ export function SupabaseWorkspace() {
             <label>Public/owner phone<input value={profile?.phone || ''} onChange={(event) => setProfile(profile ? { ...profile, phone: event.target.value } : profile)} /></label>
           </div>
           <div className="actions"><button className="primary" type="button" disabled={busy || !profile} onClick={saveProfile}>Save account</button><button type="button" disabled={busy} onClick={trustDevice}>Trust this browser</button></div>
+        </article>
+
+        <article className="panel emailVerifyPanel">
+          <p className="eyebrow">Email verification</p>
+          <h3>{profile?.email_verified_at ? 'Email verified' : 'Verify signup email'}</h3>
+          <p>{profile?.email || session.user.email} • {profile?.email_verified_at ? `verified ${fmtDate(profile.email_verified_at)}` : 'verification code comes from mypetid@yahoo.com'}</p>
+          {!profile?.email_verified_at && <>
+            <label>6-digit code<input inputMode="numeric" maxLength={6} value={emailCode} onChange={(event) => setEmailCode(event.target.value.replace(/\D/g, '').slice(0, 6))} placeholder="123456" /></label>
+            <div className="actions"><button type="button" disabled={busy} onClick={sendEmailCode}>Send code</button><button className="primary" type="button" disabled={busy || emailCode.length !== 6} onClick={verifyEmailCode}>Verify email</button></div>
+          </>}
         </article>
 
         <article className="panel">

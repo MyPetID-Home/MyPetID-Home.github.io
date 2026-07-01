@@ -26,9 +26,10 @@ Core app tables:
 - `pet_documents`
 - `membership_tiers`
 
-Verification/calendar/admin-debug tables added by `docs/migrations/2026-06-admin-audit-storage.sql`:
+Verification/calendar/admin-debug tables added by `docs/migrations/2026-06-admin-audit-storage.sql` and `docs/migrations/2026-06-email-verification-codes.sql`:
 
 - `verification_requests`
+- `email_verification_codes`
 - `calendar_events`
 - `account_activity_log`
 - `admin_account_debug_view`
@@ -73,6 +74,10 @@ Prices/products are also configured in Stripe and mirrored into Vercel env for c
 | `diamond` | `$10.00/mo` | 3 | 2 | Stripe monthly + Patreon tier |
 
 The Vercel webhook route verifies Stripe signatures and reconciles subscription checkout, subscription status, invoice, and refund events into `membership_events`, `profiles.tier`, and `tag_orders`.
+
+## Email verification
+
+`profiles.email_verified_at` records successful account email verification. `/api/email/send-code` creates 6-digit signup verification codes, stores HMAC hashes in `email_verification_codes`, and sends through Yahoo SMTP from `mypetid@yahoo.com` once the private SMTP app-password env is set. `/api/email/verify-code` checks the latest pending code, limits attempts, marks the row verified, and updates `profiles.email_verified_at`.
 
 ## Storage buckets
 

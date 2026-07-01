@@ -11,6 +11,7 @@ Never commit:
 - Supabase service/secret keys
 - Stripe secret/restricted keys
 - Patreon access/refresh/client secrets
+- Yahoo SMTP/app-password and email verification secrets
 - Google OAuth client secrets
 - passwords or raw access tokens
 
@@ -35,7 +36,7 @@ If verifying static export manually, copy to a temporary directory and remove `a
 
 ## Deployment lanes
 
-- **Vercel**: functional app host for API routes (`/api/checkout`, `/api/uploads`, `/api/account/membership`, `/api/tags/activate`, `/api/subscriptions/portal`, `/api/admin/tag-orders`, `/api/google/oauth/*`, Dog Pack invite creation) and webhooks/jobs.
+- **Vercel**: functional app host for API routes (`/api/checkout`, `/api/uploads`, `/api/account/membership`, `/api/tags/activate`, `/api/subscriptions/portal`, `/api/admin/tag-orders`, `/api/email/send-code`, `/api/email/verify-code`, `/api/google/oauth/*`, Dog Pack invite creation) and webhooks/jobs.
 - **GitHub Pages**: static export host for public/static fallback pages.
 
 `next.config.mjs` only sets `output: 'export'` when `BUILD_STATIC_EXPORT=1`.
@@ -46,6 +47,7 @@ If verifying static export manually, copy to a temporary directory and remove `a
 - Stripe webhook secret and endpoint ID are stored privately in env/Vercel; webhook route verifies Stripe signatures before updating Supabase. Patreon webhook secret is also stored privately and live signed webhook verification has passed.
 - Patreon credentials are stored privately; OAuth link/callback and signed webhook verification are wired through Vercel API routes.
 - Google OAuth/upload sync routes are implemented but require Google-side OAuth/redirect completion before production verification.
+- Email verification uses `/api/email/send-code` and `/api/email/verify-code`; code hashes use `MYPETID_EMAIL_VERIFICATION_SECRET`, and outbound delivery from `mypetid@yahoo.com` requires private Yahoo SMTP env (`MYPETID_SMTP_HOST`, `MYPETID_SMTP_PORT`, `MYPETID_SMTP_USER`, `MYPETID_SMTP_PASSWORD`, optional `MYPETID_VERIFICATION_FROM`).
 - Supabase Storage is authoritative for uploaded pet photos and documents; Google sync is a secondary copy.
 
 ## Wiki use

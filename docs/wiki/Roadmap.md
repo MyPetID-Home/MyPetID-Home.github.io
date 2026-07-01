@@ -34,7 +34,8 @@
 - Payment success route confirms Stripe sessions and marks paid orders.
 - Admin fulfillment queue lists paid/manual-review tag orders and supports queued/printing/shipped/delivered/cancelled/refunded/manual-review status changes.
 - Patreon remains visible as a membership/support path.
-- Remaining: email verification-code sending, invite acceptance/role management, final scan anti-abuse checks, shipping/tracking notification automation, and fulfillment edge-case polish.
+- Email verification-code flow is implemented with `email_verification_codes`, `profiles.email_verified_at`, and Vercel `/api/email/send-code` + `/api/email/verify-code`; real outbound delivery needs Yahoo SMTP app-password env for `mypetid@yahoo.com`.
+- Remaining: invite acceptance/role management, final scan anti-abuse checks, shipping/tracking notification automation, email delivery credential verification, and fulfillment edge-case polish.
 
 ## Phase 5: Uploads and Google sync — partially implemented
 
@@ -47,4 +48,4 @@
 
 - Restore useful legacy database chunks selectively, not old auth/storage internals.
 - Add background jobs for webhooks, upload retry, notifications, and order fulfillment status.
-- Add email verification-code flow using `mypetid@yahoo.com` for signup/verification; keep support/admin/help mailboxes separate; no automated SMS/phone PIN verification is planned.
+- Remaining: invite acceptance/role management, final scan anti-abuse checks, shipping/tracking notification automation, email delivery credential verification, and fulfillment edge-case polish.

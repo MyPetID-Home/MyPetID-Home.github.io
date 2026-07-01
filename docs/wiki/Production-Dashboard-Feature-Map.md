@@ -5,7 +5,7 @@ MyPetID is intended to be a full pet profile, activity, health, diet, distance, 
 ## Current dashboard modules
 
 - Overview: scan gate QR, public profile link, care stats, weekly distance progress, level/XP, live activity map.
-- Account: username, display name, email, phone, avatar URL, emergency contact, address, password-reset action note.
+- Account: username, display name, email verification, phone, avatar URL, emergency contact, address, password-reset action note.
 - Pets: editable pet identity, tag ID, species, breed, birthday, sex, weight, color, microchip, vet, photo, behavior notes.
 - Walks: start/end walk, moving route icon, live distance/time, saved walk history, weekly walk goal.
 - Diet: feeding plan, favorite treats, editable meal/snack logs, completion toggles.
@@ -39,7 +39,7 @@ MyPetID is intended to be a full pet profile, activity, health, diet, distance, 
   - Google OAuth connect/callback for upload sync
   - Supabase-backed upload handling
   - Dog Pack invite creation with membership slot checks
-  - membership summary, tag activation, Stripe Billing Portal routes, and admin tag-order fulfillment API
+  - membership summary, tag activation, Stripe Billing Portal routes, email verification-code routes, and admin tag-order fulfillment API
 - Supabase remains source of truth for auth, profiles, pets, tags, scans, QR records, orders, upload events, provider credentials, documents, and storage.
 
 ## Production backend still needed
@@ -48,7 +48,7 @@ Before wider live customer use, the following need more hardening:
 
 - Stripe order fulfillment queue is live in the admin dashboard; remaining work is shipping-notification automation, tracking links, and webhook edge-case hardening.
 - Patreon OAuth/webhook tier sync is wired; keep monitoring real dashboard deliveries and edge cases.
-- Email verification-code sending from `mypetid@yahoo.com` for signup/verification; keep support/admin/help mailboxes separate.
+- Email verification-code routes and dashboard controls are live; add/verify the Yahoo SMTP app password in private/Vercel env before real outbound delivery from `mypetid@yahoo.com`. Support/admin/help mailboxes remain separate.
 - Final scan-event writes with active-tag, owner/trusted-device, abuse, and rate-limit checks.
 - Invite acceptance and role/permission management for Dog Pack users.
 - Push/email notification delivery.

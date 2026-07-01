@@ -5,7 +5,7 @@ Clydius-maintained rebuild for the MyPetID NFC/QR pet profile, tracker, Dog Pack
 ## What works now
 
 - Dual-host Next.js app:
-  - **Vercel mode** keeps server API routes for Stripe checkout, checkout confirmation, Google upload sync, uploads, and Dog Pack invite creation.
+  - **Vercel mode** keeps server API routes for Stripe checkout, checkout confirmation, email verification codes, Google upload sync, uploads, and Dog Pack invite creation.
   - **GitHub Pages mode** uses `BUILD_STATIC_EXPORT=1` and deploys a static export through `.github/workflows/deploy-pages.yml`.
 - Marketing/home page explaining the MyPetID product and linking customers to `/shop/`.
 - `/shop/` and `/subscribe/` explain the purchase/subscription process and show the two physical tag products:
@@ -15,7 +15,7 @@ Clydius-maintained rebuild for the MyPetID NFC/QR pet profile, tracker, Dog Pack
 - Stripe monthly memberships are created for Basic/Silver/Gold/Diamond and mirrored in Supabase `membership_tiers`; Vercel APIs now expose membership summaries, Stripe Billing Portal sessions, server-side tag activation checks, and Dog Pack invite limit checks.
 - Stripe webhook endpoint reconciles Checkout, subscription, invoice, and refund events into Supabase orders/membership records.
 - Payment success page confirms the Stripe Checkout session and marks matching Supabase orders paid when running on Vercel.
-- Supabase Auth and dashboard workspace for signed-in account profile edits, pet create/update, physical tag claim, trusted browser records, owner scan logging, scan history, and admin tag/profile inventory.
+- Supabase Auth and dashboard workspace for signed-in account profile edits, email verification status/codes, pet create/update, physical tag claim, trusted browser records, owner scan logging, scan history, and admin tag/profile inventory.
 - Saving a dog profile creates QR destination records for:
   - the public pet profile (`pet_qr_codes`), and
   - account/Dog Pack sharing (`account_qr_codes`).
@@ -47,7 +47,7 @@ Copy `.env.example` to `.env.local` and add only browser-safe public values loca
 - **Stripe:** Basic NFC Tag and ID NFC Tag Card products/prices are configured; Basic/Silver/Gold/Diamond monthly subscription prices are configured; checkout/session confirmation/webhook/Billing Portal APIs are implemented for Vercel.
 - **Patreon:** OAuth link/callback is wired with private Patreon credentials; live campaign tier IDs are mirrored into Supabase; signed Vercel webhook verification is configured and live.
 - **Google:** upload-sync API and OAuth callback routes are in place, but CAK3D is still finishing Google OAuth/provider setup; do not treat Google login/sync as fully production verified until credentials/redirects are completed.
-- **Email verification:** MyPetID will use email verification codes/links from `mypetid@yahoo.com` for signup and verification. Support/admin/help addresses remain separate. Automated SMS/phone PIN verification is not planned.
+- **Email verification:** Vercel routes generate and verify 6-digit signup codes, store hashes in Supabase `email_verification_codes`, and update `profiles.email_verified_at`. Codes are sent from `mypetid@yahoo.com` once the Yahoo SMTP app-password env is set in private/Vercel env. Support/admin/help addresses remain separate; automated SMS/phone PIN verification is not planned.
 
 ## Security notes
 
