@@ -56,11 +56,8 @@ function htmlEscape(value: string) {
   return value.replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char] || char));
 }
 
-export async function sendVerificationEmail(to: string, code: string) {
+export async function sendEmail(to: string, subject: string, text: string, html: string) {
   const config = smtpConfig();
-  const subject = 'Your MyPetID verification code';
-  const text = `Your MyPetID verification code is ${code}. It expires in 15 minutes. If you did not request this code, you can ignore this email.`;
-  const html = `<p>Your MyPetID verification code is:</p><p style="font-size:28px;font-weight:800;letter-spacing:6px">${htmlEscape(code)}</p><p>This code expires in 15 minutes. If you did not request this code, you can ignore this email.</p>`;
   const boundary = `mypetid-${crypto.randomUUID()}`;
   const message = [
     `From: MyPetID <${verificationSender}>`,
@@ -100,4 +97,20 @@ export async function sendVerificationEmail(to: string, code: string) {
   } finally {
     socket.end();
   }
+}
+
+export async function sendVerificationEmail(to: string, code: string) {
+  const subject = 'Your MyPetID verification code';
+  const text = `Your MyPetID verification code is ${code}. It expires in 15 minutes. If you did not request this code, you can ignore this email.`;
+  const html = `<p>Your MyPetID verification code is:</p><p style="font-size:28px;font-weight:800;letter-spacing:6px">${htmlEscape(code)}</p><p>This code expires in 15 minutes. If you did not request this code, you can ignore this email.</p>`;
+  await sendEmail(to, subject, text, html);
+}
+
+export async function sendCouponEmail(to: string, code: string, tier: string, durationDays?: number | null) {
+  const title = `${tier[0]?.toUpperCase() || ''}${tier.slice(1)} MyPetID access`;
+  const duration = durationDays ? `${durationDays} day${durationDays === 1 ? '' : 's'}` : 'ongoing admin-granted';
+  const subject = `Your MyPetID ${title} code`;
+  const text = `Your MyPetID ${title} coupon code is ${code}. It unlocks ${duration} access. Sign up or sign in at https://mypetid.vercel.app/dashboard/account/ and redeem it from Account access.`;
+  const html = `<p>Your MyPetID ${htmlEscape(title)} coupon code is:</p><p style="font-size:28px;font-weight:800;letter-spacing:4px">${htmlEscape(code)}</p><p>It unlocks ${htmlEscape(duration)} access.</p><p>Sign up or sign in at <a href="https://mypetid.vercel.app/dashboard/account/">MyPetID Account</a>, then redeem the code from Account access.</p>`;
+  await sendEmail(to, subject, text, html);
 }

@@ -77,9 +77,31 @@ type MembershipSummary = {
   status: string;
   provider_customer_id: string | null;
   provider_subscription_id: string | null;
+  active_grant?: Record<string, any> | null;
   limits: { max_tags: number | null; max_users: number | null; scan_tracking_enabled: boolean };
   usage: { active_tags: number; pets: number; helpers: number };
   remaining: { tags: number | null; users: number | null };
+};
+
+type AdminMembershipAccount = {
+  profile: Profile;
+  membership: MembershipSummary;
+  grants: Array<Record<string, any>>;
+};
+
+type AccessCoupon = {
+  id: string;
+  code_hint: string | null;
+  tier: 'basic' | 'silver' | 'gold' | 'diamond' | 'admin';
+  duration_days: number | null;
+  max_redemptions: number;
+  redemption_count: number;
+  status: string;
+  recipient_email: string | null;
+  expires_at: string | null;
+  redeemed_at: string | null;
+  metadata: Record<string, any> | null;
+  created_at: string;
 };
 
 type AdminDebugRow = {
@@ -272,6 +294,8 @@ export function SupabaseWorkspace() {
   const [activityRows, setActivityRows] = useState<ActivityLogRow[]>([]);
   const [awardRules, setAwardRules] = useState<AwardRuleRow[]>([]);
   const [fulfillmentOrders, setFulfillmentOrders] = useState<FulfillmentOrder[]>([]);
+  const [adminMembershipAccounts, setAdminMembershipAccounts] = useState<AdminMembershipAccount[]>([]);
+  const [adminCoupons, setAdminCoupons] = useState<AccessCoupon[]>([]);
   const [fulfillmentSearch, setFulfillmentSearch] = useState('');
   const [fulfillmentFilter, setFulfillmentFilter] = useState('all');
   const [fulfillmentNote, setFulfillmentNote] = useState('');
@@ -281,6 +305,9 @@ export function SupabaseWorkspace() {
   const [xpDraft, setXpDraft] = useState({ eventType: 'care_task', points: '20', note: 'Care task completed' });
   const [foundDraft, setFoundDraft] = useState({ foundStatus: 'Awaiting owner confirmation', ownerFollowUp: 'Needs owner review', finderContact: '', ownerResolutionNote: '' });
   const [emailCode, setEmailCode] = useState('');
+  const [couponCode, setCouponCode] = useState('');
+  const [grantDraft, setGrantDraft] = useState({ profileId: '', tier: 'basic', durationDays: '30', note: 'Admin comp access' });
+  const [couponDraft, setCouponDraft] = useState({ recipientEmail: '', tier: 'basic', durationDays: '30', maxRedemptions: '1', expiresInDays: '30', emailCode: true, createStripePromotion: true });
   const [uploadKind, setUploadKind] = useState<'pet_photo' | 'medical_document'>('pet_photo');
   const [uploadTitle, setUploadTitle] = useState('MyPetID upload');
   const [inviteUrl, setInviteUrl] = useState('');
@@ -383,11 +410,25 @@ export function SupabaseWorkspace() {
         const ordersJson = await ordersResponse.json();
         if (ordersResponse.ok) setFulfillmentOrders((ordersJson.orders || []) as FulfillmentOrder[]);
         else setFulfillmentOrders([]);
+
+        const memberParams = new URLSearchParams();
+        if (adminSearch.trim()) memberParams.set('search', adminSearch.trim());
+        const membersResponse = await fetch(`/api/admin/memberships/?${memberParams.toString()}`, { headers: { Authorization: authValue(activeSession.access_token) } });
+        const membersJson = await membersResponse.json();
+        if (membersResponse.ok) {
+          setAdminMembershipAccounts((membersJson.accounts || []) as AdminMembershipAccount[]);
+          setAdminCoupons((membersJson.coupons || []) as AccessCoupon[]);
+        } else {
+          setAdminMembershipAccounts([]);
+          setAdminCoupons([]);
+        }
       } else {
         setAdminProfiles([]);
         setAdminDebugRows([]);
         setActivityRows([]);
         setFulfillmentOrders([]);
+        setAdminMembershipAccounts([]);
+        setAdminCoupons([]);
       }
       setMessage(`Loaded Supabase workspace for ${activeSession.user.email}.`);
     } catch (error) {
@@ -417,6 +458,8 @@ export function SupabaseWorkspace() {
         setAdminDebugRows([]);
         setActivityRows([]);
         setFulfillmentOrders([]);
+        setAdminMembershipAccounts([]);
+        setAdminCoupons([]);
         setAwardRules([]);
         setTrainingCommands([]);
         setXpEvents([]);
@@ -445,6 +488,51 @@ export function SupabaseWorkspace() {
     setProfile(json.profile as Profile);
     setEmailCode('');
     setMessage(`Email verified for ${json.email}.`);
+  }
+
+  async function redeemCoupon() {
+    if (!session?.user) return setMessage('Sign in first.');
+    setBusy(true);
+    const response = await fetch('/api/coupons/redeem/', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: authValue(session.access_token) }, body: JSON.stringify({ code: couponCode }) });
+    const json = await response.json();
+    setBusy(false);
+    if (!response.ok) return setMessage(json.error || 'Coupon redemption failed.');
+    setMembership(json.membership as MembershipSummary);
+    setCouponCode('');
+    setMessage(`Coupon redeemed: ${json.membership.effective_tier} access is active.`);
+  }
+
+  async function adminGrantMembership() {
+    if (!session?.user) return setMessage('Sign in first.');
+    setBusy(true);
+    const response = await fetch('/api/admin/memberships/', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: authValue(session.access_token) }, body: JSON.stringify({ action: 'grant_membership', profileId: grantDraft.profileId, tier: grantDraft.tier, durationDays: Number(grantDraft.durationDays || 0), note: grantDraft.note }) });
+    const json = await response.json();
+    setBusy(false);
+    if (!response.ok) return setMessage(json.error || 'Admin grant failed.');
+    setMessage(`Granted ${grantDraft.tier} access.`);
+    loadWorkspace();
+  }
+
+  async function adminGenerateCoupon() {
+    if (!session?.user) return setMessage('Sign in first.');
+    setBusy(true);
+    const response = await fetch('/api/admin/memberships/', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: authValue(session.access_token) }, body: JSON.stringify({ action: 'generate_coupon', tier: couponDraft.tier, durationDays: Number(couponDraft.durationDays || 30), maxRedemptions: Number(couponDraft.maxRedemptions || 1), expiresInDays: Number(couponDraft.expiresInDays || 30), recipientEmail: couponDraft.recipientEmail, emailCode: couponDraft.emailCode, createStripePromotion: couponDraft.createStripePromotion }) });
+    const json = await response.json();
+    setBusy(false);
+    if (!response.ok) return setMessage(json.error || 'Coupon generation failed.');
+    setMessage(json.emailed ? `Coupon emailed to ${couponDraft.recipientEmail}.` : `Coupon generated: ${json.code}`);
+    loadWorkspace();
+  }
+
+  async function adminUpdateGrant(grantId: string, status: string) {
+    if (!session?.user) return setMessage('Sign in first.');
+    setBusy(true);
+    const response = await fetch('/api/admin/memberships/', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: authValue(session.access_token) }, body: JSON.stringify({ action: 'update_grant', grantId, status }) });
+    const json = await response.json();
+    setBusy(false);
+    if (!response.ok) return setMessage(json.error || 'Grant update failed.');
+    setMessage(`Grant marked ${status}.`);
+    loadWorkspace();
   }
 
   async function saveProfile() {
@@ -766,6 +854,14 @@ export function SupabaseWorkspace() {
           </>}
         </article>
 
+        <article className="panel emailVerifyPanel">
+          <p className="eyebrow">Coupon / comp access</p>
+          <h3>Redeem a MyPetID access code</h3>
+          <p>Admin-issued codes can unlock Basic, Silver, Gold, Diamond, or admin testing access without Stripe payment.</p>
+          <label>Coupon code<input value={couponCode} onChange={(event) => setCouponCode(event.target.value.toUpperCase())} placeholder="MYPETID-BASI-1234ABCD" /></label>
+          <div className="actions"><button className="primary" type="button" disabled={busy || couponCode.trim().length < 8} onClick={redeemCoupon}>Redeem code</button></div>
+        </article>
+
         <article className="panel">
           <h3>Trusted devices</h3>
           {devices.length === 0 ? <p>No trusted browser records yet.</p> : devices.map((device) => <p key={device.id}><strong>{device.label || 'Browser'}</strong><br /><small>{device.trusted ? 'trusted' : 'not trusted'} • {fmtDate(device.created_at)}</small></p>)}
@@ -879,6 +975,49 @@ export function SupabaseWorkspace() {
               {order.metadata?.fulfillment_note && <p className="notice"><strong>Last note:</strong> {String(order.metadata.fulfillment_note)}</p>}
               {order.metadata?.tracking_url && <p><a href={String(order.metadata.tracking_url)} target="_blank" rel="noreferrer">Tracking link</a></p>}
               <div className="actions compact">{fulfillmentStatuses.map((status) => <button key={status} type="button" disabled={busy || status === order.status} onClick={() => updateOrderStatus(order, status)}>{status}</button>)}</div>
+            </div>)}
+          </div>
+        </article>}
+
+        {isAdmin && <article className="panel wide adminLivePanel membershipAdminPanel">
+          <h3>Admin membership + coupon control</h3>
+          <p>View users, paid/comp status, active grants, and create random access codes. App coupons redeem inside MyPetID; Stripe promotion sync is attempted when enabled. Patreon-style comps use MyPetID grants because Patreon does not expose a normal checkout coupon code flow.</p>
+          <div className="grid2">
+            <label>Grant target profile<select value={grantDraft.profileId} onChange={(event) => setGrantDraft({ ...grantDraft, profileId: event.target.value })}><option value="">Choose profile…</option>{adminMembershipAccounts.map((item) => <option key={item.profile.id} value={item.profile.id}>{item.profile.email || item.profile.id} • {item.membership.effective_tier}</option>)}</select></label>
+            <label>Grant tier<select value={grantDraft.tier} onChange={(event) => setGrantDraft({ ...grantDraft, tier: event.target.value })}>{['basic','silver','gold','diamond','admin'].map((tier) => <option key={tier} value={tier}>{tier}</option>)}</select></label>
+            <label>Grant days, blank/0 = ongoing<input value={grantDraft.durationDays} onChange={(event) => setGrantDraft({ ...grantDraft, durationDays: event.target.value })} /></label>
+            <label>Grant note<input value={grantDraft.note} onChange={(event) => setGrantDraft({ ...grantDraft, note: event.target.value })} /></label>
+          </div>
+          <div className="actions"><button className="primary" type="button" disabled={busy || !grantDraft.profileId} onClick={adminGrantMembership}>Grant/update access</button><button type="button" disabled={busy} onClick={() => loadWorkspace()}>Refresh memberships</button></div>
+
+          <div className="grid2">
+            <label>Coupon recipient email<input value={couponDraft.recipientEmail} onChange={(event) => setCouponDraft({ ...couponDraft, recipientEmail: event.target.value })} placeholder="newuser@example.com" /></label>
+            <label>Coupon tier<select value={couponDraft.tier} onChange={(event) => setCouponDraft({ ...couponDraft, tier: event.target.value })}>{['basic','silver','gold','diamond','admin'].map((tier) => <option key={tier} value={tier}>{tier}</option>)}</select></label>
+            <label>Access days<input value={couponDraft.durationDays} onChange={(event) => setCouponDraft({ ...couponDraft, durationDays: event.target.value })} /></label>
+            <label>Code expires in days<input value={couponDraft.expiresInDays} onChange={(event) => setCouponDraft({ ...couponDraft, expiresInDays: event.target.value })} /></label>
+            <label>Max redemptions<input value={couponDraft.maxRedemptions} onChange={(event) => setCouponDraft({ ...couponDraft, maxRedemptions: event.target.value })} /></label>
+            <label className="toggleRow"><input type="checkbox" checked={couponDraft.emailCode} onChange={(event) => setCouponDraft({ ...couponDraft, emailCode: event.target.checked })} /> Email code to recipient</label>
+            <label className="toggleRow"><input type="checkbox" checked={couponDraft.createStripePromotion} onChange={(event) => setCouponDraft({ ...couponDraft, createStripePromotion: event.target.checked })} /> Also try Stripe promotion code</label>
+          </div>
+          <div className="actions"><button className="primary" type="button" disabled={busy} onClick={adminGenerateCoupon}>Generate random coupon</button></div>
+
+          <div className="adminLookupGrid">
+            {adminMembershipAccounts.slice(0, 12).map((item) => <div className="adminLookupCard" key={item.profile.id}>
+              <strong>{item.profile.email || item.profile.id}</strong>
+              <small>{item.profile.display_name || 'No name'} • profile tier {item.profile.tier}{item.profile.is_admin ? ' • admin' : ''}</small>
+              <span>Effective: {item.membership.effective_tier} via {item.membership.provider}</span>
+              <small>Status: {item.membership.status}</small>
+              <small>Stripe customer: {item.membership.provider_customer_id || 'n/a'} • subscription: {item.membership.provider_subscription_id || 'n/a'}</small>
+              <small>Usage: {item.membership.usage.active_tags}/{limitLabel(item.membership.limits.max_tags)} tags • {item.membership.usage.helpers + 1}/{limitLabel(item.membership.limits.max_users)} users</small>
+              {item.grants.slice(0, 3).map((grant) => <p key={grant.id}><small>{grant.tier} • {grant.status} • {grant.source} • expires {fmtDate(grant.expires_at)}</small><br /><button type="button" disabled={busy || grant.status === 'revoked'} onClick={() => adminUpdateGrant(grant.id, 'revoked')}>Revoke</button> <button type="button" disabled={busy || grant.status === 'active'} onClick={() => adminUpdateGrant(grant.id, 'active')}>Reactivate</button></p>)}
+            </div>)}
+          </div>
+          <div className="adminLookupGrid">
+            {adminCoupons.slice(0, 10).map((coupon) => <div className="adminLookupCard" key={coupon.id}>
+              <strong>{coupon.tier} coupon {coupon.code_hint || ''}</strong>
+              <small>{coupon.status} • {coupon.redemption_count}/{coupon.max_redemptions} redeemed • recipient {coupon.recipient_email || 'any'}</small>
+              <span>{coupon.duration_days || 'ongoing'} days access • code expires {fmtDate(coupon.expires_at)}</span>
+              <small>Stripe: {coupon.metadata?.stripe ? 'promotion synced' : coupon.metadata?.stripe_error ? `error: ${coupon.metadata.stripe_error}` : 'not requested'}</small>
             </div>)}
           </div>
         </article>}

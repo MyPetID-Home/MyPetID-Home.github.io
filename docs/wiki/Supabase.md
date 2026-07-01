@@ -40,7 +40,7 @@ XP/awards/found-flow tables added by `docs/migrations/2026-06-xp-awards-found-fl
 - `award_rules`
 - scan/found-report follow-up columns on `scan_events`
 
-Commerce/QR/upload/provider tables added by `docs/migrations/2026-06-commerce-qr-uploads.sql`:
+Commerce/QR/upload/provider tables added by `docs/migrations/2026-06-commerce-qr-uploads.sql` and `docs/migrations/2026-06-admin-membership-grants-coupons.sql`:
 
 - `tag_products`
 - `tag_orders`
@@ -50,6 +50,8 @@ Commerce/QR/upload/provider tables added by `docs/migrations/2026-06-commerce-qr
 - `provider_credentials`
 - `upload_events`
 - `membership_events`
+- `membership_grants`
+- `access_coupons`
 
 ## Current physical tag products
 
@@ -73,7 +75,7 @@ Prices/products are also configured in Stripe and mirrored into Vercel env for c
 | `gold` | `$6.00/mo` | 2 | 1 | Stripe monthly + Patreon tier |
 | `diamond` | `$10.00/mo` | 3 | 2 | Stripe monthly + Patreon tier |
 
-The Vercel webhook route verifies Stripe signatures and reconciles subscription checkout, subscription status, invoice, and refund events into `membership_events`, `profiles.tier`, and `tag_orders`.
+The Vercel webhook route verifies Stripe signatures and reconciles subscription checkout, subscription status, invoice, and refund events into `membership_events`, `profiles.tier`, and `tag_orders`. Active `membership_grants` from admin or coupon redemption are also considered by `/api/account/membership` when computing effective tier, limits, and remaining tag/helper slots. `access_coupons` stores only HMAC hashes/hints, never raw coupon codes.
 
 ## Email verification
 

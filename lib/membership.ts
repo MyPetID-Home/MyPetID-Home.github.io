@@ -12,6 +12,7 @@ export type MembershipSummary = {
   status: string;
   provider_customer_id: string | null;
   provider_subscription_id: string | null;
+  active_grant: Record<string, unknown> | null;
   limits: {
     max_tags: number | null;
     max_users: number | null;
@@ -67,7 +68,23 @@ export async function getMembershipSummary(supabase: SupabaseClient, profileId: 
 
   const latestEvent = (latestEvents || [])[0] || null;
   const eventTier = cleanTier(latestEvent?.tier);
-  const effectiveTier = profile?.is_admin ? 'admin' : betterTier(profileTier, eventTier);
+
+  const { data: activeGrants, error: grantError } = await supabase
+    .from('membership_grants')
+    .select('*')
+    .eq('profile_id', profileId)
+    .eq('status', 'active')
+    .lte('starts_at', new Date().toISOString())
+    .order('expires_at', { ascending: false, nullsFirst: false })
+    .order('created_at', { ascending: false })
+    .limit(10);
+  if (grantError && !String(grantError.message || '').includes('membership_grants')) throw grantError;
+  const nowMs = Date.now();
+  const activeGrant = (activeGrants || [])
+    .filter((grant: any) => !grant.expires_at || new Date(grant.expires_at).getTime() > nowMs)
+    .sort((a: any, b: any) => tierOrder.indexOf(cleanTier(b.tier)) - tierOrder.indexOf(cleanTier(a.tier)))[0] || null;
+  const grantTier = cleanTier(activeGrant?.tier);
+  const effectiveTier = profile?.is_admin ? 'admin' : betterTier(betterTier(profileTier, eventTier), grantTier);
 
   const { data: tier, error: tierError } = await supabase.from('membership_tiers').select('*').eq('tier', effectiveTier).maybeSingle();
   if (tierError) throw tierError;
@@ -92,10 +109,11 @@ export async function getMembershipSummary(supabase: SupabaseClient, profileId: 
     tier: profileTier,
     effective_tier: effectiveTier,
     is_admin: Boolean(profile?.is_admin),
-    provider: latestEvent?.provider || (profile?.is_admin ? 'admin' : 'profile'),
-    status: latestEvent?.status || (profile?.is_admin ? 'active' : 'profile'),
+    provider: activeGrant?.source ? String(activeGrant.source) : latestEvent?.provider || (profile?.is_admin ? 'admin' : 'profile'),
+    status: activeGrant ? `active${activeGrant.expires_at ? ` until ${activeGrant.expires_at}` : ''}` : latestEvent?.status || (profile?.is_admin ? 'active' : 'profile'),
     provider_customer_id: latestEvent?.provider_customer_id || null,
     provider_subscription_id: latestEvent?.provider_subscription_id || null,
+    active_grant: activeGrant || null,
     limits: { max_tags: maxTags, max_users: maxUsers, scan_tracking_enabled: scanTracking },
     usage: { active_tags: activeTags, pets, helpers },
     remaining: { tags: remaining(maxTags, activeTags), users: remaining(maxUsers, helpers + 1) },
