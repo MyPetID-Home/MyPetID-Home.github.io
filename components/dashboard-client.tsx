@@ -6,7 +6,6 @@ import { QRCodeSVG } from 'qrcode.react';
 import { hasSupabaseConfig, supabase } from '../lib/supabase';
 import { AuthPanel } from './auth-panel';
 import { SupabaseWorkspace } from './supabase-workspace';
-import { appReleaseLabel } from '../lib/app-version';
 import { InstallSettingsButton } from './pwa-install-client';
 
 type Tab = 'overview' | 'public' | 'account' | 'pets' | 'walks' | 'diet' | 'medical' | 'play' | 'training' | 'lost' | 'pack' | 'goals' | 'settings' | 'admin';
@@ -186,6 +185,13 @@ const tabRoutes: Record<Tab, string> = {
   admin: '/dashboard/admin/',
 };
 function routeForTab(tab: Tab) { return tabRoutes[tab] || '/dashboard/'; }
+const pathToTab: Record<string, Tab> = {
+  '': 'overview', home: 'overview', overview: 'overview', walks: 'walks', pet: 'pets', pets: 'pets', documents: 'medical', docs: 'medical', medical: 'medical', alerts: 'lost', lost: 'lost', pack: 'pack', settings: 'settings', account: 'account', public: 'public', training: 'training', play: 'play', goals: 'goals', diet: 'diet', admin: 'admin', 'pet/public': 'public', 'pet/training': 'training', 'pet/play': 'play',
+};
+function tabFromPath(pathname: string): Tab {
+  const key = pathname.replace(/^\/dashboard\/?/, '').replace(/^\//, '').replace(/\/$/, '');
+  return pathToTab[key] || pathToTab[key.split('/').at(-1) || ''] || 'overview';
+}
 
 export function DashboardClient({ initialTab = 'overview' }: { initialTab?: Tab }) {
   const [state, setState] = useState(defaultState);
@@ -209,6 +215,11 @@ export function DashboardClient({ initialTab = 'overview' }: { initialTab?: Tab 
   const [lastGpsFix, setLastGpsFix] = useState<Coords | undefined>();
 
   useEffect(() => setState(loadState()), []);
+  useEffect(() => {
+    const onPop = () => setActiveTab(tabFromPath(window.location.pathname));
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
   useEffect(() => { document.documentElement.dataset.theme = state.theme; document.documentElement.dataset.palette = state.palette; localStorage.setItem('mypetid.dashboard', JSON.stringify(state)); }, [state]);
   useEffect(() => { if (!walking) return; const timer = window.setInterval(() => setWalkSeconds((value) => value + 1), 1000); return () => clearInterval(timer); }, [walking]);
   useEffect(() => {
@@ -260,12 +271,29 @@ export function DashboardClient({ initialTab = 'overview' }: { initialTab?: Tab 
   const walkHubTabs: Tab[] = ['walks', 'goals'];
   const documentHubTabs: Tab[] = ['medical', 'diet'];
   const settingsHubTabs: Tab[] = ['settings', 'account'];
+  const pageTitle = useMemo(() => {
+    if (activeTab === 'overview') return 'Overview';
+    if (activeTab === 'admin') return 'Admin studio';
+    if (activeTab === 'pets') return `${pet.name}'s profile`;
+    if (activeTab === 'public') return `${pet.name}'s public profile`;
+    if (activeTab === 'training') return `${pet.name}'s training`;
+    if (activeTab === 'play') return `${pet.name}'s play`;
+    return tabLabels[activeTab];
+  }, [activeTab, pet.name]);
+  const pageHint = message || (activeTab === 'overview' ? 'Pick a main area below, use the hamburger for app sections, or tap the profile picture for Account and Settings.' : 'Use Back, the hamburger, bottom navigation, or the profile picture to move around.');
   function navigateTab(tab: Tab, replace = false) {
     if (tab === activeTab) return;
-    if (replace) setTabHistory((history) => history);
-    else setTabHistory((history) => [...history.slice(-8), activeTab]);
+    if (!replace) setTabHistory((history) => [...history.slice(-8), activeTab]);
+    setActiveTab(tab);
     setMenuOpen(false);
-    if (typeof window !== 'undefined') window.location.assign(routeForTab(tab));
+    if (typeof window !== 'undefined') {
+      const nextRoute = routeForTab(tab);
+      if (window.location.pathname !== nextRoute) {
+        if (replace) window.history.replaceState(null, '', nextRoute);
+        else window.history.pushState(null, '', nextRoute);
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   }
 
   function patchAccount(next: Partial<AccountProfile>) { setState({ ...state, account: { ...account, ...next } }); }
@@ -275,7 +303,14 @@ export function DashboardClient({ initialTab = 'overview' }: { initialTab?: Tab 
   function finishSection(next: Tab = nextTab) { navigateTab(next); setMessage(`Saved this section locally. Next up: ${tabLabels[next]}.`); }
   function goBack() {
     const previous = tabHistory.at(-1);
-    if (previous) return navigateTab(previous, true);
+    if (previous) {
+      setTabHistory((history) => history.slice(0, -1));
+      return navigateTab(previous, true);
+    }
+    if (typeof window !== 'undefined' && window.history.length > 1) {
+      window.history.back();
+      return;
+    }
     if (!tabs.includes(activeTab)) return navigateTab('pets', true);
     return navigateTab(prevTab, true);
   }
@@ -314,7 +349,7 @@ export function DashboardClient({ initialTab = 'overview' }: { initialTab?: Tab 
         <div className={`tierBadge ${state.tier === 'admin' ? 'red' : 'green'}`}><span>{state.adminMode ? 'Admin view' : tiers[activeTier].label}</span><strong>{petLimitLabel} pets • {tiers[activeTier].users} users</strong><small>{state.subscription.patreonLinked ? state.subscription.patreonStatus : 'Patreon not linked — Free limits active'}</small></div>
       </aside>
       <section className="workspace">
-        <header className="appHeader stickyChrome"><div><p className="eyebrow">{appReleaseLabel} • {tabLabels[activeTab]}</p><h1>{state.adminMode ? 'Admin app studio' : `${pet.name}'s ${tabLabels[activeTab]}`}</h1><p>{message || 'Use the navbar, hamburger, profile picture, or section tabs to switch pages without hunting through a long scroll stack.'}</p></div><div className="topActions"><button className="profileTopRight" type="button" onClick={() => navigateTab('account')}><img src={account.avatarUrl || '/images/logo/MyPetID-Logo_Resized.jpg'} alt={account.displayName} /><span>{account.displayName}</span><small>{state.subscription.patreonLinked ? state.subscription.patreonStatus : 'Account'}</small>{lostAlertCount > 0 && <strong className="redAlert">{lostAlertCount}</strong>}</button><div className="actions compact dashboardTools">{state.tier === 'admin' && <button type="button" onClick={() => setState({ ...state, adminMode: !state.adminMode })}>{state.adminMode ? 'Use as user' : 'Admin'}</button>}<button type="button" aria-label="Open settings" onClick={() => navigateTab('settings')}>⚙</button><button type="button" onClick={() => setState({ ...state, theme: state.theme === 'dark' ? 'light' : 'dark' })}>{state.theme === 'dark' ? 'Light' : 'Dark'}</button></div></div></header>
+        <header className="appHeader stickyChrome"><div><p className="eyebrow">{tabLabels[activeTab]}</p><h1>{pageTitle}</h1><p>{pageHint}</p></div><div className="topActions"><button type="button" onClick={goBack} disabled={activeTab === 'overview' && tabHistory.length === 0}>Back</button><button className="profileTopRight" type="button" onClick={() => { setShowSettings(true); navigateTab('account'); }}><img src={account.avatarUrl || '/images/logo/MyPetID-Logo_Resized.jpg'} alt={account.displayName} /><span>{account.displayName}</span><small>Account & settings</small>{lostAlertCount > 0 && <strong className="redAlert">{lostAlertCount}</strong>}</button></div></header>
         {([...petHubTabs, ...walkHubTabs, ...documentHubTabs, ...settingsHubTabs].includes(activeTab)) && <nav className="detailTabRail" aria-label="Section detail tabs">
           {petHubTabs.includes(activeTab) && <><button className={activeTab === 'pets' ? 'active' : ''} type="button" onClick={() => navigateTab('pets')}>Profile</button><button className={activeTab === 'public' ? 'active' : ''} type="button" onClick={() => navigateTab('public')}>Public</button><button className={activeTab === 'training' ? 'active' : ''} type="button" onClick={() => navigateTab('training')}>Training</button><button className={activeTab === 'play' ? 'active' : ''} type="button" onClick={() => navigateTab('play')}>Play</button><button className={activeTab === 'goals' ? 'active' : ''} type="button" onClick={() => navigateTab('goals')}>Goals</button></>}
           {walkHubTabs.includes(activeTab) && !petHubTabs.includes(activeTab) && <><button className={activeTab === 'walks' ? 'active' : ''} type="button" onClick={() => navigateTab('walks')}>Live Map</button><button className={activeTab === 'goals' ? 'active' : ''} type="button" onClick={() => navigateTab('goals')}>Walk Goals</button></>}
@@ -346,11 +381,12 @@ export function DashboardClient({ initialTab = 'overview' }: { initialTab?: Tab 
 
         {activeTab === 'goals' && <div className="dashboardGrid"><section className="panel wide"><h2>Goals, points, and achievements</h2><div className="grid2"><Field label="Weekly walk distance" type="number" value={String(state.goals.weeklyMiles)} onChange={(v) => setState({ ...state, goals: { ...state.goals, weeklyMiles: Number(v) || 0 } })} /><Field label="Meals per day" type="number" value={String(state.goals.mealsPerDay)} onChange={(v) => setState({ ...state, goals: { ...state.goals, mealsPerDay: Number(v) || 0 } })} /><Field label="Weekly care tasks" type="number" value={String(state.goals.careTasks)} onChange={(v) => setState({ ...state, goals: { ...state.goals, careTasks: Number(v) || 0 } })} /><Field label="Training sessions" type="number" value={String(state.goals.trainingSessions)} onChange={(v) => setState({ ...state, goals: { ...state.goals, trainingSessions: Number(v) || 0 } })} /><Field label="Play minutes" type="number" value={String(state.goals.playMinutes)} onChange={(v) => setState({ ...state, goals: { ...state.goals, playMinutes: Number(v) || 0 } })} /><Field label="Current XP" type="number" value={String(state.goals.currentXp)} onChange={(v) => setState({ ...state, goals: { ...state.goals, currentXp: Number(v) || 0, level: Math.max(1, Math.floor((Number(v) || 0) / 250) + 1) } })} /></div><div className="levelBadge">Level {state.goals.level}<div className="progress"><span style={{ width: `${state.goals.currentXp % 250 / 2.5}%` }} /></div>{state.goals.currentXp + earnedXp} XP including achievements</div><div className="actions"><button type="button" onClick={() => awardXp(20, 'care task completed')}>Complete care task</button><button type="button" onClick={() => awardXp(35, 'goal streak completed')}>Complete streak</button><button type="button" onClick={() => awardXp(25, 'play session logged')}>Log play points</button><button type="button" onClick={() => setState({ ...state, achievements: [{ id: Date.now(), title: 'New achievement', category: 'Custom', points: 25, earned: false, requirement: 'Define requirement' }, ...state.achievements] })}>Add achievement</button></div></section>{state.achievements.slice(0, 1).map((item) => <section className="panel" key={item.id}><h3>{item.icon || '🏆'} {item.title}</h3><p>{item.category} • {item.points} pts • trigger: {item.trigger || 'manual'} {item.target ? `/ ${item.target}` : ''}</p><p>{item.requirement}</p><small>{item.adminLocked ? 'Admin-managed award rule. Customers can earn it but cannot edit points.' : 'Local custom award.'}</small><label className="toggleRow"><input type="checkbox" checked={item.earned} onChange={(event) => setState({ ...state, achievements: state.achievements.map((row) => row.id === item.id ? { ...row, earned: event.target.checked } : row) })} /> Earned</label></section>)}</div>}
 
-        {activeTab === 'settings' && <div className="dashboardGrid"><section className="panel wide"><h2>Settings, privacy, and app look</h2>{Object.entries(state.settings).map(([key, value]) => typeof value === 'boolean' ? <label className="toggleRow" key={key}><input type="checkbox" checked={value} onChange={(event) => patchSettings({ [key]: event.target.checked } as Partial<typeof state.settings>)} /> {key}</label> : null)}<div className="grid2"><SelectField label="Units" value={state.settings.units} options={['miles','kilometers']} onChange={(v) => patchSettings({ units: v })} /><SelectField label="Privacy mode" value={state.settings.privacyMode} options={['strict','balanced','open during lost mode']} onChange={(v) => patchSettings({ privacyMode: v })} /><SelectField label="Map style" value={state.settings.mapStyle} options={['standard map','satellite-ready','city grid','trail map']} onChange={(v) => patchSettings({ mapStyle: v })} /><SelectField label="Default walk end" value={state.settings.defaultWalkEnd} options={['destination','start','home','custom']} onChange={(v) => patchSettings({ defaultWalkEnd: v as WalkEndMode })} /><SelectField label="App color palette" value={state.palette} options={['forest','ocean','sunset','mono']} onChange={(v) => setState({ ...state, palette: v as Palette })} /><SelectField label="Theme" value={state.theme} options={['dark','light']} onChange={(v) => setState({ ...state, theme: v as Theme })} /></div></section><section className="panel"><h3>Scan URLs</h3><p>NFC/QR:</p><code>{publicUrl}</code><p>Read-only:</p><code>{readOnlyUrl}</code></section><section className="panel"><InstallSettingsButton /></section><section className="panel"><h3>Legal and support</h3><p>Legal, support, and app install controls stay in Settings instead of popping up everywhere.</p><div className="actions"><Link className="button" href="/privacy/">Privacy Policy</Link><Link className="button" href="/terms/">Terms of Service</Link><Link className="button" href="/contact/">Contact</Link></div></section></div>}
+        {activeTab === 'settings' && <div className="dashboardGrid"><section className="panel wide"><h2>Settings, privacy, and app look</h2>{Object.entries(state.settings).map(([key, value]) => typeof value === 'boolean' ? <label className="toggleRow" key={key}><input type="checkbox" checked={value} onChange={(event) => patchSettings({ [key]: event.target.checked } as Partial<typeof state.settings>)} /> {key}</label> : null)}<div className="grid2"><SelectField label="Units" value={state.settings.units} options={['miles','kilometers']} onChange={(v) => patchSettings({ units: v })} /><SelectField label="Privacy mode" value={state.settings.privacyMode} options={['strict','balanced','open during lost mode']} onChange={(v) => patchSettings({ privacyMode: v })} /><SelectField label="Map style" value={state.settings.mapStyle} options={['standard map','satellite-ready','city grid','trail map']} onChange={(v) => patchSettings({ mapStyle: v })} /><SelectField label="Default walk end" value={state.settings.defaultWalkEnd} options={['destination','start','home','custom']} onChange={(v) => patchSettings({ defaultWalkEnd: v as WalkEndMode })} /><SelectField label="App color palette" value={state.palette} options={['forest','ocean','sunset','mono']} onChange={(v) => setState({ ...state, palette: v as Palette })} /><SelectField label="Theme" value={state.theme} options={['dark','light']} onChange={(v) => setState({ ...state, theme: v as Theme })} /></div><div className="actions">{state.tier === 'admin' && <button type="button" onClick={() => setState({ ...state, adminMode: !state.adminMode })}>{state.adminMode ? 'Use normal view' : 'Use admin view'}</button>}<button type="button" onClick={() => navigateTab('account')}>Open account</button></div></section><section className="panel"><h3>Scan URLs</h3><p>NFC/QR:</p><code>{publicUrl}</code><p>Read-only:</p><code>{readOnlyUrl}</code></section><section className="panel"><InstallSettingsButton /></section><section className="panel"><h3>Legal and support</h3><p>Legal, support, and app install controls stay in Settings instead of popping up everywhere.</p><div className="actions"><Link className="button" href="/privacy/">Privacy Policy</Link><Link className="button" href="/terms/">Terms of Service</Link><Link className="button" href="/contact/">Contact</Link></div></section></div>}
 
         {activeTab === 'admin' && canSeeAdmin && <div className="dashboardGrid"><section className="panel wide"><h2>Admin console</h2><div className="notificationDock"><span>🔔 3</span><span>📍 1</span><span>🩺 {state.records.length}</span><span>💬 {state.packMessages.length}</span><span>🏆 {state.achievements.filter((item) => item.earned).length}</span></div><p>Customize app colors/features, switch between admin/user mode, edit users, stage pet profiles, and manage routes. Secret operations still need Supabase Edge Functions before production.</p><div className="serviceGrid"><div className={`servicePill ${hasSupabaseConfig ? 'green' : 'yellow'}`}><span />Supabase {hasSupabaseConfig ? 'configured' : 'needs public env'}</div><div className="servicePill green"><span />GitHub Pages static app</div><div className="servicePill green"><span />Local browser storage</div><div className="servicePill yellow"><span />Edge Functions not deployed</div></div><section className="awardRulePanel"><h3>Admin award rules</h3><p>Admin defines point values and unlock triggers. Customers can earn awards but cannot edit the XP rules.</p><div className="awardRuleList">{state.achievements.map((award) => <div key={award.id} className="awardRuleCard"><Field label="Award" value={award.title} onChange={(v) => setState({ ...state, achievements: state.achievements.map((item) => item.id === award.id ? { ...item, title: v } : item) })} /><SelectField label="Trigger" value={award.trigger || 'custom'} options={awardTriggerOptions} onChange={(v) => setState({ ...state, achievements: state.achievements.map((item) => item.id === award.id ? { ...item, trigger: v } : item) })} /><Field label="Target" type="number" value={String(award.target || 1)} onChange={(v) => setState({ ...state, achievements: state.achievements.map((item) => item.id === award.id ? { ...item, target: Number(v) || 0 } : item) })} /><Field label="XP" type="number" value={String(award.points)} onChange={(v) => setState({ ...state, achievements: state.achievements.map((item) => item.id === award.id ? { ...item, points: Number(v) || 0 } : item) })} /></div>)}</div></section><div className="grid2"><SelectField label="Global palette" value={state.palette} options={['forest','ocean','sunset','mono']} onChange={(v) => setState({ ...state, palette: v as Palette })} /><SelectField label="Admin account plan" value={state.tier} options={Object.keys(tiers)} onChange={(v) => setState({ ...state, tier: v as keyof typeof tiers })} /><Field label="New user name" value={userDraft.name} onChange={(v) => setUserDraft({ ...userDraft, name: v })} /><Field label="New user email" value={userDraft.email} onChange={(v) => setUserDraft({ ...userDraft, email: v })} /></div><div className="adminActions"><button className="primary" type="button" onClick={() => { patchPet({ tagId: `tag-${Math.random().toString(36).slice(2, 8)}` }); setMessage('New tag code generated locally. Production should mint this server-side.'); }}>Generate tag ID</button><button type="button" onClick={addManagedUser}>Create/invite user</button><button type="button" onClick={() => setState({ ...state, adminMode: !state.adminMode })}>Switch admin/user</button><button type="button" onClick={() => setMessage('Patreon sync requires client secret/creator token on an Edge Function, not in browser.')}>Sync Patreon</button><button type="button" onClick={() => setState(defaultState)}>Reset demo data</button></div></section>{state.managedUsers.map((user) => <section className="panel" key={user.id}><h3>{user.name}</h3><p>{user.role} • {user.status}</p><p>{user.email}</p><SelectField label="Plan" value={user.plan} options={Object.keys(tiers)} onChange={(v) => setState({ ...state, managedUsers: state.managedUsers.map((item) => item.id === user.id ? { ...item, plan: v as keyof typeof tiers } : item) })} /><button type="button" onClick={() => setMessage(`Opened editable admin route for ${user.name}.`)}>Edit account</button></section>)}</div>}
 
         {!hasSupabaseConfig && activeTab === 'settings' && <p className="notice">Demo mode: Supabase public env values are missing from this static build, so edits save locally in this browser and flow through the UI.</p>}
+        <div className="sectionNav pageBackNav"><button type="button" onClick={goBack} disabled={activeTab === 'overview' && tabHistory.length === 0}>Back</button><button className="primary" type="button" onClick={() => navigateTab('overview')}>Home</button></div>
         <nav className="mobileBottomNav" aria-label="Primary mobile navigation"><button type="button" onClick={() => navigateTab('overview')}>⌂<span>Home</span></button><button type="button" onClick={() => navigateTab('walks')}>👣<span>Walks</span></button><button className="scanFab" type="button" onClick={() => navigateTab('pets')}>🐾<span>Pet</span></button><button type="button" onClick={() => navigateTab('medical')}>📄<span>Docs</span></button><button type="button" onClick={() => navigateTab('lost')}>🚨<span>Alerts</span></button></nav>
       </section>
     </main>

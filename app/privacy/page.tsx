@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import { appReleaseLabel } from '../../lib/app-version';
 
 export const metadata = { title: 'Privacy Policy | MyPetID' };
 
@@ -8,13 +7,9 @@ export default function Page() {
     <main className="legalPage">
       <Link className="brandLockup" href="/"><img src="/images/logo/MyPetID-Logo_Resized.jpg" alt="MyPetID" /><span>MyPetID</span></Link>
       <article className="legalDocument">
-        <p className="eyebrow">{appReleaseLabel}</p>
         <h1>Privacy Policy</h1>
         <div className="legalCopy" dangerouslySetInnerHTML={{ __html: `
 <p>Effective date: June 28, 2026</p>
-<p>App version: 7.68.5</p>
-<p>Build: 26513225</p>
-
 <p>MyPetID is a pet identification, care, and lost-pet recovery application operated by MyPetID-Home. This policy explains what information the app collects, how it is used, who can access it, and how pet owners and finders can contact us.</p>
 
 <p>This policy is written for transparency and product planning. It is not a substitute for legal advice, and it should be reviewed by counsel before launch with live customers.</p>
@@ -91,8 +86,8 @@ export default function Page() {
 <li>Support: dev.mypetid-sup@yahoo.com</li>
 <li>Help: dev.mypetid-help@yahoo.com</li>
 <li>Admin: dev.mypetid-adm@yahoo.com</li>
-<li>Main app/setup email: mypetid@yahoo.com</li>
-<li>Phone: (207) 613-5454</li>
+<li>Verification/no-reply sender: mypetid@yahoo.com</li>
+<li>Business phone, admin-escalated inquiries only: (207) 613-5454</li>
 </ul>
 
 <h2>11. Changes to this policy</h2>

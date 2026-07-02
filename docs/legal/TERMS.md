@@ -30,7 +30,7 @@ Users must keep login credentials secure and should report suspected account com
 
 ## 6. Email and verification
 
-MyPetID may use email verification codes and confirmation links from `mypetid@yahoo.com` to help confirm signups, password changes, email changes, and account recovery requests. MyPetID is not planning automated SMS or phone PIN verification at this time.
+MyPetID may use email verification codes and confirmation links from `mypetid@yahoo.com` to help confirm signups, password changes, email changes, and account recovery requests. That address is a verification/no-reply sender, not a support mailbox. MyPetID is not planning automated SMS or phone PIN verification at this time.
 
 ## 7. Subscription and admin access
 
@@ -52,7 +52,7 @@ MyPetID can assist with pet identification and recovery, but it is not an emerge
 
 ## 10. Intellectual property
 
-MyPetID, MyPetID Home, associated logos, tag flows, dashboard names, visual marks, and related branding are trademarks or service marks of MyPetID-Home unless otherwise noted. App content, design, documentation, and source materials are protected by copyright and other intellectual-property laws.
+MyPetID™ is the app/customer-facing mark for the pet ID service. MyPetID-Home is the GitHub/code home and organization name for the app. Associated logos, tag flows, dashboard names, visual marks, and related branding are trademarks or service marks unless otherwise noted. App content, design, documentation, and source materials are protected by copyright and other intellectual-property laws.
 
 Users retain ownership of pet photos, documents, and profile information they provide, subject to the rights needed for MyPetID to host, display, process, and operate the service.
 
@@ -71,8 +71,8 @@ For support, legal, privacy, or security concerns:
 - Support: dev.mypetid-sup@yahoo.com
 - Help: dev.mypetid-help@yahoo.com
 - Admin: dev.mypetid-adm@yahoo.com
-- Main app/setup email: mypetid@yahoo.com
-- Phone: (207) 613-5454
+- Verification/no-reply sender: mypetid@yahoo.com
+- Business phone, admin-escalated inquiries only: (207) 613-5454
 
 ## 14. Changes to terms
 

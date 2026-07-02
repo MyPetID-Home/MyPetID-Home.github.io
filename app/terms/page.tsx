@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import { appReleaseLabel } from '../../lib/app-version';
 
 export const metadata = { title: 'Terms of Service | MyPetID' };
 
@@ -8,13 +7,9 @@ export default function Page() {
     <main className="legalPage">
       <Link className="brandLockup" href="/"><img src="/images/logo/MyPetID-Logo_Resized.jpg" alt="MyPetID" /><span>MyPetID</span></Link>
       <article className="legalDocument">
-        <p className="eyebrow">{appReleaseLabel}</p>
         <h1>Terms of Service</h1>
         <div className="legalCopy" dangerouslySetInnerHTML={{ __html: `
 <p>Effective date: June 28, 2026</p>
-<p>App version: 7.68.5</p>
-<p>Build: 26513225</p>
-
 <p>These Terms of Service describe the rules for using MyPetID. They are written for transparency and product planning and should be reviewed by counsel before launch with live customers.</p>
 
 <h2>1. Acceptance of terms</h2>
@@ -41,7 +36,7 @@ export default function Page() {
 
 <h2>6. Email and verification</h2>
 
-<p>MyPetID may use email verification codes and confirmation links from <code>mypetid@yahoo.com</code> to help confirm signups, password changes, email changes, and account recovery requests. MyPetID is not planning automated SMS or phone PIN verification at this time.</p>
+<p>MyPetID may use email verification codes and confirmation links from <code>mypetid@yahoo.com</code> to help confirm signups, password changes, email changes, and account recovery requests. That address is a verification/no-reply sender, not a support mailbox. MyPetID is not planning automated SMS or phone PIN verification at this time.</p>
 
 <h2>7. Subscription and admin access</h2>
 
@@ -65,7 +60,7 @@ export default function Page() {
 
 <h2>10. Intellectual property</h2>
 
-<p>MyPetID, MyPetID Home, associated logos, tag flows, dashboard names, visual marks, and related branding are trademarks or service marks of MyPetID-Home unless otherwise noted. App content, design, documentation, and source materials are protected by copyright and other intellectual-property laws.</p>
+<p>MyPetID™ is the app/customer-facing mark for the pet ID service. MyPetID-Home is the GitHub/code home and organization name for the app. Associated logos, tag flows, dashboard names, visual marks, and related branding are trademarks or service marks unless otherwise noted. App content, design, documentation, and source materials are protected by copyright and other intellectual-property laws.</p>
 
 <p>Users retain ownership of pet photos, documents, and profile information they provide, subject to the rights needed for MyPetID to host, display, process, and operate the service.</p>
 
@@ -85,8 +80,8 @@ export default function Page() {
 <li>Support: dev.mypetid-sup@yahoo.com</li>
 <li>Help: dev.mypetid-help@yahoo.com</li>
 <li>Admin: dev.mypetid-adm@yahoo.com</li>
-<li>Main app/setup email: mypetid@yahoo.com</li>
-<li>Phone: (207) 613-5454</li>
+<li>Verification/no-reply sender: mypetid@yahoo.com</li>
+<li>Business phone, admin-escalated inquiries only: (207) 613-5454</li>
 </ul>
 
 <h2>14. Changes to terms</h2>

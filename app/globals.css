@@ -344,6 +344,6 @@ textarea { min-height: 96px; resize: vertical; }
 
 .termsAgree { border: 1px solid var(--line); border-radius: 18px; padding: 12px; background: rgba(255,255,255,.06); }
 .termsAgree a { color: var(--brand2); font-weight: 950; }
-.compactLegalFooter nav { display: none; }
+.compactLegalFooter nav { display: flex; }
 .compactLegalFooter small { color: var(--muted); }
 @media (max-width: 620px) { .mobileSectionNav { display: none; } }

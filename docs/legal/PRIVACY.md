@@ -75,8 +75,8 @@ For privacy, support, or security questions:
 - Support: dev.mypetid-sup@yahoo.com
 - Help: dev.mypetid-help@yahoo.com
 - Admin: dev.mypetid-adm@yahoo.com
-- Main app/setup email: mypetid@yahoo.com
-- Phone: (207) 613-5454
+- Verification/no-reply sender: mypetid@yahoo.com
+- Business phone, admin-escalated inquiries only: (207) 613-5454
 
 ## 11. Changes to this policy
 
