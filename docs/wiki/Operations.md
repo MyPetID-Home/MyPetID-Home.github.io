@@ -36,7 +36,7 @@ If verifying static export manually, copy to a temporary directory and remove `a
 
 ## Deployment lanes
 
-- **Vercel**: functional app host for API routes (`/api/checkout`, `/api/uploads`, `/api/account/membership`, `/api/tags/activate`, `/api/subscriptions/portal`, `/api/admin/tag-orders`, `/api/admin/memberships`, `/api/coupons/redeem`, `/api/email/send-code`, `/api/email/verify-code`, `/api/google/oauth/*`, Dog Pack invite creation) and webhooks/jobs.
+- **Vercel**: functional app host for API routes (`/api/checkout`, `/api/uploads`, `/api/account/membership`, `/api/tags/activate`, `/api/subscriptions/portal`, `/api/admin/tag-orders`, `/api/admin/memberships`, `/api/admin/providers`, `/api/coupons/redeem`, `/api/email/send-code`, `/api/email/verify-code`, `/api/google/oauth/*`, Dog Pack invite creation) and webhooks/jobs.
 - **GitHub Pages**: static export host for public/static fallback pages.
 
 `next.config.mjs` only sets `output: 'export'` when `BUILD_STATIC_EXPORT=1`.
@@ -48,7 +48,9 @@ If verifying static export manually, copy to a temporary directory and remove `a
 - Patreon credentials are stored privately; OAuth link/callback and signed webhook verification are wired through Vercel API routes.
 - Google OAuth/upload sync routes are implemented but require Google-side OAuth/redirect completion before production verification.
 - Email verification uses `/api/email/send-code` and `/api/email/verify-code`; code hashes use `MYPETID_EMAIL_VERIFICATION_SECRET`, and outbound delivery from `mypetid@yahoo.com` requires private Yahoo SMTP env (`MYPETID_SMTP_HOST`, `MYPETID_SMTP_PORT`, `MYPETID_SMTP_USER`, `MYPETID_SMTP_PASSWORD`, optional `MYPETID_VERIFICATION_FROM`).
-- Admin membership/coupon control uses `/api/admin/memberships` and `/api/coupons/redeem`; coupon code hashes use `MYPETID_COUPON_SECRET`. App coupons can grant Basic/Silver/Gold/Diamond/Admin access for a chosen duration and optionally attempt Stripe promotion-code sync. Patreon does not provide the same checkout coupon surface, so Patreon-equivalent comps are represented as MyPetID grants.
+- Admin provider control uses `/api/admin/providers` for Stripe product/price/coupon/promotion-code CRUD plus Patreon campaign-tier read/sync. Stripe objects can be created/archived from MyPetID; Patreon native tier edits/coupons remain dashboard-only, so MyPetID grants/coupons are the app-level Patreon-equivalent comp path.
+- Admin membership/coupon control uses `/api/admin/memberships` and `/api/coupons/redeem`; coupon code hashes use `MYPETID_COUPON_SECRET`. App coupons can grant Basic/Silver/Gold/Diamond/Admin access for a chosen duration and optionally attempt Stripe promotion-code sync. User account pages show provider/source/status privately; public pet profiles should show membership tier only.
+
 - Supabase Storage is authoritative for uploaded pet photos and documents; Google sync is a secondary copy.
 
 ## Wiki use

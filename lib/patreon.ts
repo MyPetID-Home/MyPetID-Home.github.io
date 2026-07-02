@@ -18,8 +18,8 @@ export function verifyPatreonState(state: string) {
 }
 
 export async function patreonToken(body: Record<string, string>) {
-  const clientId = process.env.PATREON_CLIENT_ID;
-  const clientSecret = process.env.PATREON_CLIENT_SECRET;
+  const clientId = process.env.PATREON_CLIENT_ID || process.env.MYPETID_PATREON_CLIENT_ID;
+  const clientSecret = process.env.PATREON_CLIENT_SECRET || process.env.MYPETID_PATREON_CLIENT_SECRET;
   if (!clientId || !clientSecret) throw new Error('Patreon OAuth env is not configured.');
   const response = await fetch('https://www.patreon.com/api/oauth2/token', {
     method: 'POST',
@@ -36,6 +36,25 @@ export async function patreonGet(path: string, accessToken: string) {
   const data = await response.json();
   if (!response.ok) throw new Error(data?.errors?.[0]?.detail || data?.error || `Patreon ${response.status}`);
   return data;
+}
+
+function patreonCreatorToken() {
+  return process.env.PATREON_CREATOR_ACCESS_TOKEN || process.env.MYPETID_PATREON_CREATOR_ACCESS_TOKEN;
+}
+
+export async function patreonCreatorGet(path: string) {
+  let token = patreonCreatorToken();
+  if (!token) throw new Error('Patreon creator access token is not configured.');
+  try {
+    return await patreonGet(path, token);
+  } catch (error) {
+    const refreshToken = process.env.PATREON_CREATOR_REFRESH_TOKEN || process.env.MYPETID_PATREON_CREATOR_REFRESH_TOKEN;
+    if (!refreshToken) throw error;
+    const refreshed = await patreonToken({ grant_type: 'refresh_token', refresh_token: refreshToken });
+    token = refreshed.access_token;
+    if (!token) throw error;
+    return patreonGet(path, token);
+  }
 }
 
 export function tierSlugFromPatreon(tierIds: string[], amountCents?: number, title?: string) {

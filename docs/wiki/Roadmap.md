@@ -35,7 +35,7 @@
 - Admin fulfillment queue lists paid/manual-review tag orders and supports queued/printing/shipped/delivered/cancelled/refunded/manual-review status changes.
 - Patreon remains visible as a membership/support path.
 - Email verification-code flow is implemented with `email_verification_codes`, `profiles.email_verified_at`, and Vercel `/api/email/send-code` + `/api/email/verify-code`; outbound delivery uses Yahoo SMTP from `mypetid@yahoo.com`.
-- Admin membership/coupon controls are live: CAK3D can inspect user status, grant paid-tier access, generate random emailed app coupon codes, and optionally attempt matching Stripe promotion codes for checkout discounts.
+- Admin membership/coupon/provider controls are live: CAK3D can inspect user status, grant paid-tier access, generate random emailed app coupon codes, create Stripe products/prices/coupons/promotion codes, and sync Patreon tier metadata where Patreon API permits it.
 - Remaining: invite acceptance/role management, final scan anti-abuse checks, shipping/tracking notification automation, email delivery credential verification, and fulfillment edge-case polish.
 
 ## Phase 5: Uploads and Google sync — partially implemented

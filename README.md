@@ -5,14 +5,14 @@ Clydius-maintained rebuild for the MyPetID NFC/QR pet profile, tracker, Dog Pack
 ## What works now
 
 - Dual-host Next.js app:
-  - **Vercel mode** keeps server API routes for Stripe checkout, checkout confirmation, email verification codes, admin membership/coupon grants, Google upload sync, uploads, and Dog Pack invite creation.
+  - **Vercel mode** keeps server API routes for Stripe checkout, checkout confirmation, email verification codes, admin membership/coupon grants, admin Stripe/Patreon provider control, Google upload sync, uploads, and Dog Pack invite creation.
   - **GitHub Pages mode** uses `BUILD_STATIC_EXPORT=1` and deploys a static export through `.github/workflows/deploy-pages.yml`.
 - Marketing/home page explaining the MyPetID product and linking customers to `/shop/`.
 - `/shop/` and `/subscribe/` explain the purchase/subscription process and show the two physical tag products:
   - **Basic NFC Tag** — `$10.00`, blank NFC card plus QR-code sticker.
   - **ID NFC Tag Card** — `$15.00`, license-style ID card with NFC + QR-code camera fallback.
 - Stripe products/prices are created and saved in Supabase `tag_products`; Vercel API checkout creates `tag_orders` and returns secure Stripe Checkout sessions.
-- Stripe monthly memberships are created for Basic/Silver/Gold/Diamond and mirrored in Supabase `membership_tiers`; Vercel APIs now expose membership summaries, Stripe Billing Portal sessions, server-side tag activation checks, Dog Pack invite limit checks, admin membership grants, and random coupon-code generation/redemption.
+- Stripe monthly memberships are created for Basic/Silver/Gold/Diamond and mirrored in Supabase `membership_tiers`; Vercel APIs now expose membership summaries, Stripe Billing Portal sessions, server-side tag activation checks, Dog Pack invite limit checks, admin membership grants, random coupon-code generation/redemption, and admin Stripe provider controls. User account pages show private source/status; public pet profiles use only the tier.
 - Stripe webhook endpoint reconciles Checkout, subscription, invoice, and refund events into Supabase orders/membership records.
 - Payment success page confirms the Stripe Checkout session and marks matching Supabase orders paid when running on Vercel.
 - Supabase Auth and dashboard workspace for signed-in account profile edits, email verification status/codes, pet create/update, physical tag claim, trusted browser records, owner scan logging, scan history, and admin tag/profile inventory.
@@ -44,8 +44,8 @@ Copy `.env.example` to `.env.local` and add only browser-safe public values loca
 ## Provider status
 
 - **Supabase:** live project `ryyaefxszkmibcnngnfg` is source of truth for auth/data/storage.
-- **Stripe:** Basic NFC Tag and ID NFC Tag Card products/prices are configured; Basic/Silver/Gold/Diamond monthly subscription prices are configured; checkout/session confirmation/webhook/Billing Portal APIs are implemented for Vercel. Admin coupons can optionally attempt matching Stripe 100%-off promotion-code creation while MyPetID app coupons remain the source of truth for comp access.
-- **Patreon:** OAuth link/callback is wired with private Patreon credentials; live campaign tier IDs are mirrored into Supabase; signed Vercel webhook verification is configured and live.
+- **Stripe:** Basic NFC Tag and ID NFC Tag Card products/prices are configured; Basic/Silver/Gold/Diamond monthly subscription prices are configured; checkout/session confirmation/webhook/Billing Portal APIs are implemented for Vercel. Admin can view/create/archive Stripe products/prices and create coupons/promotion codes from the MyPetID dashboard. Admin app coupons can also optionally attempt matching Stripe 100%-off promotion-code creation while MyPetID app coupons remain the source of truth for comp access.
+- **Patreon:** OAuth link/callback is wired with private Patreon credentials; live campaign tier IDs are mirrored into Supabase; signed Vercel webhook verification is configured and live. Admin dashboard can read/sync Patreon campaign tier metadata, but Patreon native tier editing/coupons still require Patreon Creator dashboard because Patreon does not expose the same checkout coupon CRUD surface as Stripe.
 - **Google:** upload-sync API and OAuth callback routes are in place, but CAK3D is still finishing Google OAuth/provider setup; do not treat Google login/sync as fully production verified until credentials/redirects are completed.
 - **Email verification:** Vercel routes generate and verify 6-digit signup codes, store hashes in Supabase `email_verification_codes`, and update `profiles.email_verified_at`. Codes are sent from `mypetid@yahoo.com` once the Yahoo SMTP app-password env is set in private/Vercel env. Support/admin/help addresses remain separate; automated SMS/phone PIN verification is not planned.
 

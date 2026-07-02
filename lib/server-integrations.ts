@@ -21,8 +21,12 @@ export async function userFromBearer(authHeader: string | null) {
   return { user: data.user, token };
 }
 
-export async function stripeRequest(path: string, body: Record<string, string | number | boolean | null | undefined>) {
-  const secret = process.env.STRIPE_SECRET_KEY;
+function stripeSecret() {
+  return process.env.STRIPE_SECRET_KEY || process.env.MYPETID_STRIPE_SECRET_KEY || process.env.MYPETID_STRIPE_RESTRICTED_KEY;
+}
+
+export async function stripeRequest(path: string, body: Record<string, string | number | boolean | null | undefined>, method = 'POST') {
+  const secret = stripeSecret();
   if (!secret) throw new Error('Stripe secret key is not configured.');
   const params = new URLSearchParams();
   Object.entries(body).forEach(([key, value]) => {
@@ -30,7 +34,7 @@ export async function stripeRequest(path: string, body: Record<string, string | 
   });
   const scheme = String.fromCharCode(66, 101, 97, 114, 101, 114);
   const response = await fetch(`https://api.stripe.com/v1${path}`, {
-    method: 'POST',
+    method,
     headers: { Authorization: `${scheme} ${secret}`, 'Content-Type': 'application/x-www-form-urlencoded' },
     body: params,
   });
@@ -40,7 +44,7 @@ export async function stripeRequest(path: string, body: Record<string, string | 
 }
 
 export async function stripeRetrieve(path: string) {
-  const secret = process.env.STRIPE_SECRET_KEY;
+  const secret = stripeSecret();
   if (!secret) throw new Error('Stripe secret key is not configured.');
   const scheme = String.fromCharCode(66, 101, 97, 114, 101, 114);
   const response = await fetch(`https://api.stripe.com/v1${path}`, {
@@ -49,6 +53,15 @@ export async function stripeRetrieve(path: string) {
   const data = await response.json();
   if (!response.ok) throw new Error(data?.error?.message || `Stripe ${response.status}`);
   return data;
+}
+
+export async function stripeList(path: string, query: Record<string, string | number | boolean | null | undefined> = {}) {
+  const params = new URLSearchParams();
+  Object.entries(query).forEach(([key, value]) => {
+    if (value !== undefined && value !== null) params.append(key, String(value));
+  });
+  const suffix = params.toString() ? `?${params.toString()}` : '';
+  return stripeRetrieve(`${path}${suffix}`);
 }
 
 export async function googleAccessToken(refreshToken: string) {

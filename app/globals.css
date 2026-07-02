@@ -106,13 +106,13 @@ textarea { min-height: 96px; resize: vertical; }
 .brandLockup { display: inline-flex; align-items: center; gap: 12px; text-decoration: none; font-weight: 950; letter-spacing: -.03em; }
 .brandLockup img { width: 48px; height: 48px; object-fit: cover; border-radius: 14px; }
 .hamburger { display: inline-flex; width: auto; justify-content: center; }
-.hamburger.topLeft { position: fixed; left: 16px; top: 16px; z-index: 30; min-width: 48px; min-height: 48px; padding: 12px 14px; }
+.hamburger.topLeft { position: fixed; left: 16px; top: 16px; z-index: 110; min-width: 48px; min-height: 48px; padding: 12px 14px; }
 .userLockup { display: grid; gap: 6px; text-align: left; border-radius: 22px; padding: 14px; }
 .userLockup img { width: 64px; height: 64px; object-fit: cover; border-radius: 20px; border: 1px solid var(--line); }
 .userLockup span { font-weight: 950; }
 .userLockup small { color: var(--muted); }
 .appShell { display: block; min-height: 100vh; }
-.sidebar { position: fixed; left: 16px; top: 76px; bottom: 16px; z-index: 25; width: min(320px, calc(100vw - 32px)); overflow-y: auto; padding: 18px; border: 1px solid var(--line); border-radius: 28px; background: linear-gradient(160deg, var(--surface), color-mix(in srgb, var(--surface) 78%, var(--brand) 22%)); backdrop-filter: blur(18px); display: none; align-content: start; gap: 18px; box-shadow: 0 24px 80px var(--shadow); }
+.sidebar { position: fixed; left: 16px; top: 76px; bottom: 16px; z-index: 100; width: min(320px, calc(100vw - 32px)); overflow-y: auto; padding: 18px; border: 1px solid var(--line); border-radius: 28px; background: linear-gradient(160deg, var(--surface), color-mix(in srgb, var(--surface) 78%, var(--brand) 22%)); backdrop-filter: blur(18px); display: none; align-content: start; gap: 18px; box-shadow: 0 24px 80px var(--shadow); }
 .sidebar.open { display: grid; }
 .sideNav { display: grid; gap: 10px; }
 .sideNav button { width: 100%; text-transform: capitalize; text-align: left; border-radius: 18px; }
@@ -278,7 +278,9 @@ textarea { min-height: 96px; resize: vertical; }
   .appHeader { gap: 10px; margin-bottom: 8px; }
   .appHeader h1 { font-size: clamp(2rem, 12vw, 3rem); }
   .appHeader p:not(.eyebrow) { display: none; }
-  .appHeader.stickyChrome { grid-template-columns: minmax(0, 1fr) auto; border-radius: 22px; padding: 10px; }
+  .appHeader.stickyChrome { grid-template-columns: minmax(0, 1fr) auto; border-radius: 22px; padding: 10px 10px 10px 64px; min-height: 72px; }
+  .sidebar { top: 74px; left: 10px; right: 10px; bottom: 86px; width: auto; border-radius: 24px; }
+  .hamburger.topLeft { left: 10px; top: 10px; min-width: 46px; min-height: 46px; padding: 10px 12px; }
   .topActions { align-self: start; gap: 6px; }
   .dashboardTools { display: none; }
   .profileTopRight { justify-self: end; width: 54px; height: 54px; padding: 6px; border-radius: 18px; overflow: visible; }

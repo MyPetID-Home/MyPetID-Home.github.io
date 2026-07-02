@@ -104,6 +104,13 @@ type AccessCoupon = {
   created_at: string;
 };
 
+type ProviderAdminSnapshot = {
+  tiers: Array<Record<string, any>>;
+  stripe: { products: Array<Record<string, any>>; prices: Array<Record<string, any>>; coupons: Array<Record<string, any>>; promotion_codes: Array<Record<string, any>>; errors?: string[] };
+  patreon: { campaigns: Array<Record<string, any>>; included: Array<Record<string, any>>; editable_in_app: boolean; note?: string; error?: string };
+  capabilities: Record<string, any>;
+};
+
 type AdminDebugRow = {
   profile_id: string;
   email: string | null;
@@ -308,6 +315,9 @@ export function SupabaseWorkspace() {
   const [couponCode, setCouponCode] = useState('');
   const [grantDraft, setGrantDraft] = useState({ profileId: '', tier: 'basic', durationDays: '30', note: 'Admin comp access' });
   const [couponDraft, setCouponDraft] = useState({ recipientEmail: '', tier: 'basic', durationDays: '30', maxRedemptions: '1', expiresInDays: '30', emailCode: true, createStripePromotion: true });
+  const [providerSnapshot, setProviderSnapshot] = useState<ProviderAdminSnapshot | null>(null);
+  const [providerTierDraft, setProviderTierDraft] = useState({ tier: 'basic', name: 'Basic Membership', monthlyCents: '300', description: 'MyPetID Basic monthly membership' });
+  const [stripeCouponDraft, setStripeCouponDraft] = useState({ name: 'MyPetID one-month free', code: '', percentOff: '100', duration: 'repeating', durationMonths: '1', maxRedemptions: '1' });
   const [uploadKind, setUploadKind] = useState<'pet_photo' | 'medical_document'>('pet_photo');
   const [uploadTitle, setUploadTitle] = useState('MyPetID upload');
   const [inviteUrl, setInviteUrl] = useState('');
@@ -422,6 +432,11 @@ export function SupabaseWorkspace() {
           setAdminMembershipAccounts([]);
           setAdminCoupons([]);
         }
+
+        const providerResponse = await fetch('/api/admin/providers/', { headers: { Authorization: authValue(activeSession.access_token) } });
+        const providerJson = await providerResponse.json();
+        if (providerResponse.ok) setProviderSnapshot(providerJson as ProviderAdminSnapshot);
+        else setProviderSnapshot(null);
       } else {
         setAdminProfiles([]);
         setAdminDebugRows([]);
@@ -429,6 +444,7 @@ export function SupabaseWorkspace() {
         setFulfillmentOrders([]);
         setAdminMembershipAccounts([]);
         setAdminCoupons([]);
+        setProviderSnapshot(null);
       }
       setMessage(`Loaded Supabase workspace for ${activeSession.user.email}.`);
     } catch (error) {
@@ -533,6 +549,29 @@ export function SupabaseWorkspace() {
     if (!response.ok) return setMessage(json.error || 'Grant update failed.');
     setMessage(`Grant marked ${status}.`);
     loadWorkspace();
+  }
+
+  async function adminProviderAction(action: string, body: Record<string, unknown> = {}) {
+    if (!session?.user) return setMessage('Sign in first.');
+    setBusy(true);
+    const response = await fetch('/api/admin/providers/', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: authValue(session.access_token) }, body: JSON.stringify({ action, ...body }) });
+    const json = await response.json();
+    setBusy(false);
+    if (!response.ok) return setMessage(json.error || 'Provider action failed.');
+    setMessage(`Provider action complete: ${action}.`);
+    loadWorkspace();
+  }
+
+  async function adminCreateStripeTier() {
+    await adminProviderAction('stripe_create_product_price', { tier: providerTierDraft.tier, name: providerTierDraft.name, monthlyCents: Number(providerTierDraft.monthlyCents || 0), description: providerTierDraft.description });
+  }
+
+  async function adminCreateStripeCoupon() {
+    await adminProviderAction('stripe_create_coupon', { name: stripeCouponDraft.name, code: stripeCouponDraft.code, percentOff: Number(stripeCouponDraft.percentOff || 100), duration: stripeCouponDraft.duration, durationMonths: Number(stripeCouponDraft.durationMonths || 1), maxRedemptions: Number(stripeCouponDraft.maxRedemptions || 1) });
+  }
+
+  async function adminSyncPatreonTiers() {
+    await adminProviderAction('sync_patreon_tiers');
   }
 
   async function saveProfile() {
@@ -823,7 +862,8 @@ export function SupabaseWorkspace() {
           <div>
             <p className="eyebrow">Membership enforcement</p>
             <h3>{membership ? `${membership.effective_tier.toUpperCase()} plan` : 'Membership loading'}</h3>
-            <p>{membership ? `${membership.provider} • ${membership.status}` : 'Refresh to load Stripe/Patreon/admin status.'}</p>
+            <p>{membership ? `Private account status: ${membership.provider} • ${membership.status}` : 'Refresh to load Stripe/Patreon/admin/coupon status.'}</p>
+            <small>Only the membership tier is used for app/profile limits. Provider source and payment/coupon status stay inside Account/Admin and are not shown on public pet profiles.</small>
           </div>
           <div className="actions compact"><button type="button" disabled={busy} onClick={refreshMembership}>Refresh membership</button><button type="button" disabled={busy} onClick={manageBilling}>Manage Stripe billing</button></div>
         </div>
@@ -1019,6 +1059,34 @@ export function SupabaseWorkspace() {
               <span>{coupon.duration_days || 'ongoing'} days access • code expires {fmtDate(coupon.expires_at)}</span>
               <small>Stripe: {coupon.metadata?.stripe ? 'promotion synced' : coupon.metadata?.stripe_error ? `error: ${coupon.metadata.stripe_error}` : 'not requested'}</small>
             </div>)}
+          </div>
+        </article>}
+
+        {isAdmin && <article className="panel wide adminLivePanel providerControlPanel">
+          <h3>Admin provider control center</h3>
+          <p>Stripe can be managed from here for products, recurring prices, coupons, and promotion codes. Patreon is currently read/sync from its creator API; Patreon tier edits/native coupons still require Patreon Creator dashboard, while MyPetID grants/coupons handle free Patreon-equivalent app access.</p>
+          <div className="actions"><button type="button" disabled={busy} onClick={() => loadWorkspace()}>Refresh provider snapshot</button><button type="button" disabled={busy} onClick={adminSyncPatreonTiers}>Sync Patreon tier metadata</button></div>
+          <div className="grid2">
+            <label>Stripe tier<select value={providerTierDraft.tier} onChange={(event) => setProviderTierDraft({ ...providerTierDraft, tier: event.target.value })}>{['basic','silver','gold','diamond'].map((tier) => <option key={tier} value={tier}>{tier}</option>)}</select></label>
+            <label>Stripe product name<input value={providerTierDraft.name} onChange={(event) => setProviderTierDraft({ ...providerTierDraft, name: event.target.value })} /></label>
+            <label>Monthly cents<input value={providerTierDraft.monthlyCents} onChange={(event) => setProviderTierDraft({ ...providerTierDraft, monthlyCents: event.target.value.replace(/\D/g, '') })} /></label>
+            <label>Description<input value={providerTierDraft.description} onChange={(event) => setProviderTierDraft({ ...providerTierDraft, description: event.target.value })} /></label>
+          </div>
+          <div className="actions"><button className="primary" type="button" disabled={busy} onClick={adminCreateStripeTier}>Create Stripe product + monthly price</button></div>
+          <div className="grid2">
+            <label>Stripe coupon name<input value={stripeCouponDraft.name} onChange={(event) => setStripeCouponDraft({ ...stripeCouponDraft, name: event.target.value })} /></label>
+            <label>Promotion code<input value={stripeCouponDraft.code} onChange={(event) => setStripeCouponDraft({ ...stripeCouponDraft, code: event.target.value.toUpperCase() })} placeholder="optional, e.g. CLYDEFREE" /></label>
+            <label>Percent off<input value={stripeCouponDraft.percentOff} onChange={(event) => setStripeCouponDraft({ ...stripeCouponDraft, percentOff: event.target.value.replace(/\D/g, '') })} /></label>
+            <label>Duration<select value={stripeCouponDraft.duration} onChange={(event) => setStripeCouponDraft({ ...stripeCouponDraft, duration: event.target.value })}><option value="once">once</option><option value="repeating">repeating</option><option value="forever">forever</option></select></label>
+            <label>Duration months<input value={stripeCouponDraft.durationMonths} onChange={(event) => setStripeCouponDraft({ ...stripeCouponDraft, durationMonths: event.target.value.replace(/\D/g, '') })} /></label>
+            <label>Max redemptions<input value={stripeCouponDraft.maxRedemptions} onChange={(event) => setStripeCouponDraft({ ...stripeCouponDraft, maxRedemptions: event.target.value.replace(/\D/g, '') })} /></label>
+          </div>
+          <div className="actions"><button className="primary" type="button" disabled={busy} onClick={adminCreateStripeCoupon}>Create Stripe coupon/promo</button></div>
+          <div className="adminLookupGrid">
+            <div className="adminLookupCard"><strong>Supabase tiers</strong><small>{providerSnapshot?.tiers?.length || 0} rows</small>{providerSnapshot?.tiers?.slice(0, 6).map((tier) => <p key={String(tier.tier)}><small>{String(tier.tier)} • {money(Number(tier.monthly_price || 0), 'usd')}/mo • Stripe {String(tier.stripe_price_id || 'n/a')} • Patreon {String(tier.patreon_tier_id || 'n/a')}</small></p>)}</div>
+            <div className="adminLookupCard"><strong>Stripe products/prices</strong><small>{providerSnapshot?.stripe?.products?.length || 0} products • {providerSnapshot?.stripe?.prices?.length || 0} recurring prices</small>{providerSnapshot?.stripe?.errors?.map((error) => <p key={error}><small>Stripe warning: {error}</small></p>)}{providerSnapshot?.stripe?.prices?.slice(0, 6).map((price) => <p key={String(price.id)}><small>{String(price.nickname || price.id)} • {money(Number(price.unit_amount || 0), String(price.currency || 'usd'))}/{String(price.recurring?.interval || 'n/a')} • {String(price.active ? 'active' : 'archived')}</small></p>)}</div>
+            <div className="adminLookupCard"><strong>Stripe coupons/promos</strong><small>{providerSnapshot?.stripe?.coupons?.length || 0} coupons • {providerSnapshot?.stripe?.promotion_codes?.length || 0} promo codes</small>{providerSnapshot?.stripe?.promotion_codes?.slice(0, 6).map((promo) => <p key={String(promo.id)}><small>{String(promo.code)} • {String(promo.active ? 'active' : 'disabled')} • redeemed {String(promo.times_redeemed || 0)}/{String(promo.max_redemptions || '∞')}</small></p>)}</div>
+            <div className="adminLookupCard"><strong>Patreon campaign/tier sync</strong><small>{providerSnapshot?.patreon?.note || 'Refresh provider snapshot to load Patreon tier metadata.'}</small>{providerSnapshot?.patreon?.error && <p><small>Patreon warning: {providerSnapshot.patreon.error}</small></p>}{providerSnapshot?.patreon?.included?.filter((item) => item.type === 'tier').slice(0, 6).map((tier) => <p key={String(tier.id)}><small>{String(tier.attributes?.title || tier.id)} • {money(Number(tier.attributes?.amount_cents || 0), 'usd')}/mo • {String(tier.attributes?.published ? 'published' : 'not published')}</small></p>)}</div>
           </div>
         </article>}
 
