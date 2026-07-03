@@ -9,13 +9,14 @@ MyPetID is intended to be a full pet profile, activity, health, diet, distance, 
 - Pets: editable pet identity, tag ID, species, breed, birthday, sex, weight, color, microchip, vet, photo, behavior notes.
 - Walks: start/end walk, moving route icon, live distance/time, saved walk history, weekly walk goal.
 - Diet: feeding plan, favorite treats, editable meal/snack logs, completion toggles.
-- Medical: allergies, medications, vaccine/ID/document records, public-safe flags.
+- Medical: pet health display area for allergies, medications, vet info, vaccine status, and medical summaries. Medical should show documents that were uploaded/categorized from Docs, but it should not be the document-library entry point.
+- Docs: dedicated document upload/library for vet paperwork, vaccine certificates, rabies documents, licenses, insurance, service/rescue/support documentation, IDs, images, and custom files. Docs must support categories/tags and links to the app sections where each document should appear, such as Medical, Public Profile, License, Insurance, or Admin Review.
 - Lost/found: lost reports, sighting location/note/status, last-scan sharing action, owner follow-up controls.
 - Dog Pack: groups/messages plus live invite-link creation through Vercel API.
-- Goals: weekly distance, meals/day, care tasks, XP, levels, task completion buttons.
+- Goals: user-facing progress display only. Normal users should see achievements, XP, progress, and earned rewards, but should not manually grant XP or edit award rules.
 - Settings: public-field toggles, alerts, units, privacy mode, theme, Google upload-sync connect button.
-- Uploads: pet photos and medical docs upload to Supabase; Google Photos/Drive sync is attempted when connected.
-- Admin: tag ID generation, paid tag fulfillment queue, membership/user status and coupon/grant controls, Stripe provider catalog/coupon controls, Patreon tier metadata sync, profile/tag/search views, XP/award rule controls, found-report review, unrestricted CAK3D access.
+- Uploads: pet photos and document files upload to Supabase; Google Photos/Drive sync is attempted when connected. Upload records should feed Docs first, then linked sections.
+- Admin: hidden/admin-only console for CAK3D with user/app/service metrics, connected-service links/status, tag/orders/fulfillment, membership/user status and coupon/grant controls, Stripe provider catalog/coupon/product/tier controls, Patreon tier metadata sync, purchase history, profile/tag/search views, XP/award rule controls, found-report review, and unrestricted CAK3D access.
 
 ## Customer commerce modules
 
@@ -41,6 +42,36 @@ MyPetID is intended to be a full pet profile, activity, health, diet, distance, 
   - Dog Pack invite creation with membership slot checks
   - membership summary, tag activation, Stripe Billing Portal routes, email verification-code routes, admin membership/coupon/provider routes, and admin tag-order fulfillment API
 - Supabase remains source of truth for auth, profiles, pets, tags, scans, QR records, orders, upload events, provider credentials, documents, and storage.
+
+## Achievement and XP rules
+
+Achievements are admin-authored rules, not user-clickable XP buttons. Normal users can view progress and earned achievements, but they cannot edit achievement definitions, change point values, or manually mark achievements complete.
+
+Required trigger model examples:
+
+- First walk after cumulative or single-walk distance reaches 1 mile.
+- Account profile completion reaches 100%.
+- Dog profile completion reaches 100%.
+- Required document uploaded and categorized, such as rabies certificate or license.
+- Medication, meal, training, play, or walk streaks are completed from real logged events.
+- Dog Pack invite accepted or helper role confirmed.
+- Lost/found report resolved.
+- Custom admin-defined trigger templates created later by CAK3D.
+
+The engine should listen to real app events and stored progress, then auto-award XP once each rule is satisfied. User pages should show progress bars/cards like `0.72 / 1.00 miles` instead of buttons that grant XP directly.
+
+## Admin account and admin dashboard direction
+
+Normal users should not see the admin section or admin navigation. CAK3D wants a dedicated hidden admin login target for `CAK3D_ADMIN` with the configured private password handled only through auth/secrets, never hard-coded in public client code.
+
+Admin mode should provide:
+
+- Overview of all users, pets, tags, scans, uploads, purchases, memberships, and app metrics.
+- Service health/status and quick links for Supabase, Vercel, GitHub Pages, Stripe, Patreon, Google OAuth/storage, email delivery, and future notification providers.
+- Stripe and Patreon product/tier/membership controls: add, edit, delete/sync tiers, prices, coupons, products, and provider metadata.
+- Purchase/order views: who bought what, when, status, fulfillment, membership source, coupon/grant source, and payment provider IDs.
+- Achievement rule editor: create/edit/delete achievement rules, XP values, trigger types, thresholds, sections/categories, and visibility.
+- User impersonation/switch-to-user-view for CAK3D testing without exposing admin controls to normal users.
 
 ## Production backend still needed
 
