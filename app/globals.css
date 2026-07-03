@@ -172,6 +172,16 @@ textarea { min-height: 96px; resize: vertical; }
 .cardMiniHead { display: flex; align-items: center; justify-content: space-between; gap: 10px; border-bottom: 1px solid var(--line); padding-bottom: 8px; margin-bottom: 2px; }
 .cardMiniHead strong { color: var(--brand); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .cardMiniHead span { flex: 0 0 auto; border: 1px solid var(--line); border-radius: 999px; padding: 5px 8px; background: rgba(255,255,255,.07); color: var(--muted); font-size: .78rem; font-weight: 900; }
+
+.summaryCardGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 12px; }
+.summaryCard { border: 1px solid var(--line); border-radius: 20px; padding: 12px; background: color-mix(in srgb, var(--surface-2) 72%, transparent); display: grid; gap: 8px; align-content: start; }
+.summaryCard p { margin: 0; }
+.mutedLine { color: var(--muted); font-size: .9rem; }
+.cardActions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; }
+.cardActions button { padding: 8px 12px; }
+.cardEditor { display: grid; gap: 8px; border-top: 1px solid var(--line); padding-top: 10px; margin-top: 4px; }
+.cardEditor label, .cardEditor .field, .cardEditor textarea { margin-top: 0; }
+@media (max-width: 620px) { .summaryCardGrid { grid-template-columns: 1fr; } .summaryCard { border-radius: 18px; padding: 10px; } }
 .medicalPreview { border-radius: 18px; max-height: 280px; object-fit: cover; }
 .appointment { grid-template-columns: 52px 1fr auto; }
 .adminActions { display: flex; flex-wrap: wrap; gap: 12px; }
