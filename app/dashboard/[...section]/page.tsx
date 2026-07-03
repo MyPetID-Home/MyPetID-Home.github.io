@@ -1,6 +1,6 @@
 import { DashboardClient } from '../../../components/dashboard-client';
 
-type Tab = 'overview' | 'public' | 'account' | 'pets' | 'walks' | 'diet' | 'medical' | 'play' | 'training' | 'lost' | 'pack' | 'goals' | 'settings' | 'admin';
+type Tab = 'overview' | 'public' | 'account' | 'pets' | 'walks' | 'diet' | 'medical' | 'docs' | 'play' | 'training' | 'lost' | 'pack' | 'goals' | 'settings' | 'admin';
 
 const routeToTab: Record<string, Tab> = {
   home: 'overview',
@@ -8,8 +8,8 @@ const routeToTab: Record<string, Tab> = {
   walks: 'walks',
   pet: 'pets',
   pets: 'pets',
-  documents: 'medical',
-  docs: 'medical',
+  documents: 'docs',
+  docs: 'docs',
   medical: 'medical',
   alerts: 'lost',
   lost: 'lost',
@@ -25,11 +25,12 @@ const routeToTab: Record<string, Tab> = {
   'pet/public': 'public',
   'pet/training': 'training',
   'pet/play': 'play',
+  'pet/medical': 'medical',
 };
 
 const staticRoutes = [
   ['walks'], ['pet'], ['documents'], ['alerts'], ['pack'], ['settings'], ['account'], ['goals'], ['diet'], ['admin'],
-  ['pet', 'public'], ['pet', 'training'], ['pet', 'play'],
+  ['pet', 'public'], ['pet', 'medical'], ['pet', 'training'], ['pet', 'play'],
 ];
 
 export function generateStaticParams() {
