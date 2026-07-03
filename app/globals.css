@@ -253,6 +253,28 @@ textarea { min-height: 96px; resize: vertical; }
 .sectionNav { position: sticky; bottom: 16px; z-index: 5; display: flex; justify-content: space-between; gap: 12px; margin: 24px 0 8px; padding: 12px; border: 1px solid var(--line); border-radius: 24px; background: rgba(16,23,18,.86); backdrop-filter: blur(18px); box-shadow: 0 18px 60px rgba(0,0,0,.28); }
 :root[data-theme="light"] .sectionNav { background: rgba(245,248,239,.88); }
 .sectionNav button { min-width: 120px; }
+.avatarGuide { position: fixed; right: 18px; bottom: 104px; z-index: 95; pointer-events: none; animation: avatarGuideIn .28s ease-out both; }
+.avatarBubble { display: flex; align-items: center; gap: 12px; width: min(360px, calc(100vw - 28px)); border: 1px solid var(--line); border-radius: 26px; padding: 12px 14px; background: linear-gradient(145deg, color-mix(in srgb, var(--surface) 88%, var(--brand) 12%), color-mix(in srgb, var(--surface-2) 76%, var(--brand2) 24%)); box-shadow: 0 22px 80px rgba(0,0,0,.42); backdrop-filter: blur(18px); }
+.avatarBubble strong { display: block; color: var(--brand); font-size: .92rem; }
+.avatarBubble p { margin: 2px 0 0; color: var(--text); font-weight: 850; }
+.avatarSprite { position: relative; display: grid; place-items: center; width: 62px; height: 62px; flex: 0 0 62px; border-radius: 22px; background: radial-gradient(circle at 30% 22%, rgba(255,255,255,.36), transparent 32%), linear-gradient(135deg, var(--brand), var(--brand2)); color: #071008; box-shadow: inset 0 0 0 2px rgba(255,255,255,.28), 0 12px 30px rgba(0,0,0,.3); animation: avatarBob 1.2s ease-in-out infinite; }
+.avatarFace { font-size: 2.1rem; filter: drop-shadow(0 2px 0 rgba(255,255,255,.28)); }
+.avatarPaws { position: absolute; right: -10px; bottom: -8px; font-size: 1.25rem; animation: avatarPaws 1.05s ease-in-out infinite; }
+.avatarGuide.saving .avatarSprite, .avatarGuide.loading .avatarSprite { animation: avatarSpinSave 1.25s ease-in-out infinite; }
+.avatarGuide.walk .avatarSprite { animation: avatarWalkBounce .65s ease-in-out infinite; }
+.avatarGuide.training .avatarSprite { animation: avatarTrainPulse .8s ease-in-out infinite; }
+.avatarGuide.pack .avatarSprite { animation: avatarPackWag .7s ease-in-out infinite; }
+.avatarGuide.alert .avatarSprite { background: linear-gradient(135deg, var(--danger), var(--warn)); animation: avatarAlert .55s ease-in-out infinite; }
+.avatarGuide.success .avatarSprite { animation: avatarSuccess 1s ease-in-out infinite; }
+@keyframes avatarGuideIn { from { opacity: 0; transform: translateY(18px) scale(.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
+@keyframes avatarBob { 0%,100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(-6px) rotate(2deg); } }
+@keyframes avatarPaws { 0%,100% { transform: translate(0,0) rotate(-8deg); opacity: .75; } 50% { transform: translate(7px,-7px) rotate(12deg); opacity: 1; } }
+@keyframes avatarSpinSave { 0%,100% { transform: rotate(-5deg) scale(1); } 50% { transform: rotate(8deg) scale(1.08); } }
+@keyframes avatarWalkBounce { 0%,100% { transform: translateX(-3px) translateY(0); } 50% { transform: translateX(7px) translateY(-6px); } }
+@keyframes avatarTrainPulse { 0%,100% { transform: scale(1); box-shadow: inset 0 0 0 2px rgba(255,255,255,.28), 0 0 0 0 rgba(135,224,111,.35); } 50% { transform: scale(1.08); box-shadow: inset 0 0 0 2px rgba(255,255,255,.28), 0 0 0 12px rgba(135,224,111,0); } }
+@keyframes avatarPackWag { 0%,100% { transform: rotate(-8deg); } 50% { transform: rotate(8deg); } }
+@keyframes avatarAlert { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-3px); } 75% { transform: translateX(3px); } }
+@keyframes avatarSuccess { 0%,100% { transform: scale(1) rotate(0); } 50% { transform: scale(1.12) rotate(6deg); } }
 @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(135,224,111,.7); } 70% { box-shadow: 0 0 0 16px rgba(135,224,111,0); } 100% { box-shadow: 0 0 0 0 rgba(135,224,111,0); } }
 @keyframes walkAcross { 0%,100% { transform: translateX(0) translateY(0); } 50% { transform: translateX(85px) translateY(-4px); } }
 @keyframes leashWiggle { 0%,100% { transform: rotate(8deg); } 50% { transform: rotate(-4deg); } }
