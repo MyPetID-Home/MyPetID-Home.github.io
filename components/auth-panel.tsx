@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
-import { isAdminEmail, supabase } from '../lib/supabase';
+import { isAdminEmail, normalizeLoginEmail, supabase } from '../lib/supabase';
 
 type Profile = {
   id: string;
@@ -68,9 +68,10 @@ export function AuthPanel() {
       return;
     }
     setMessage('Working…');
+    const loginEmail = normalizeLoginEmail(email);
     const result = mode === 'sign-in'
-      ? await supabase.auth.signInWithPassword({ email, password })
-      : await supabase.auth.signUp({ email, password, options: { data: { display_name: email.split('@')[0] } } });
+      ? await supabase.auth.signInWithPassword({ email: loginEmail, password })
+      : await supabase.auth.signUp({ email: loginEmail, password, options: { data: { display_name: loginEmail.split('@')[0] } } });
     if (result.error) setMessage(result.error.message);
     else setMessage(mode === 'sign-up' ? 'Signup created. Check email if confirmation is required.' : 'Signed in.');
   }

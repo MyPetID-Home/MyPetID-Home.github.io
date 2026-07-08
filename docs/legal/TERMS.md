@@ -70,7 +70,7 @@ For support, legal, privacy, or security concerns:
 
 - Support: dev.mypetid-sup@yahoo.com
 - Help: dev.mypetid-help@yahoo.com
-- Admin: dev.mypetid-adm@yahoo.com
+- Admin: real_cak3d@yahoo.com
 - Verification/no-reply sender: mypetid@yahoo.com
 - Business phone, admin-escalated inquiries only: (207) 613-5454
 

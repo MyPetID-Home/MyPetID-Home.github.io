@@ -6,7 +6,7 @@
 ## Contact
 
 - Support: dev.mypetid-sup@yahoo.com
-- Admin/security/customer service: dev.mypetid-adm@yahoo.com
+- Admin/security/customer service: real_cak3d@yahoo.com
 - Help: dev.mypetid-help@yahoo.com
 - Verification/no-reply sender: mypetid@yahoo.com
 - Business phone, admin-escalated inquiries only: (207) 613-5454

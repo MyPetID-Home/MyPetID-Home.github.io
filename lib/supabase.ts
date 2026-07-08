@@ -11,10 +11,13 @@ export const supabase = hasSupabaseConfig
     })
   : null;
 
+export const primaryAdminEmail = 'real_cak3d@yahoo.com';
+export const adminLoginAlias = 'CAK3D_ADMIN';
+
+export function normalizeLoginEmail(value: string) {
+  return value.trim().toUpperCase() === adminLoginAlias ? primaryAdminEmail : value.trim();
+}
+
 export function isAdminEmail(email?: string | null) {
-  const allowList = (process.env.NEXT_PUBLIC_ADMIN_EMAILS ?? '')
-    .split(',')
-    .map((item) => item.trim().toLowerCase())
-    .filter(Boolean);
-  return Boolean(email && allowList.includes(email.toLowerCase()));
+  return Boolean(email && email.toLowerCase() === primaryAdminEmail);
 }

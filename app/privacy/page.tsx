@@ -85,7 +85,7 @@ export default function Page() {
 <ul>
 <li>Support: dev.mypetid-sup@yahoo.com</li>
 <li>Help: dev.mypetid-help@yahoo.com</li>
-<li>Admin: dev.mypetid-adm@yahoo.com</li>
+<li>Admin: real_cak3d@yahoo.com</li>
 <li>Verification/no-reply sender: mypetid@yahoo.com</li>
 <li>Business phone, admin-escalated inquiries only: (207) 613-5454</li>
 </ul>
