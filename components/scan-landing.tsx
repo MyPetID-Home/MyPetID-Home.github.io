@@ -32,6 +32,11 @@ function readTag() {
   return new URLSearchParams(window.location.search).get('tag') || 'demo-tag-001';
 }
 
+function readScanMode() {
+  if (typeof window === 'undefined') return 'finder';
+  return new URLSearchParams(window.location.search).get('mode') || 'finder';
+}
+
 function scannerInstallId() {
   if (typeof window === 'undefined') return 'server';
   const key = 'mypetid.installId';
@@ -44,15 +49,17 @@ function scannerInstallId() {
 
 export function ScanLanding() {
   const tag = readTag();
+  const scanMode = readScanMode();
   const [tagId, setTagId] = useState<string | null>(null);
   const [pet, setPet] = useState<Pet>(fallbackPet);
-  const [status, setStatus] = useState('No location has been saved from this visit. Tap the consent button if you want to help update the scan trail.');
+  const [status, setStatus] = useState(scanMode === 'owner' ? 'Owner/profile mode: no location is requested on load. Use dashboard walk/lost buttons when you want to share from this device.' : 'Finder tag scan: do you want to share this scan location with the owner? Nothing is saved until you tap consent and the browser grants GPS.');
   const [actor, setActor] = useState<'owner' | 'linked_user' | 'stranger'>('stranger');
   const [saving, setSaving] = useState(false);
-  const [reportedLost, setReportedLost] = useState(false);
+  const [reportedLost, setReportedLost] = useState(scanMode !== 'owner');
   const [finderNote, setFinderNote] = useState('I found this dog here.');
   const [finderContact, setFinderContact] = useState('');
-  const profileUrl = useMemo(() => `/pet/?tag=${encodeURIComponent(tag)}`, [tag]);
+  const [consentDismissed, setConsentDismissed] = useState(scanMode === 'owner');
+  const profileUrl = useMemo(() => `/pet/?tag=${encodeURIComponent(tag)}&mode=owner`, [tag]);
   const dashboardUrl = useMemo(() => `/dashboard/?tag=${encodeURIComponent(tag)}`, [tag]);
 
   useEffect(() => {
@@ -129,31 +136,52 @@ export function ScanLanding() {
     );
   }
 
+  function acceptFinderLocation() {
+    setConsentDismissed(true);
+    requestLocation(reportedLost ? 'Finder reported lost sighting from finder tag URL' : 'Finder consented from finder tag URL');
+  }
+
+  function denyFinderLocation() {
+    setConsentDismissed(true);
+    setStatus('Location sharing denied for this scan. The profile is visible and nothing was saved from this visit.');
+  }
+
   return (
-    <main className="publicShell scanLanding">
+    <main className={`publicShell scanLanding ${!consentDismissed ? 'finderConsentActive' : ''}`}>
+      {!consentDismissed && <div className="finderConsentOverlay" role="dialog" aria-modal="true" aria-labelledby="finder-consent-title">
+        <div className="finderConsentModal">
+          <span className="finderConsentDog" aria-hidden="true">🐶</span>
+          <p className="eyebrow">Lost/found scan consent</p>
+          <h2 id="finder-consent-title">Share this scan location?</h2>
+          <p>A finder scan can help the owner locate {pet.name}. Choose Accept to ask this device for GPS permission, or Deny to view the profile without sharing location.</p>
+          <div className="actions consentChoices"><button className="primary" type="button" disabled={saving} onClick={acceptFinderLocation}>{saving ? 'Requesting…' : 'Accept & share location'}</button><button type="button" onClick={denyFinderLocation}>Deny, view profile only</button></div>
+          <small>No GPS is saved unless you accept and the browser grants permission.</small>
+        </div>
+      </div>}
+      <div className="scanProfileFrame" aria-hidden={!consentDismissed}>
       <section className="publicHero">
         <Link className="brandLockup" href="/"><img src="/images/logo/MyPetID-Logo_Resized.jpg" alt="MyPetID" /><span>MyPetID</span></Link>
         <div className="scanCard">
           <div className="scanPhotoWrap"><img src={pet.photo_url || '/images/dog/Clyde.png'} alt={pet.name} /><span className="scanPulse" /></div>
           <div>
-            <p className="eyebrow">NFC/QR scan gate • tag {tag}</p>
+            <p className="eyebrow">{scanMode === 'owner' ? 'Owner profile route' : 'Finder NFC/QR scan gate'} • tag {tag}</p>
             <h1>{pet.name}</h1>
-            <p className="lead">This scan page does not save GPS on load. Location is saved only after the finder taps a consent button and the browser grants permission. Current actor: {actor.replace('_', ' ')}.</p>
-            <div className="lostRibbon">{pet.lost_mode ? 'Marked lost — share sighting if safe' : 'Public profile ready — optional scan trail update'}</div>
+            <p className="lead">{scanMode === 'owner' ? 'Owner/profile mode does not request GPS on load. Location is only requested after owner actions like walk tracking or lost reporting.' : 'Finder/lost mode asks whether the scanner wants to share location data with the owner. Nothing is saved until consent is tapped and the browser grants permission.'} Current actor: {actor.replace('_', ' ')}.</p>
+            <div className="lostRibbon">{scanMode === 'owner' ? 'Owner-safe profile link — no automatic location prompt' : pet.lost_mode || reportedLost ? 'Lost/found scan — share sighting if safe' : 'Public scan gate — optional scan trail update'}</div>
           </div>
         </div>
       </section>
 
       <section className="publicGrid">
         <article className="panel wide consentPanel">
-          <h2>Help update the scan trail</h2>
-          <p>Accidental opens, refreshes, previews, and owner checks should not pollute the last-location history. That is why the NFC tag should point here first, while the normal profile remains read-only.</p>
+          <h2>{scanMode === 'owner' ? 'Owner route: no automatic GPS' : 'Share this scan location?'}</h2>
+          <p>{scanMode === 'owner' ? 'This link is safe for the owner to bookmark or scan. It does not ask for location data until the owner clicks a location feature in the dashboard.' : 'This is the stranger/finder tag URL. It asks for location sharing because a lost or found pet scan can help the owner, but the scanner still controls consent.'}</p>
           <label className="toggleRow"><input type="checkbox" checked={reportedLost} onChange={(event) => setReportedLost(event.target.checked)} /> I found this dog / I am reporting a lost-pet sighting</label>
           <label>Finder note<textarea value={finderNote} onChange={(event) => setFinderNote(event.target.value)} /></label>
           <label>Optional finder contact<input value={finderContact} onChange={(event) => setFinderContact(event.target.value)} placeholder="phone or email, optional" /></label>
           <div className="actions">
-            <button className="primary" type="button" disabled={saving} onClick={() => requestLocation(reportedLost ? 'Finder reported lost sighting from scan gate' : 'Finder consented from scan gate')}>{saving ? 'Requesting…' : 'Share my scan location'}</button>
-            <Link className="button" href={profileUrl}>View profile without sharing location</Link>
+            {scanMode !== 'owner' && <button className="primary" type="button" disabled={saving} onClick={acceptFinderLocation}>{saving ? 'Requesting…' : 'Share scan location'}</button>}
+            <Link className="button" href={profileUrl}>{scanMode === 'owner' ? 'Open owner profile' : 'View profile without sharing location'}</Link>
             <Link className="button" href={dashboardUrl}>I am the owner</Link>
           </div>
           <p className="notice">{status}</p>
@@ -170,6 +198,7 @@ export function ScanLanding() {
           <p>Next production step: move final scan writes into a Supabase Edge Function so tier checks, bot filtering, and abuse limits happen server-side.</p>
         </article>
       </section>
+      </div>
     </main>
   );
 }

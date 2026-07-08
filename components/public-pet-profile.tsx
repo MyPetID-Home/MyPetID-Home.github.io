@@ -84,9 +84,15 @@ function readPetId() {
   return new URLSearchParams(window.location.search).get('pet') || '';
 }
 
+function readMode() {
+  if (typeof window === 'undefined') return 'owner';
+  return new URLSearchParams(window.location.search).get('mode') || 'owner';
+}
+
 export function PublicPetProfile() {
   const tag = readTag();
   const petId = readPetId();
+  const mode = readMode();
   const [pet, setPet] = useState<Pet>(fallbackPet);
   const [contactStatus, setContactStatus] = useState('Choose a contact action. Nothing writes location data from this public view.');
   const demoMap = useMemo(() => 'https://maps.google.com/maps?q=44.097371370963934,-70.16535158888728&z=13&output=embed', []);
@@ -128,11 +134,11 @@ export function PublicPetProfile() {
         <div className="scanCard">
           <div className="scanPhotoWrap"><img src={pet.photo_url || '/images/dog/Clyde.png'} alt={pet.name} /><span className="scanPulse" /></div>
           <div>
-            <p className="eyebrow">Public pet profile • tag {tag}</p>
+            <p className="eyebrow">{mode === 'owner' ? 'Owner-safe public profile' : 'Public pet profile'} • tag {tag}</p>
             <h1>{pet.name}</h1>
             <p className="lead">{pet.behavior_public}</p>
             <div className="chipCloud"><span>{ageFromBirthday(pet.birthday)}</span><span>{pet.weight}</span><span>{pet.eye_color} eyes</span><span>{pet.coat_color} {pet.coat_type} coat</span></div>
-            <div className="lostRibbon">{pet.lost_mode ? 'Marked lost — contact owner now' : 'Not marked lost — public profile view'}</div><div className="publicProfileActions">{publicPhone ? <a className="button primary" href={`tel:${publicPhone}`}>Call owner</a> : <button className="primary" type="button" onClick={() => setContactStatus('Owner has not published a phone route yet.')}>Contact owner</button>}<Link className="button" href={`/scan/?tag=${encodeURIComponent(tag)}`}>Share scan location</Link></div>
+            <div className="lostRibbon">{mode === 'owner' ? 'Owner link — no location prompt on load' : pet.lost_mode ? 'Marked lost — contact owner now' : 'Not marked lost — public profile view'}</div><div className="publicProfileActions">{publicPhone ? <a className="button primary" href={`tel:${publicPhone}`}>Call owner</a> : <button className="primary" type="button" onClick={() => setContactStatus('Owner has not published a phone route yet.')}>Contact owner</button>}<Link className="button" href={`/scan/?tag=${encodeURIComponent(tag)}&mode=finder`}>Finder scan / share location</Link></div>
           </div>
         </div>
       </section>
@@ -146,9 +152,9 @@ export function PublicPetProfile() {
         </article>
 
         <article className="panel">
-          <h2>Need to update the scan trail?</h2>
-          <p>The NFC/QR tag should open the separate scan gate. That page looks like this profile, but asks for explicit location permission before writing any scan event.</p>
-          <div className="actions"><Link className="button primary" href={`/scan/?tag=${encodeURIComponent(tag)}`}>Open scan gate</Link><Link className="button" href={`/dashboard/?tag=${encodeURIComponent(tag)}`}>Owner dashboard</Link></div>
+          <h2>Two safe links</h2>
+          <p>The finder tag URL asks for location consent. This owner/profile URL never requests GPS on load; owner location prompts belong behind dashboard actions like walks and lost reporting.</p>
+          <div className="actions"><Link className="button primary" href={`/scan/?tag=${encodeURIComponent(tag)}&mode=finder`}>Open finder scan gate</Link><Link className="button" href={`/dashboard/?tag=${encodeURIComponent(tag)}`}>Owner dashboard</Link></div>
         </article>
 
         <article className="panel wide">
