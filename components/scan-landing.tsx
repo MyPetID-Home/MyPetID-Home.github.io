@@ -16,6 +16,7 @@ type Pet = {
 };
 
 type TagRecord = { id: string; tag_code: string; pet: Pet | Pet[] | null };
+type DeviceRecord = { trusted: boolean; label?: string | null };
 
 const fallbackPet: Pet = {
   id: '11111111-1111-4111-8111-111111111111',
@@ -78,14 +79,18 @@ export function ScanLanding() {
           setPet(loaded);
           const { data: auth } = await supabase.auth.getUser();
           if (auth.user?.id && loaded.owner_id === auth.user.id) {
+            const fingerprint = scannerInstallId();
+            const { data: device } = await supabase.from('devices').select('trusted,label').eq('profile_id', auth.user.id).eq('device_fingerprint', fingerprint).maybeSingle() as { data: DeviceRecord | null };
             setActor('owner');
-            setStatus('Owner session detected. You can log an owner scan without sharing finder GPS.');
+            setConsentDismissed(true);
+            setStatus(device?.trusted ? 'Linked owner device detected. No finder popup shown and no recent finder scan was created.' : 'Owner session detected. No finder popup shown; trust this browser in the dashboard if you want it remembered as a linked device.');
           } else if (auth.user?.id) {
             const fingerprint = scannerInstallId();
-            const { data: device } = await supabase.from('devices').select('trusted').eq('profile_id', auth.user.id).eq('device_fingerprint', fingerprint).maybeSingle();
+            const { data: device } = await supabase.from('devices').select('trusted,label').eq('profile_id', auth.user.id).eq('device_fingerprint', fingerprint).maybeSingle() as { data: DeviceRecord | null };
             if (device?.trusted) {
               setActor('linked_user');
-              setStatus('Trusted browser detected. Finder GPS still requires an explicit consent tap.');
+              setConsentDismissed(true);
+              setStatus('Linked helper/trusted device detected. No finder popup shown and no recent finder scan was created.');
             }
           }
         }
@@ -100,12 +105,16 @@ export function ScanLanding() {
     const payload = {
       tag_id: tagId,
       pet_id: pet.id,
-      actor,
+      actor: 'stranger',
       latitude: coords.latitude,
       longitude: coords.longitude,
       accuracy_meters: coords.accuracy,
       reported_lost: reportedLost,
-      note: `${note}; finder_note=${finderNote || 'none'}; finder_contact=${finderContact || 'not provided'}; install=${installId}`,
+      note: `${note}; install=${installId}`,
+      finder_note: finderNote || null,
+      finder_contact: finderContact || null,
+      found_status: reportedLost ? 'Found report received' : 'scan_only',
+      owner_follow_up: reportedLost ? 'Needs owner review' : 'not_required',
     };
     if (!supabase) {
       setStatus(`Demo only: ${coords.latitude.toFixed(5)}, ${coords.longitude.toFixed(5)} would be saved after Supabase config loads.`);

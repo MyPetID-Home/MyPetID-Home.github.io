@@ -39,6 +39,9 @@ type TagRow = {
   pet_id: string | null;
   created_by: string | null;
   claimed_at: string | null;
+  claim_code_hint?: string | null;
+  nfc_uid?: string | null;
+  status?: string | null;
   created_at: string;
 };
 
@@ -237,6 +240,20 @@ function installId() {
   localStorage.setItem(key, next);
   return next;
 }
+function randomDigits(length: number) { return Array.from({ length }, () => Math.floor(Math.random() * 10)).join(''); }
+function randomAlphaNum(length: number) { const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; return Array.from({ length }, () => chars[Math.floor(Math.random() * chars.length)]).join(''); }
+function makeCardId() { return `MPID-${randomAlphaNum(4)}-${randomAlphaNum(4)}`; }
+function makeClaimCode() {
+  const digits = randomDigits(4);
+  const inner = ['M', randomDigits(1), 'P', randomDigits(1), 'I', randomDigits(1), 'D', randomDigits(1)].join('');
+  return `${digits}-${inner}`;
+}
+function normalizeClaim(value: string) { return value.trim().toUpperCase().replace(/[^A-Z0-9]/g, ''); }
+async function sha256Hex(value: string) {
+  const bytes = new TextEncoder().encode(normalizeClaim(value));
+  const hash = await crypto.subtle.digest('SHA-256', bytes);
+  return Array.from(new Uint8Array(hash)).map((byte) => byte.toString(16).padStart(2, '0')).join('');
+}
 function authValue(token: string) { return [String.fromCharCode(66, 101, 97, 114, 101, 114), token].join(' '); }
 function limitLabel(value: number | null) { return value === null ? 'Unlimited' : String(value); }
 function money(cents?: number | null, currency = 'usd') { return cents == null ? 'n/a' : new Intl.NumberFormat(undefined, { style: 'currency', currency: currency || 'usd' }).format(cents / 100); }
@@ -324,7 +341,10 @@ export function SupabaseWorkspace() {
   const [adminSearch, setAdminSearch] = useState('');
   const [petDraft, setPetDraft] = useState<PetDraft>(emptyPetDraft);
   const [tagCode, setTagCode] = useState('demo-tag-001');
+  const [claimCode, setClaimCode] = useState('');
   const [newTagCode, setNewTagCode] = useState('');
+  const [newClaimCode, setNewClaimCode] = useState('');
+  const [newNfcUid, setNewNfcUid] = useState('');
   const [deviceLabel, setDeviceLabel] = useState('This browser');
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('Supabase workspace ready. Sign in to sync real account, pet, tag, scan, trusted-device, and admin data.');
@@ -332,7 +352,7 @@ export function SupabaseWorkspace() {
   const isAdmin = Boolean(profile?.is_admin || isAdminEmail(session?.user.email));
   const selectedPet = useMemo(() => pets.find((pet) => pet.id === petDraft.id) || pets[0] || null, [petDraft.id, pets]);
   const selectedPetTags = useMemo(() => tags.filter((tag) => tag.pet_id === selectedPet?.id), [selectedPet?.id, tags]);
-  const selectedPetScans = useMemo(() => scans.filter((scan) => !selectedPet?.id || scan.pet_id === selectedPet.id).slice(0, 6), [scans, selectedPet?.id]);
+  const selectedPetScans = useMemo(() => scans.filter((scan) => (!selectedPet?.id || scan.pet_id === selectedPet.id) && scan.actor === 'stranger').slice(0, 6), [scans, selectedPet?.id]);
   const selectedPetTraining = useMemo(() => trainingCommands.filter((item) => item.pet_id === selectedPet?.id).slice(0, 6), [trainingCommands, selectedPet?.id]);
   const selectedPetXp = useMemo(() => xpEvents.filter((item) => !selectedPet?.id || item.pet_id === selectedPet.id).slice(0, 6), [xpEvents, selectedPet?.id]);
   const latestSelectedScan = selectedPetScans[0] || null;
@@ -663,7 +683,7 @@ export function SupabaseWorkspace() {
     const response = await fetch('/api/tags/activate/', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: authValue(session.access_token) },
-      body: JSON.stringify({ tagCode: code, petId: selectedPet.id }),
+      body: JSON.stringify({ tagCode: code, claimCode, petId: selectedPet.id }),
     });
     const json = await response.json();
     setBusy(false);
@@ -671,16 +691,20 @@ export function SupabaseWorkspace() {
     const saved = json.tag as TagRow;
     setTags((current) => [saved, ...current.filter((tag) => tag.id !== saved.id)]);
     if (json.membership) setMembership(json.membership as MembershipSummary);
-    setMessage(`Activated tag ${saved.tag_code} for ${selectedPet.name}. ${json.membership?.remaining?.tags === null ? 'Unlimited tag slots remain.' : `${json.membership?.remaining?.tags ?? 0} tag slot(s) remain.`}`);
+    setClaimCode('');
+    setMessage(`Activated card ${saved.tag_code} for ${selectedPet.name}. Claim code is now used and invalid for future activation. ${json.membership?.remaining?.tags === null ? 'Unlimited tag slots remain.' : `${json.membership?.remaining?.tags ?? 0} tag slot(s) remain.`}`);
   }
 
   async function mintTag() {
-    if (!supabase || !session?.user || !isAdmin) return setMessage('Only unrestricted admins can mint tag IDs from the static admin UI.');
-    const code = (newTagCode || `tag-${crypto.randomUUID().slice(0, 8)}`).trim();
+    if (!supabase || !session?.user || !isAdmin) return setMessage('Only unrestricted admins can mint card IDs from the static admin UI.');
+    const code = (newTagCode || makeCardId()).trim().toUpperCase();
+    const rawClaim = (newClaimCode || makeClaimCode()).trim().toUpperCase();
+    const claimHash = await sha256Hex(rawClaim);
+    const hint = rawClaim.slice(-4);
     setBusy(true);
     const { data, error } = await supabase
       .from('tags')
-      .insert({ tag_code: code, created_by: session.user.id })
+      .insert({ tag_code: code, claim_code_hash: claimHash, claim_code_hint: hint, nfc_uid: newNfcUid.trim().replace(/:/g, '').toUpperCase() || null, status: 'unassigned', created_by: session.user.id })
       .select('*')
       .single();
     setBusy(false);
@@ -688,8 +712,11 @@ export function SupabaseWorkspace() {
     const saved = data as TagRow;
     setTags((current) => [saved, ...current]);
     setNewTagCode('');
+    setNewClaimCode('');
+    setNewNfcUid('');
     setTagCode(saved.tag_code);
-    setMessage(`Minted physical tag code ${saved.tag_code}. Link it to a pet when the QR/NFC tag is assigned.`);
+    setClaimCode(rawClaim);
+    setMessage(`Created physical card ${saved.tag_code}. One-time claim code: ${rawClaim}. Program NFC/QR to /scan/?tag=${encodeURIComponent(saved.tag_code)}&mode=finder, print Card ID, include claim code privately, then mark the order printing/shipped.`);
   }
 
   async function trustDevice() {
@@ -710,17 +737,7 @@ export function SupabaseWorkspace() {
 
   async function markOwnerScan() {
     if (!supabase || !session?.user || !selectedPet) return setMessage('Sign in and select a pet first.');
-    const tag = selectedPetTags[0];
-    setBusy(true);
-    const { data, error } = await supabase
-      .from('scan_events')
-      .insert({ tag_id: tag?.id ?? null, pet_id: selectedPet.id, actor: 'owner', scanner_profile_id: session.user.id, found_status: 'owner_scan', owner_follow_up: 'not_required', note: `Owner/trusted device scan install=${installId()}` })
-      .select('*')
-      .single();
-    setBusy(false);
-    if (error) return setMessage(error.message);
-    setScans((current) => [data as ScanRow, ...current]);
-    setMessage(`Owner scan logged for ${selectedPet.name} without GPS. Finder GPS still requires explicit consent on /scan/.`);
+    setMessage(`Owner device scan recognized for ${selectedPet.name} on install ${installId().slice(0, 12)}…. Owner/user scans do not update recent finder scans; they will feed a separate owner activity log later.`);
   }
 
   async function saveTrainingCommand() {
@@ -942,16 +959,17 @@ export function SupabaseWorkspace() {
         </article>
 
         <article className="panel wide">
-          <h3>Physical tag claim</h3>
-          <p>Admins mint tag codes before a physical NFC/QR tag ships. Owners activate an existing code and attach it to a saved pet. Activation is server-checked against the current Stripe/Patreon/admin tier allowance.</p>
-          <div className="grid2"><label>Activate existing tag<input value={tagCode} onChange={(event) => setTagCode(event.target.value)} /></label><label>Selected pet<input value={selectedPet?.name || 'Save a pet first'} readOnly /></label></div>
-          <div className="actions"><button className="primary" type="button" disabled={busy || !selectedPet} onClick={claimTag}>Activate tag for pet</button><button type="button" disabled={busy || !selectedPet} onClick={markOwnerScan}>Log owner scan</button></div>
-          <div className="tagList">{selectedPetTags.length === 0 ? <span>No tags linked to this pet.</span> : selectedPetTags.map((tag) => <span key={tag.id}>#{tag.tag_code}</span>)}</div>
+          <h3>Physical card activation</h3>
+          <p>Ship every NFC/QR card with a public Card ID printed on it and a private one-time claim code in the package. The card NFC should point to <code>/scan/?tag=&lt;Card ID&gt;&amp;mode=finder</code>. Owners link the card here after saving/selecting their dog.</p>
+          <div className="grid2"><label>Card ID / tag code<input value={tagCode} onChange={(event) => setTagCode(event.target.value.toUpperCase())} placeholder="MPID-2A81-K9C4" /></label><label>One-time claim code<input value={claimCode} onChange={(event) => setClaimCode(event.target.value.toUpperCase())} placeholder="7394-M3P7I6D5" /></label><label>Selected pet<input value={selectedPet?.name || 'Save a pet first'} readOnly /></label></div>
+          <div className="actions"><button className="primary" type="button" disabled={busy || !selectedPet || !tagCode.trim() || !claimCode.trim()} onClick={claimTag}>Activate card for dog</button><button type="button" disabled={busy || !selectedPet} onClick={trustDevice}>Trust this device for this account</button><button type="button" disabled={busy || !selectedPet} onClick={markOwnerScan}>Test owner-device scan</button></div>
+          <p className="formHint">Claim codes are one-time use. Once linked to a dog profile, the same Card ID/claim code cannot activate again. Linked owner/trusted device scans do not update recent finder scans.</p>
+          <div className="tagList">{selectedPetTags.length === 0 ? <span>No cards linked to this pet.</span> : selectedPetTags.map((tag) => <span key={tag.id}>#{tag.tag_code}{tag.claim_code_hint ? ` • claim hint ${tag.claim_code_hint}` : ''}</span>)}</div>
         </article>
 
         <article className="panel">
-          <h3>Recent scans</h3>
-          {selectedPetScans.length === 0 ? <p>No scan events loaded yet.</p> : selectedPetScans.map((scan) => <p key={scan.id}><strong>{scan.actor}{scan.reported_lost ? ' • lost sighting' : ''}</strong><br /><small>{fmtDate(scan.created_at)}{scan.latitude ? ` • ${scan.latitude.toFixed(4)}, ${scan.longitude?.toFixed(4)}` : ' • no GPS'} • {scan.found_status || 'scan_only'} • {scan.owner_follow_up || 'not_required'}</small></p>)}
+          <h3>Recent finder scans</h3>
+          {selectedPetScans.length === 0 ? <p>No finder scan events loaded yet. Owner/trusted device scans are intentionally excluded.</p> : selectedPetScans.map((scan) => <p key={scan.id}><strong>{scan.actor}{scan.reported_lost ? ' • lost sighting' : ''}</strong><br /><small>{fmtDate(scan.created_at)}{scan.latitude ? ` • ${scan.latitude.toFixed(4)}, ${scan.longitude?.toFixed(4)}` : ' • no GPS'} • {scan.found_status || 'scan_only'} • {scan.owner_follow_up || 'not_required'}</small></p>)}
         </article>
 
         <article className="panel wide">
@@ -994,8 +1012,8 @@ export function SupabaseWorkspace() {
         </article>
 
         {isAdmin && <article className="panel wide adminLivePanel fulfillmentQueue">
-          <h3>Physical tag fulfillment queue</h3>
-          <p>Paid Stripe tag orders land here for CAK3D to print/program QR or NFC payloads, package, ship, and mark delivered. Use status changes as the shop floor checklist.</p>
+          <h3>Physical card fulfillment queue</h3>
+          <p>Paid Stripe/subscription card requests land here as CAK3D admin notifications. For each order: generate a randomized Card ID + one-time claim code, program NFC/QR to the finder URL, package the private claim code, ship it, then move the order through printing/shipped/delivered.</p>
           <div className="grid2">
             <label>Search order, customer, pet, Stripe ID, or address<input placeholder="email, Clyde, pi_..., shipped" value={fulfillmentSearch} onChange={(event) => setFulfillmentSearch(event.target.value)} /></label>
             <label>Status filter<select value={fulfillmentFilter} onChange={(event) => setFulfillmentFilter(event.target.value)}><option value="all">All statuses</option>{fulfillmentStatuses.map((status) => <option key={status} value={status}>{status}</option>)}</select></label>
@@ -1105,7 +1123,9 @@ export function SupabaseWorkspace() {
           <h3>Admin dashboard: live lookup + audit trail</h3>
           <p>Admin bypass remains unrestricted for CAK3D testing. Use lookup to connect an account to pets, tags, scans, documents, calendar events, verification requests, and recent edits.</p>
           <div className="grid2"><label>Search account, email, phone, or profile ID<input placeholder="dev.mypetid-adm@yahoo.com" value={adminSearch} onChange={(event) => setAdminSearch(event.target.value)} /></label><label>Admin count<input readOnly value={`${adminProfiles.length} profiles • ${tags.length} tags • ${scans.length} scans • ${activityRows.length} audit events`} /></label></div>
-          <div className="actions"><button className="primary" type="button" disabled={busy} onClick={mintTag}>Mint admin tag</button><button type="button" disabled={busy} onClick={() => loadWorkspace()}>Refresh lookup</button></div>
+          <div className="grid2"><label>New Card ID<input value={newTagCode} onChange={(event) => setNewTagCode(event.target.value.toUpperCase())} placeholder="auto or MPID-2A81-K9C4" /></label><label>New one-time claim code<input value={newClaimCode} onChange={(event) => setNewClaimCode(event.target.value.toUpperCase())} placeholder="auto or 7394-M3P7I6D5" /></label><label>NFC UID / serial<input value={newNfcUid} onChange={(event) => setNewNfcUid(event.target.value.toUpperCase())} placeholder="046CE30FBE2A81" /></label><label>Finder NFC URL<input readOnly value={newTagCode.trim() ? `/scan/?tag=${encodeURIComponent(newTagCode.trim().toUpperCase())}&mode=finder` : 'Auto-generated after card creation'} /></label></div>
+          <p className="formHint">Leave Card ID and claim code blank to randomize. Claim codes use the numeric + MPID pattern, like 7394-M3P7I6D5, and are only shown at generation time for packing slips.</p>
+          <div className="actions"><button className="primary" type="button" disabled={busy} onClick={mintTag}>Generate card ID + claim code</button><button type="button" disabled={busy} onClick={() => loadWorkspace()}>Refresh lookup</button></div>
           <div className="adminLookupGrid">
             {filteredAdminDebugRows.length === 0 ? <p>No matching accounts loaded.</p> : filteredAdminDebugRows.map((row) => <button className="adminLookupCard" type="button" key={row.profile_id} onClick={() => setAdminSearch(row.email || row.profile_id)}>
               <strong>{row.email || row.profile_id}</strong>
