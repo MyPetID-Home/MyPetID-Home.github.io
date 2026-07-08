@@ -1032,6 +1032,12 @@ export function SupabaseWorkspace() {
         {isAdmin && adminSection === 'cards' && <article className="panel wide adminLivePanel fulfillmentQueue">
           <h3>Physical card fulfillment queue</h3>
           <p>Paid Stripe/subscription card requests land here as CAK3D admin notifications. For each order: generate a randomized Card ID + one-time claim code, program NFC/QR to the finder URL, package the private claim code, ship it, then move the order through printing/shipped/delivered.</p>
+          <div className="adminCardGenerator">
+            <h4>Create a card now</h4>
+            <p className="formHint">Leave Card ID and claim code blank to randomize. Claim codes use the numeric + MPID pattern, like 7394-M3P7I6D5, and are only shown at generation time for packing slips.</p>
+            <div className="grid2"><label>New Card ID<input value={newTagCode} onChange={(event) => setNewTagCode(event.target.value.toUpperCase())} placeholder="auto or MPID-2A81-K9C4" /></label><label>New one-time claim code<input value={newClaimCode} onChange={(event) => setNewClaimCode(event.target.value.toUpperCase())} placeholder="auto or 7394-M3P7I6D5" /></label><label>NFC UID / serial<input value={newNfcUid} onChange={(event) => setNewNfcUid(event.target.value.toUpperCase())} placeholder="046CE30FBE2A81" /></label><label>Finder NFC URL<input readOnly value={newTagCode.trim() ? `/scan/?tag=${encodeURIComponent(newTagCode.trim().toUpperCase())}&mode=finder` : 'Auto-generated after card creation'} /></label></div>
+            <div className="actions"><button className="primary" type="button" disabled={busy} onClick={mintTag}>Generate card ID + claim code</button><button type="button" disabled={busy} onClick={() => loadWorkspace()}>Refresh cards/orders</button></div>
+          </div>
           <div className="grid2">
             <label>Search order, customer, pet, Stripe ID, or address<input placeholder="email, Clyde, pi_..., shipped" value={fulfillmentSearch} onChange={(event) => setFulfillmentSearch(event.target.value)} /></label>
             <label>Status filter<select value={fulfillmentFilter} onChange={(event) => setFulfillmentFilter(event.target.value)}><option value="all">All statuses</option>{fulfillmentStatuses.map((status) => <option key={status} value={status}>{status}</option>)}</select></label>
@@ -1141,9 +1147,7 @@ export function SupabaseWorkspace() {
           <h3>Admin dashboard: live lookup + audit trail</h3>
           <p>Admin bypass remains unrestricted for CAK3D testing. Use lookup to connect an account to pets, tags, scans, documents, calendar events, verification requests, and recent edits.</p>
           <div className="grid2"><label>Search account, email, phone, or profile ID<input placeholder="real_cak3d@yahoo.com" value={adminSearch} onChange={(event) => setAdminSearch(event.target.value)} /></label><label>Admin count<input readOnly value={`${adminProfiles.length} profiles • ${tags.length} tags • ${scans.length} scans • ${activityRows.length} audit events`} /></label></div>
-          <div className="grid2"><label>New Card ID<input value={newTagCode} onChange={(event) => setNewTagCode(event.target.value.toUpperCase())} placeholder="auto or MPID-2A81-K9C4" /></label><label>New one-time claim code<input value={newClaimCode} onChange={(event) => setNewClaimCode(event.target.value.toUpperCase())} placeholder="auto or 7394-M3P7I6D5" /></label><label>NFC UID / serial<input value={newNfcUid} onChange={(event) => setNewNfcUid(event.target.value.toUpperCase())} placeholder="046CE30FBE2A81" /></label><label>Finder NFC URL<input readOnly value={newTagCode.trim() ? `/scan/?tag=${encodeURIComponent(newTagCode.trim().toUpperCase())}&mode=finder` : 'Auto-generated after card creation'} /></label></div>
-          <p className="formHint">Leave Card ID and claim code blank to randomize. Claim codes use the numeric + MPID pattern, like 7394-M3P7I6D5, and are only shown at generation time for packing slips.</p>
-          <div className="actions"><button className="primary" type="button" disabled={busy} onClick={mintTag}>Generate card ID + claim code</button><button type="button" disabled={busy} onClick={() => loadWorkspace()}>Refresh lookup</button></div>
+          <div className="actions"><button type="button" disabled={busy} onClick={() => loadWorkspace()}>Refresh lookup</button></div>
           <div className="adminLookupGrid">
             {filteredAdminDebugRows.length === 0 ? <p>No matching accounts loaded.</p> : filteredAdminDebugRows.map((row) => <button className="adminLookupCard" type="button" key={row.profile_id} onClick={() => setAdminSearch(row.email || row.profile_id)}>
               <strong>{row.email || row.profile_id}</strong>
