@@ -263,6 +263,14 @@ function shippingSummary(shipTo?: Record<string, any> | null) {
   return [details.name, address.line1, address.line2, address.city, address.state, address.postal_code].filter(Boolean).join(', ') || 'No shipping address yet';
 }
 const fulfillmentStatuses = ['paid', 'queued', 'printing', 'shipped', 'delivered', 'manual_review', 'cancelled', 'refunded'];
+const adminSections = [
+  { id: 'cards', label: 'Cards & shipping', hint: 'Orders, card IDs, claim codes, NFC/QR fulfillment' },
+  { id: 'memberships', label: 'Memberships', hint: 'Grants, coupons, comps, user tier lookup' },
+  { id: 'providers', label: 'Providers', hint: 'Stripe products, promos, Patreon metadata' },
+  { id: 'awards', label: 'Award rules', hint: 'XP rules, targets, active/inactive state' },
+  { id: 'lookup', label: 'Lookup & audit', hint: 'Accounts, pets, tags, scan history, audit trail' },
+] as const;
+type AdminSection = typeof adminSections[number]['id'];
 
 function petToDraft(pet: PetRow): PetDraft {
   const contact = pet.contact_public || {};
@@ -339,6 +347,7 @@ export function SupabaseWorkspace() {
   const [uploadTitle, setUploadTitle] = useState('MyPetID upload');
   const [inviteUrl, setInviteUrl] = useState('');
   const [adminSearch, setAdminSearch] = useState('');
+  const [adminSection, setAdminSection] = useState<AdminSection>('cards');
   const [petDraft, setPetDraft] = useState<PetDraft>(emptyPetDraft);
   const [tagCode, setTagCode] = useState('demo-tag-001');
   const [claimCode, setClaimCode] = useState('');
@@ -1011,7 +1020,16 @@ export function SupabaseWorkspace() {
           <div className="actions"><button className="primary" type="button" disabled={busy || !latestSelectedScan} onClick={saveFoundFollowup}>Save owner follow-up</button></div>
         </article>
 
-        {isAdmin && <article className="panel wide adminLivePanel fulfillmentQueue">
+        {isAdmin && <article className="panel wide adminLivePanel adminSectionNavPanel">
+          <p className="eyebrow">Admin workspace</p>
+          <h3>Choose an admin section</h3>
+          <p className="formHint">Admin is split into focused tabs so the dashboard stays readable and only the section you need renders.</p>
+          <div className="adminSectionTabs" role="tablist" aria-label="Admin dashboard sections">
+            {adminSections.map((section) => <button key={section.id} type="button" role="tab" aria-selected={adminSection === section.id} className={adminSection === section.id ? 'active' : ''} onClick={() => setAdminSection(section.id)}><strong>{section.label}</strong><small>{section.hint}</small></button>)}
+          </div>
+        </article>}
+
+        {isAdmin && adminSection === 'cards' && <article className="panel wide adminLivePanel fulfillmentQueue">
           <h3>Physical card fulfillment queue</h3>
           <p>Paid Stripe/subscription card requests land here as CAK3D admin notifications. For each order: generate a randomized Card ID + one-time claim code, program NFC/QR to the finder URL, package the private claim code, ship it, then move the order through printing/shipped/delivered.</p>
           <div className="grid2">
@@ -1037,7 +1055,7 @@ export function SupabaseWorkspace() {
           </div>
         </article>}
 
-        {isAdmin && <article className="panel wide adminLivePanel membershipAdminPanel">
+        {isAdmin && adminSection === 'memberships' && <article className="panel wide adminLivePanel membershipAdminPanel">
           <h3>Admin membership + coupon control</h3>
           <p>View users, paid/comp status, active grants, and create random access codes. App coupons redeem inside MyPetID; Stripe promotion sync is attempted when enabled. Patreon-style comps use MyPetID grants because Patreon does not expose a normal checkout coupon code flow.</p>
           <div className="grid2">
@@ -1080,7 +1098,7 @@ export function SupabaseWorkspace() {
           </div>
         </article>}
 
-        {isAdmin && <article className="panel wide adminLivePanel providerControlPanel">
+        {isAdmin && adminSection === 'providers' && <article className="panel wide adminLivePanel providerControlPanel">
           <h3>Admin provider control center</h3>
           <p>Stripe can be managed from here for products, recurring prices, coupons, and promotion codes. Patreon is currently read/sync from its creator API; Patreon tier edits/native coupons still require Patreon Creator dashboard, while MyPetID grants/coupons handle free Patreon-equivalent app access.</p>
           <div className="actions"><button type="button" disabled={busy} onClick={() => loadWorkspace()}>Refresh provider snapshot</button><button type="button" disabled={busy} onClick={adminSyncPatreonTiers}>Sync Patreon tier metadata</button></div>
@@ -1108,7 +1126,7 @@ export function SupabaseWorkspace() {
           </div>
         </article>}
 
-        {isAdmin && <article className="panel wide adminLivePanel">
+        {isAdmin && adminSection === 'awards' && <article className="panel wide adminLivePanel">
           <h3>Admin award rules</h3>
           <p>Live Supabase rules: admins can tune XP and targets. Customers can earn/log progress but cannot change rule values.</p>
           <div className="adminLookupGrid">{awardRules.map((rule) => <div className="adminLookupCard" key={rule.id}>
@@ -1119,7 +1137,7 @@ export function SupabaseWorkspace() {
           </div>)}</div>
         </article>}
 
-        {isAdmin && <article className="panel wide adminLivePanel">
+        {isAdmin && adminSection === 'lookup' && <article className="panel wide adminLivePanel">
           <h3>Admin dashboard: live lookup + audit trail</h3>
           <p>Admin bypass remains unrestricted for CAK3D testing. Use lookup to connect an account to pets, tags, scans, documents, calendar events, verification requests, and recent edits.</p>
           <div className="grid2"><label>Search account, email, phone, or profile ID<input placeholder="real_cak3d@yahoo.com" value={adminSearch} onChange={(event) => setAdminSearch(event.target.value)} /></label><label>Admin count<input readOnly value={`${adminProfiles.length} profiles • ${tags.length} tags • ${scans.length} scans • ${activityRows.length} audit events`} /></label></div>

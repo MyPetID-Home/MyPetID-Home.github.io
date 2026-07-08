@@ -229,6 +229,13 @@ textarea { min-height: 96px; resize: vertical; }
 .servicePill.red span { background: var(--danger); color: var(--danger); }
 .adminMiniGrid { display: grid; grid-template-columns: 1fr 1fr; }
 .adminMiniGrid div { display: grid; align-content: start; gap: 8px; }
+.adminSectionNavPanel { position: sticky; top: 82px; z-index: 4; background: color-mix(in srgb, var(--surface) 90%, var(--brand) 10%); backdrop-filter: blur(18px); }
+.adminSectionTabs { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; margin-top: 14px; }
+.adminSectionTabs button { text-align: left; display: grid; gap: 4px; align-content: start; min-height: 86px; border-radius: 20px; padding: 12px; }
+.adminSectionTabs button strong { color: var(--text); font-size: .98rem; }
+.adminSectionTabs button small { color: var(--muted); line-height: 1.25; }
+.adminSectionTabs button.active { border-color: rgba(135,224,111,.72); background: linear-gradient(135deg, rgba(135,224,111,.22), rgba(87,215,255,.13)); box-shadow: inset 0 0 0 1px rgba(255,255,255,.08); }
+.adminSectionTabs button.active strong { color: var(--brand); }
 .adminLookupGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 14px; }
 .adminLookupCard { text-align: left; display: grid; gap: 6px; align-content: start; border-radius: 22px; padding: 14px; background: linear-gradient(145deg, var(--surface-2), var(--surface-3)); }
 .adminLookupCard strong { color: var(--brand); font-size: 1.5rem; }
@@ -307,9 +314,9 @@ textarea { min-height: 96px; resize: vertical; }
 @keyframes rotateSlow { to { transform: rotate(360deg); } }
 @keyframes pawMove { 0%,100% { transform: translate(0,0) rotate(-12deg); } 50% { transform: translate(68vw,20px) rotate(12deg); } }
 @keyframes bounce { 0%,100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-8px) scale(1.06); } }
-@media (max-width: 1100px) { .appShell { grid-template-columns: 1fr; } .sidebar { top: 76px; } .sideNav { grid-template-columns: repeat(2, 1fr); } .dashboardGrid, .publicGrid { grid-template-columns: repeat(2, 1fr); } .cards { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 1100px) { .appShell { grid-template-columns: 1fr; } .sidebar { top: 76px; } .sideNav { grid-template-columns: repeat(2, 1fr); } .dashboardGrid, .publicGrid { grid-template-columns: repeat(2, 1fr); } .cards { grid-template-columns: 1fr 1fr; } .adminSectionTabs { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 900px) { .heroGrid, .splitPanel, .grid2, .scanCard { grid-template-columns: 1fr; } .appHeader { grid-template-columns: 1fr auto; } .phoneCard { min-height: auto; } .docGrid { grid-template-columns: 1fr 1fr; } }
-@media (max-width: 620px) { .cards, .dashboardGrid, .publicGrid, .docGrid, .wizardSteps, .publicPreview, .routeMeta { grid-template-columns: 1fr; } .panel.wide, .heroPanel { grid-column: span 1; } .heroPanel { display: grid; } .sideNav { grid-template-columns: 1fr 1fr; max-height: 360px; overflow: auto; } h1 { font-size: 2.8rem; } .workspace { padding: 16px; } .sectionNav { display: grid; } .realMap iframe { height: 300px; } }
+@media (max-width: 620px) { .cards, .dashboardGrid, .publicGrid, .docGrid, .wizardSteps, .publicPreview, .routeMeta, .adminSectionTabs { grid-template-columns: 1fr; } .panel.wide, .heroPanel { grid-column: span 1; } .heroPanel { display: grid; } .sideNav { grid-template-columns: 1fr 1fr; max-height: 360px; overflow: auto; } h1 { font-size: 2.8rem; } .workspace { padding: 16px; } .sectionNav { display: grid; } .adminSectionNavPanel { position: static; } .adminSectionTabs button { min-height: auto; } .realMap iframe { height: 300px; } }
 
 .mobileSectionNav { display: none; }
 .gpsStatus { margin: 12px 0 0; border: 1px solid rgba(87,215,255,.32); border-radius: 18px; padding: 10px 12px; background: rgba(87,215,255,.08); color: var(--brand2); font-size: .92rem; }
