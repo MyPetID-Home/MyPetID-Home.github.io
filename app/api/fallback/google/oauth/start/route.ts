@@ -8,7 +8,7 @@ export async function GET() {
   try {
     const clientId = googleClientId();
     if (!clientId) throw new Error('Google client ID is not configured.');
-    const redirectUri = `${appBaseUrl}/api/fallback/google/oauth/callback`;
+    const redirectUri = `${appBaseUrl}/api/google/oauth/callback`;
     const state = Buffer.from(JSON.stringify({ purpose: 'mypetid-google-fallback', nonce: crypto.randomUUID() })).toString('base64url');
     const url = new URL('https://accounts.google.com/o/oauth2/v2/auth');
     url.searchParams.set('client_id', clientId);
