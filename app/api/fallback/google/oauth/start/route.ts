@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { appBaseUrl } from '../../../../../lib/server-integrations';
-import { googleClientId } from '../../../../../lib/google-fallback';
+import { appBaseUrl } from '../../../../../../lib/server-integrations';
+import { googleClientId } from '../../../../../../lib/google-fallback';
 
 export const dynamic = 'force-dynamic';
 
