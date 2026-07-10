@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { appBaseUrl, userFromBearer } from '../../../../../lib/server-integrations';
+import { googleMyPetIdScopes } from '../../../../../lib/google-services';
 
 export const dynamic = 'force-dynamic';
 
@@ -8,11 +9,7 @@ export async function GET(request: NextRequest) {
     const { user } = await userFromBearer(request.headers.get('authorization'));
     const clientId = process.env.GOOGLE_CLIENT_ID;
     if (!clientId) throw new Error('Google client ID is not configured.');
-    const scope = [
-      'openid', 'email', 'profile',
-      'https://www.googleapis.com/auth/drive.file',
-      'https://www.googleapis.com/auth/photoslibrary.appendonly',
-    ].join(' ');
+    const scope = googleMyPetIdScopes.join(' ');
     const redirectUri = `${appBaseUrl}/api/google/oauth/callback`;
     const state = Buffer.from(JSON.stringify({ profile_id: user.id, nonce: crypto.randomUUID() })).toString('base64url');
     const url = new URL('https://accounts.google.com/o/oauth2/v2/auth');

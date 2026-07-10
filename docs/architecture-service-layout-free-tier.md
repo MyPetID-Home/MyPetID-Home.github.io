@@ -504,23 +504,47 @@ Avoid:
 - Relying on Patreon alone for app permissions.
 - Storing private Patreon account details publicly.
 
-## Immediate implementation plan
+## Current execution focus
 
-1. Disable or rewrite upload flow so originals no longer go to Supabase Storage first.
-2. Add metadata tables for Google Photos/Drive/Docs references.
-3. Add/repair Google OAuth scopes and connection UX for Photos/Drive/Docs/Calendar.
-4. Build `POST /api/media/upload` for photos -> Google Photos + metadata.
-5. Build `POST /api/documents/upload` for files -> Google Drive + metadata.
+CAK3D's current direction is to hold off on Supabase changes until the quota restriction is handled, skip Cloudflare for now, and park Patreon until later. The non-Supabase pieces to situate now are Google, Vercel, Stripe, GitHub, and email.
+
+Completed/staged in this pass:
+
+1. Added a reusable server-side Google service layer for future Photos, Drive, Docs, and Calendar operations.
+2. Expanded Google OAuth scopes to cover:
+   - Drive file writes,
+   - Docs document creation,
+   - Calendar event creation,
+   - Google Photos append-only uploads.
+3. Added `/api/google/status/`, a Supabase-free readiness endpoint that reports Google env/scopes/redirect configuration without exposing secrets.
+
+Deferred until Supabase is back/approved:
+
+1. Supabase metadata migrations for Google asset references.
+2. Upload-route rewrite that stores originals in Google first and Supabase references second.
+3. Public scan/profile page changes that rely on new metadata rows.
+
+Deferred until later by request:
+
+1. Cloudflare R2 public thumbnail/cache integration.
+2. Patreon reconnect/tier sync.
+3. GitHub Actions stale-secret cleanup, unless explicitly requested.
+
+## Later implementation plan
+
+1. Add metadata tables for Google Photos/Drive/Docs references.
+2. Disable or rewrite upload flow so originals no longer go to Supabase Storage first.
+3. Build `POST /api/media/upload` for photos -> Google Photos + metadata.
+4. Build `POST /api/documents/upload` for files -> Google Drive/Docs + metadata.
+5. Change public scan/profile pages to use thumbnail/reference metadata, not Supabase Storage originals.
 6. Add optional Cloudflare R2 integration for public thumbnails/QR/tag assets.
-7. Change public scan/profile pages to use thumbnail/reference metadata, not Supabase Storage originals.
-8. Add provider quota/status admin panel:
+7. Add provider quota/status admin panel:
    - Supabase health + egress warning where API allows.
    - Google connected/storage estimate fields.
    - R2 object count/usage if added.
    - Vercel deployment/API health.
    - Stripe webhook status/test mode.
    - Patreon token freshness.
-9. Clean GitHub Actions secrets/variables that are stale or unrelated.
 
 ## Notes from audit blockers
 
