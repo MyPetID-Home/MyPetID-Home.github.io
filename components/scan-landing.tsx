@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '../lib/supabase';
+import { isServiceRestrictionMessage, queueFallbackSync } from '../lib/fallback-local';
 
 type Pet = {
   id: string;
@@ -117,11 +118,15 @@ export function ScanLanding() {
       owner_follow_up: reportedLost ? 'Needs owner review' : 'not_required',
     };
     if (!supabase) {
-      setStatus(`Location captured on this device: ${coords.latitude.toFixed(5)}, ${coords.longitude.toFixed(5)}. Cloud save is paused until account sync is restored.`);
+      queueFallbackSync('scan_event', `Finder scan queued for ${pet.name}`, payload);
+      setStatus(`Location captured on this device: ${coords.latitude.toFixed(5)}, ${coords.longitude.toFixed(5)}. Cloud save is paused; this scan is queued locally for later sync.`);
       return;
     }
     const { error } = await supabase.from('scan_events').insert(payload);
-    if (error) setStatus(`Location captured, but Supabase blocked the save: ${error.message}`);
+    if (error && isServiceRestrictionMessage(error.message)) {
+      queueFallbackSync('scan_event', `Finder scan queued for ${pet.name}`, payload);
+      setStatus(`Location captured, but cloud save is restricted. This scan is queued locally for later sync.`);
+    } else if (error) setStatus(`Location captured, but cloud save needs attention: ${error.message}`);
     else setStatus(reportedLost ? `🔴 Lost/found report sent with location: ${coords.latitude.toFixed(5)}, ${coords.longitude.toFixed(5)}. The owner dashboard can show this as a red alert.` : `Saved scan location: ${coords.latitude.toFixed(5)}, ${coords.longitude.toFixed(5)}. Thank you for helping ${pet.name}.`);
   }
 

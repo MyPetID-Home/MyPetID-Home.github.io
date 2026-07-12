@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import { isAdminEmail, normalizeLoginEmail, supabase } from '../lib/supabase';
+import { createFallbackAccount, getFallbackQueueStats, getFallbackSession, isServiceRestrictionMessage, signInFallback, signOutFallback, type FallbackSession } from '../lib/fallback-local';
 
 type Profile = {
   id: string;
@@ -17,12 +18,22 @@ type Profile = {
 
 export function AuthPanel() {
   const [session, setSession] = useState<Session | null>(null);
+  const [fallbackSession, setFallbackSession] = useState<FallbackSession | null>(null);
+  const [queueStats, setQueueStats] = useState(() => getFallbackQueueStats());
   const [profile, setProfile] = useState<Profile | null>(null);
   const [mode, setMode] = useState<'sign-in' | 'sign-up'>('sign-in');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
   const [acceptedTerms, setAcceptedTerms] = useState(false);
+
+  useEffect(() => {
+    setFallbackSession(getFallbackSession());
+    setQueueStats(getFallbackQueueStats());
+    const refresh = () => { setFallbackSession(getFallbackSession()); setQueueStats(getFallbackQueueStats()); };
+    window.addEventListener('storage', refresh);
+    return () => window.removeEventListener('storage', refresh);
+  }, []);
 
   useEffect(() => {
     if (!supabase) return;
@@ -59,21 +70,43 @@ export function AuthPanel() {
   }, [session]);
 
   async function submit() {
-    if (!supabase) {
-      setMessage('Supabase env is not configured in this build yet.');
-      return;
-    }
     if (mode === 'sign-up' && !acceptedTerms) {
       setMessage('Please read and agree to the Terms of Service and Privacy Policy before creating an account.');
       return;
     }
     setMessage('Working…');
     const loginEmail = normalizeLoginEmail(email);
-    const result = mode === 'sign-in'
-      ? await supabase.auth.signInWithPassword({ email: loginEmail, password })
-      : await supabase.auth.signUp({ email: loginEmail, password, options: { data: { display_name: loginEmail.split('@')[0] } } });
-    if (result.error) setMessage(result.error.message);
-    else setMessage(mode === 'sign-up' ? 'Signup created. Check email if confirmation is required.' : 'Signed in.');
+    if (supabase) {
+      try {
+        const result = mode === 'sign-in'
+          ? await supabase.auth.signInWithPassword({ email: loginEmail, password })
+          : await supabase.auth.signUp({ email: loginEmail, password, options: { data: { display_name: loginEmail.split('@')[0] } } });
+        if (!result.error) {
+          setMessage(mode === 'sign-up' ? 'Signup created. Check email if confirmation is required.' : 'Signed in.');
+          return;
+        }
+        if (!isServiceRestrictionMessage(result.error.message)) {
+          setMessage(result.error.message);
+          return;
+        }
+      } catch (error) {
+        const text = error instanceof Error ? error.message : String(error);
+        if (!isServiceRestrictionMessage(text)) {
+          setMessage(text);
+          return;
+        }
+      }
+    }
+    try {
+      const localSession = mode === 'sign-up'
+        ? await createFallbackAccount(loginEmail, password, loginEmail.split('@')[0])
+        : await signInFallback(loginEmail, password);
+      setFallbackSession(localSession);
+      setQueueStats(getFallbackQueueStats());
+      setMessage(`${mode === 'sign-up' ? 'Local fallback account created' : 'Signed in locally'} on this device. Changes will queue here and sync when cloud services recover.`);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Local fallback sign-in failed.');
+    }
   }
 
   async function google() {
@@ -83,8 +116,10 @@ export function AuthPanel() {
   }
 
   async function signOut() {
-    if (!supabase) return;
-    await supabase.auth.signOut();
+    if (supabase && session?.user) await supabase.auth.signOut();
+    signOutFallback();
+    setFallbackSession(null);
+    setQueueStats(getFallbackQueueStats());
     setMessage('Signed out.');
   }
 
@@ -101,11 +136,26 @@ export function AuthPanel() {
     );
   }
 
+  if (fallbackSession) {
+    return (
+      <section className="authPanel signedIn">
+        <div>
+          <p className="eyebrow">Local fallback mode</p>
+          <strong>{fallbackSession.displayName || fallbackSession.email}</strong>
+          <p>{fallbackSession.email} • this-device sign-in • {queueStats.pending} queued sync item{queueStats.pending === 1 ? '' : 's'}</p>
+          <small>Cloud services are unavailable or restricted. You can keep using MyPetID here; queued changes sync later when provider services recover.</small>
+        </div>
+        <button type="button" onClick={signOut}>Sign out</button>
+      </section>
+    );
+  }
+
   return (
     <section className="authPanel">
       <div>
         <p className="eyebrow">MyPetID account</p>
         <h3>{mode === 'sign-in' ? 'Log in to your account' : 'Create your account'}</h3>
+        <small>If cloud login is unavailable, this same form opens a local fallback session on this device and queues changes for later sync.</small>
       </div>
       <label>Email<input value={email} onChange={(e) => setEmail(e.target.value)} type="email" placeholder="you@example.com" /></label>
       <label>Password<input value={password} onChange={(e) => setPassword(e.target.value)} type="password" placeholder="••••••••" /></label>
