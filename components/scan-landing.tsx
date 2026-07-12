@@ -117,7 +117,7 @@ export function ScanLanding() {
       owner_follow_up: reportedLost ? 'Needs owner review' : 'not_required',
     };
     if (!supabase) {
-      setStatus(`Demo only: ${coords.latitude.toFixed(5)}, ${coords.longitude.toFixed(5)} would be saved after Supabase config loads.`);
+      setStatus(`Location captured on this device: ${coords.latitude.toFixed(5)}, ${coords.longitude.toFixed(5)}. Cloud save is paused until account sync is restored.`);
       return;
     }
     const { error } = await supabase.from('scan_events').insert(payload);
@@ -204,7 +204,7 @@ export function ScanLanding() {
         <article className="panel">
           <h2>Privacy rule</h2>
           <p>The regular public profile mimics this page visually, but cannot write scan GPS. Only this consent gate can create a scan event.</p>
-          <p>Next production step: move final scan writes into a Supabase Edge Function so tier checks, bot filtering, and abuse limits happen server-side.</p>
+          <p>Final cloud processing will run through the server so tier checks, bot filtering, and abuse limits happen before scan events are stored.</p>
         </article>
       </section>
       </div>

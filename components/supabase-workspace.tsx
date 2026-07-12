@@ -957,9 +957,9 @@ export function SupabaseWorkspace() {
 
         <article className="panel wide">
           <h3>Uploads, Google sync, and Dog Pack invites</h3>
-          <p>Pet photos upload to Supabase Storage and update the saved pet photo. Medical documents upload to the private medical-documents bucket and create a pet document record. If Google is connected, photos sync to Google Photos and documents sync to Google Drive.</p>
+          <p>Uploads are temporarily paused while Supabase account sync is restricted. The next upload path will store photo/document originals in Google-backed media first and keep only lightweight app references in the database.</p>
           <div className="grid2">
-            <label>Upload type<select value={uploadKind} onChange={(event) => setUploadKind(event.target.value as 'pet_photo' | 'medical_document')}><option value="pet_photo">Pet photo → Supabase + Google Photos</option><option value="medical_document">Medical document → Supabase + Google Drive</option></select></label>
+            <label>Upload type<select value={uploadKind} onChange={(event) => setUploadKind(event.target.value as 'pet_photo' | 'medical_document')}><option value="pet_photo">Pet photo → Google Photos-ready</option><option value="medical_document">Medical document → Google Drive-ready</option></select></label>
             <label>Upload title<input value={uploadTitle} onChange={(event) => setUploadTitle(event.target.value)} /></label>
           </div>
           <input type="file" accept={uploadKind === 'pet_photo' ? 'image/*' : 'image/*,application/pdf'} onChange={(event) => uploadSelectedFile(event.target.files?.[0])} />

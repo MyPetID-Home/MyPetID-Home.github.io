@@ -161,7 +161,7 @@ function TextArea({ label, value, onChange }: { label: string; value: string; on
   return <label>{label}<textarea value={value} onChange={(event) => onChange(event.target.value)} /></label>;
 }
 function ImageUpload({ label, onLoaded }: { label: string; onLoaded: (dataUrl: string) => void }) {
-  return <label>{label}<input type="file" accept="image/*" onChange={(event) => { const file = event.target.files?.[0]; if (!file) return; const reader = new FileReader(); reader.onload = () => onLoaded(String(reader.result || '')); reader.readAsDataURL(file); }} /><small>Previewed in this browser now; production should store private files in Supabase Storage with owner/admin RLS.</small></label>;
+  return <label>{label}<input type="file" accept="image/*" onChange={(event) => { const file = event.target.files?.[0]; if (!file) return; const reader = new FileReader(); reader.onload = () => onLoaded(String(reader.result || '')); reader.readAsDataURL(file); }} /><small>Previewed in this browser now; cloud media storage will use provider-backed uploads after account sync is restored.</small></label>;
 }
 function milesBetween(start?: Coords, end?: Coords) { if (!start || !end) return 0; const toRad = (value: number) => value * Math.PI / 180; const r = 3958.8; const dLat = toRad(end.lat - start.lat); const dLng = toRad(end.lng - start.lng); const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(start.lat)) * Math.cos(toRad(end.lat)) * Math.sin(dLng / 2) ** 2; return Number((2 * r * Math.asin(Math.sqrt(a))).toFixed(3)); }
 function coordsFromPosition(position: GeolocationPosition, label: string): Coords { return { lat: position.coords.latitude, lng: position.coords.longitude, accuracy: position.coords.accuracy, timestamp: position.timestamp, label }; }

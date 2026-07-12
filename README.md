@@ -20,7 +20,7 @@ Clydius-maintained rebuild for the MyPetID NFC/QR pet profile, tracker, Dog Pack
   - the public pet profile (`pet_qr_codes`), and
   - account/Dog Pack sharing (`account_qr_codes`).
 - Public profile supports `/pet/?tag=<tag_code>` and `/pet/?pet=<pet_id>`.
-- Customer upload controls send pet photos/documents to Supabase Storage; when Google is connected on Vercel, pet photos sync to Google Photos and documents sync to Google Drive.
+- Upload UI is present, but original photo/document cloud persistence is paused while Supabase is quota-restricted. The staged next path is Google Photos/Drive first, with lightweight database references later.
 - Dog Pack invite API creates shareable invite links.
 - Demo public pet scan page at `/pet/?tag=demo-tag-001` and scan consent gate at `/scan/?tag=demo-tag-001`.
 - Supabase migration for commerce/QR/uploads/provider credentials: `docs/migrations/2026-06-commerce-qr-uploads.sql`.
@@ -43,11 +43,11 @@ Copy `.env.example` to `.env.local` and add only browser-safe public values loca
 
 ## Provider status
 
-- **Supabase:** live project `ryyaefxszkmibcnngnfg` is source of truth for auth/data/storage.
+- **Supabase:** live project `ryyaefxszkmibcnngnfg` is currently restricted by `exceed_egress_quota`; auth/data features that depend on Supabase are degraded until the quota/spend-cap issue is resolved.
 - **Stripe:** Basic NFC Tag and ID NFC Tag Card products/prices are configured; Basic/Silver/Gold/Diamond monthly subscription prices are configured; checkout/session confirmation/webhook/Billing Portal APIs are implemented for Vercel. Admin can view/create/archive Stripe products/prices and create coupons/promotion codes from the MyPetID dashboard. Admin app coupons can also optionally attempt matching Stripe 100%-off promotion-code creation while MyPetID app coupons remain the source of truth for comp access.
-- **Patreon:** OAuth link/callback is wired with private Patreon credentials; live campaign tier IDs are mirrored into Supabase; signed Vercel webhook verification is configured and live. Admin dashboard can read/sync Patreon campaign tier metadata, but Patreon native tier editing/coupons still require Patreon Creator dashboard because Patreon does not expose the same checkout coupon CRUD surface as Stripe.
-- **Google:** upload-sync API and OAuth callback routes are in place, but CAK3D is still finishing Google OAuth/provider setup; do not treat Google login/sync as fully production verified until credentials/redirects are completed.
-- **Email verification:** Vercel routes generate and verify 6-digit signup codes, store hashes in Supabase `email_verification_codes`, and update `profiles.email_verified_at`. Codes are sent from `mypetid@yahoo.com` once the Yahoo SMTP app-password env is set in private/Vercel env. Support/admin/help addresses remain separate; automated SMS/phone PIN verification is not planned.
+- **Patreon:** routes/env scaffolding exist, but live token refresh/reconnect is deferred. Patreon is not currently treated as an up service.
+- **Google:** Vercel Google OAuth env and `/api/google/status/` are healthy; Photos/Drive/Docs/Calendar server helpers and scopes are staged. User-level Google connection still waits on Supabase-backed token storage being available.
+- **Email verification:** Yahoo SMTP credentials verify successfully and Vercel routes are implemented; final code storage/verification still depends on Supabase availability. Support/admin/help addresses remain separate; automated SMS/phone PIN verification is not planned.
 
 ## Security notes
 
