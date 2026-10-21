@@ -1,5 +1,7 @@
 import { DashboardClient } from '../../../components/dashboard-client';
 
+export const metadata = { title: 'Dashboard | MyPetID' };
+
 type Tab = 'overview' | 'public' | 'account' | 'pets' | 'walks' | 'diet' | 'medical' | 'docs' | 'play' | 'training' | 'lost' | 'pack' | 'goals' | 'settings' | 'admin';
 
 const routeToTab: Record<string, Tab> = {
