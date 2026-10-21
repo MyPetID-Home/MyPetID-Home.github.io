@@ -29,15 +29,14 @@ const fallbackPet: Pet = {
   lost_mode: false,
 };
 
-function readTag() {
-  if (typeof window === 'undefined') return 'demo-tag-001';
-  return new URLSearchParams(window.location.search).get('tag') || 'demo-tag-001';
-}
+const DEMO_TAG = 'demo-tag-001';
 
-function readScanMode() {
-  if (typeof window === 'undefined') return 'finder';
-  return new URLSearchParams(window.location.search).get('mode') || 'finder';
-}
+// Shown when a real (non-demo) tag cannot be loaded, so a finder never sees the
+// demo dog in place of the pet they actually found.
+const unknownPet: Pet = { id: '', name: 'this pet', breed: null, photo_url: null, medical_public: null, behavior_public: null, lost_mode: false };
+
+const OWNER_STATUS = 'Owner/profile mode: no location is requested on load. Use dashboard walk/lost buttons when you want to share from this device.';
+const FINDER_STATUS = 'Finder tag scan: do you want to share this scan location with the owner? Nothing is saved until you tap consent and the browser grants GPS.';
 
 function scannerInstallId() {
   if (typeof window === 'undefined') return 'server';
@@ -50,23 +49,41 @@ function scannerInstallId() {
 }
 
 export function ScanLanding() {
-  const tag = readTag();
-  const scanMode = readScanMode();
+  // Query params are read after mount; reading window.location during render
+  // caused React hydration error #418 on the statically exported page.
+  const [query, setQuery] = useState<{ tag: string; scanMode: string } | null>(null);
+  const tag = query?.tag ?? DEMO_TAG;
+  const scanMode = query?.scanMode ?? 'finder';
   const [tagId, setTagId] = useState<string | null>(null);
   const [pet, setPet] = useState<Pet>(fallbackPet);
-  const [status, setStatus] = useState(scanMode === 'owner' ? 'Owner/profile mode: no location is requested on load. Use dashboard walk/lost buttons when you want to share from this device.' : 'Finder tag scan: do you want to share this scan location with the owner? Nothing is saved until you tap consent and the browser grants GPS.');
+  const [status, setStatus] = useState(FINDER_STATUS);
   const [actor, setActor] = useState<'owner' | 'linked_user' | 'stranger'>('stranger');
   const [saving, setSaving] = useState(false);
-  const [reportedLost, setReportedLost] = useState(scanMode !== 'owner');
+  const [reportedLost, setReportedLost] = useState(true);
   const [finderNote, setFinderNote] = useState('I found this dog here.');
   const [finderContact, setFinderContact] = useState('');
-  const [consentDismissed, setConsentDismissed] = useState(scanMode === 'owner');
+  const [consentDismissed, setConsentDismissed] = useState(false);
   const profileUrl = useMemo(() => `/pet/?tag=${encodeURIComponent(tag)}&mode=owner`, [tag]);
   const dashboardUrl = useMemo(() => `/dashboard/?tag=${encodeURIComponent(tag)}`, [tag]);
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const nextMode = params.get('mode') || 'finder';
+    setQuery({ tag: params.get('tag') || DEMO_TAG, scanMode: nextMode });
+    if (nextMode === 'owner') {
+      setStatus(OWNER_STATUS);
+      setReportedLost(false);
+      setConsentDismissed(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!query) return;
     async function loadPet() {
-      if (!supabase) return;
+      if (!supabase) {
+        if (tag !== DEMO_TAG) setPet(unknownPet);
+        return;
+      }
       const { data, error } = await supabase
         .from('tags')
         .select('id,tag_code,pet:pets(id,owner_id,name,breed,photo_url,medical_public,behavior_public,lost_mode)')
@@ -94,18 +111,20 @@ export function ScanLanding() {
               setStatus('Linked helper/trusted device detected. No finder popup shown and no recent finder scan was created.');
             }
           }
+          return;
         }
       }
+      if (tag !== DEMO_TAG) setPet(unknownPet);
     }
-    loadPet();
-  }, [tag]);
+    loadPet().catch(() => { if (tag !== DEMO_TAG) setPet(unknownPet); });
+  }, [query, tag]);
 
   async function savePosition(position: GeolocationPosition, note: string) {
     const coords = position.coords;
     const installId = scannerInstallId();
     const payload = {
       tag_id: tagId,
-      pet_id: pet.id,
+      pet_id: pet.id || null,
       actor: 'stranger',
       latitude: coords.latitude,
       longitude: coords.longitude,
@@ -176,10 +195,10 @@ export function ScanLanding() {
       <section className="publicHero">
         <Link className="brandLockup" href="/"><img src="/images/logo/MyPetID-Logo_Resized.jpg" alt="MyPetID" /><span>MyPetID</span></Link>
         <div className="scanCard">
-          <div className="scanPhotoWrap"><img src={pet.photo_url || '/images/dog/Clyde.png'} alt={pet.name} /><span className="scanPulse" /></div>
+          <div className="scanPhotoWrap"><img src={pet.photo_url || (pet.id ? '/images/dog/Clyde.png' : '/images/logo/MyPetID-Logo_Resized.jpg')} alt={pet.id ? pet.name : 'MyPetID'} /><span className="scanPulse" /></div>
           <div>
             <p className="eyebrow">{scanMode === 'owner' ? 'Owner profile route' : 'Finder NFC/QR scan gate'} • tag {tag}</p>
-            <h1>{pet.name}</h1>
+            <h1>{pet.id ? pet.name : 'Pet profile unavailable'}</h1>
             <p className="lead">{scanMode === 'owner' ? 'Owner/profile mode does not request GPS on load. Location is only requested after owner actions like walk tracking or lost reporting.' : 'Finder/lost mode asks whether the scanner wants to share location data with the owner. Nothing is saved until consent is tapped and the browser grants permission.'} Current actor: {actor.replace('_', ' ')}.</p>
             <div className="lostRibbon">{scanMode === 'owner' ? 'Owner-safe profile link — no automatic location prompt' : pet.lost_mode || reportedLost ? 'Lost/found scan — share sighting if safe' : 'Public scan gate — optional scan trail update'}</div>
           </div>
