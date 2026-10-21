@@ -42,12 +42,18 @@ jobs:
           NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${{ vars.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY }}
           NEXT_PUBLIC_STRIPE_BASIC_NFC_PRICE_ID: ${{ vars.NEXT_PUBLIC_STRIPE_BASIC_NFC_PRICE_ID }}
           NEXT_PUBLIC_STRIPE_ID_NFC_PRICE_ID: ${{ vars.NEXT_PUBLIC_STRIPE_ID_NFC_PRICE_ID }}
+          # Server routes (checkout, Patreon, Google, uploads, email codes, tag activation)
+          # run on the Vercel app, which allows this origin via CORS (next.config.mjs).
+          NEXT_PUBLIC_API_BASE_URL: ${{ vars.NEXT_PUBLIC_API_BASE_URL || 'https://mypetid.vercel.app' }}
         run: |
           set -euo pipefail
-          trap 'if [ -d .app-api-vercel-only ]; then rm -rf app/api; mv .app-api-vercel-only app/api; fi' EXIT
+          # app/api and proxy.ts are Vercel-only: a static export supports neither.
+          trap 'if [ -d .app-api-vercel-only ]; then rm -rf app/api; mv .app-api-vercel-only app/api; fi; if [ -f .proxy-vercel-only.ts ]; then mv .proxy-vercel-only.ts proxy.ts; fi' EXIT
           mv app/api .app-api-vercel-only
+          mv proxy.ts .proxy-vercel-only.ts
           pnpm build
           mv .app-api-vercel-only app/api
+          mv .proxy-vercel-only.ts proxy.ts
           trap - EXIT
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3

@@ -11,6 +11,15 @@
 
 export const API_UNAVAILABLE_MESSAGE = 'This feature runs on the MyPetID server app and is not available on this site right now. Nothing was changed.';
 
+// The GitHub Pages build sets NEXT_PUBLIC_API_BASE_URL to the Vercel app
+// (https://mypetid.vercel.app), which allows that origin via CORS. On Vercel it is
+// unset and requests stay same-origin.
+const API_BASE_URL = (process.env.NEXT_PUBLIC_API_BASE_URL || '').trim().replace(/\/+$/, '');
+
+export function apiUrl(path: string) {
+  return API_BASE_URL && path.startsWith('/api/') ? `${API_BASE_URL}${path}` : path;
+}
+
 export type ApiResponse = { ok: boolean; status: number; unavailable: boolean; json: () => Promise<any> };
 
 // Builds the Authorization header value. The scheme name is assembled from char
@@ -27,7 +36,7 @@ function unavailable(status: number): ApiResponse {
 export async function apiFetch(path: string, init?: RequestInit): Promise<ApiResponse> {
   let response: Response;
   try {
-    response = await fetch(path, init);
+    response = await fetch(apiUrl(path), init);
   } catch {
     return unavailable(0);
   }

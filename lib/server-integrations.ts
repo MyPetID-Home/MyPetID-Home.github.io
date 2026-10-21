@@ -1,6 +1,10 @@
 import { createClient } from '@supabase/supabase-js';
 
-export const appBaseUrl = process.env.NEXT_PUBLIC_APP_BASE_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://mypetid-home.github.io');
+// Where Stripe/OAuth flows return users. Prefer an explicit setting, then the
+// project's production domain (not the per-deployment VERCEL_URL, which changes
+// every deploy and may be behind Vercel deployment protection).
+const productionHost = process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.VERCEL_URL;
+export const appBaseUrl = (process.env.NEXT_PUBLIC_APP_BASE_URL || (productionHost ? `https://${productionHost}` : 'https://mypetid.vercel.app')).replace(/\/+$/, '');
 
 export function serverSupabase() {
   const url = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
