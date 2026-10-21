@@ -56,7 +56,17 @@ function htmlEscape(value: string) {
   return value.replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char] || char));
 }
 
+// Strict single-address check. The recipient is written into SMTP commands and
+// headers, so CR/LF or angle brackets would allow command/header injection.
+export function assertSafeEmailAddress(value: string) {
+  if (value.length > 254 || !/^[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+$/.test(value)) {
+    throw new Error('The account email address is not valid for sending.');
+  }
+  return value;
+}
+
 export async function sendEmail(to: string, subject: string, text: string, html: string) {
+  assertSafeEmailAddress(to);
   const config = smtpConfig();
   const boundary = `mypetid-${crypto.randomUUID()}`;
   const message = [

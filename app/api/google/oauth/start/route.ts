@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { appBaseUrl, userFromBearer } from '../../../../../lib/server-integrations';
 import { googleMyPetIdScopes } from '../../../../../lib/google-services';
+import { signOAuthState } from '../../../../../lib/oauth-state';
 
 export const dynamic = 'force-dynamic';
 
@@ -8,10 +9,11 @@ export async function GET(request: NextRequest) {
   try {
     const { user } = await userFromBearer(request.headers.get('authorization'));
     const clientId = process.env.GOOGLE_CLIENT_ID;
-    if (!clientId) throw new Error('Google client ID is not configured.');
+    const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+    if (!clientId || !clientSecret) throw new Error('Google OAuth is not configured.');
     const scope = googleMyPetIdScopes.join(' ');
     const redirectUri = `${appBaseUrl}/api/google/oauth/callback`;
-    const state = Buffer.from(JSON.stringify({ profile_id: user.id, nonce: crypto.randomUUID() })).toString('base64url');
+    const state = signOAuthState(clientSecret, user.id);
     const url = new URL('https://accounts.google.com/o/oauth2/v2/auth');
     url.searchParams.set('client_id', clientId);
     url.searchParams.set('redirect_uri', redirectUri);

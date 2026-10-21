@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { appBaseUrl, serverSupabase } from '../../../../../lib/server-integrations';
+import { verifyOAuthState } from '../../../../../lib/oauth-state';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,8 +14,9 @@ export async function GET(request: NextRequest) {
     const code = url.searchParams.get('code');
     const state = url.searchParams.get('state');
     if (!code || !state) throw new Error('Missing Google OAuth code/state.');
-    const parsed = JSON.parse(Buffer.from(state, 'base64url').toString('utf8')) as { profile_id?: string };
-    if (!parsed.profile_id) throw new Error('Google OAuth state is missing profile id.');
+    const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+    if (!clientSecret) throw new Error('Google OAuth is not configured.');
+    const parsed = verifyOAuthState(clientSecret, state);
     const redirectUri = `${appBaseUrl}/api/google/oauth/callback`;
     const response = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST',

@@ -22,6 +22,20 @@ export async function POST(request: NextRequest) {
     if (coupon.expires_at && new Date(coupon.expires_at).getTime() <= Date.now()) throw new Error('Coupon code has expired.');
     if (Number(coupon.redemption_count || 0) >= Number(coupon.max_redemptions || 1)) throw new Error('Coupon code has already been redeemed.');
     if (coupon.recipient_email && String(coupon.recipient_email).toLowerCase() !== email) throw new Error('Coupon code is assigned to a different email address.');
+    // Reserve the redemption first with a compare-and-set on redemption_count, so two
+    // parallel requests cannot both redeem a single-use coupon.
+    const now = new Date().toISOString();
+    const previousCount = Number(coupon.redemption_count || 0);
+    const nextCount = previousCount + 1;
+    const couponStatus = nextCount >= Number(coupon.max_redemptions || 1) ? 'disabled' : 'active';
+    const { data: reserved, error: reserveError } = await supabase.from('access_coupons')
+      .update({ redemption_count: nextCount, redeemed_by: user.id, redeemed_at: now, status: couponStatus })
+      .eq('id', coupon.id)
+      .eq('status', 'active')
+      .eq('redemption_count', previousCount)
+      .select('id');
+    if (reserveError) throw reserveError;
+    if (!reserved?.length) throw new Error('Coupon code has already been redeemed.');
     const expiresAt = grantExpiration(Number(coupon.duration_days || 0) || null);
     const { data: grant, error: grantError } = await supabase.from('membership_grants').insert({
       profile_id: user.id,
@@ -33,11 +47,11 @@ export async function POST(request: NextRequest) {
       note: `Redeemed coupon ${coupon.code_hint || ''}`.trim(),
       metadata: { coupon_id: coupon.id, duration_days: coupon.duration_days, recipient_email: coupon.recipient_email || null },
     }).select('*').single();
-    if (grantError) throw grantError;
-    const now = new Date().toISOString();
-    const nextCount = Number(coupon.redemption_count || 0) + 1;
-    const couponStatus = nextCount >= Number(coupon.max_redemptions || 1) ? 'disabled' : 'active';
-    await supabase.from('access_coupons').update({ redemption_count: nextCount, redeemed_by: user.id, redeemed_at: now, status: couponStatus }).eq('id', coupon.id);
+    if (grantError) {
+      // Release the reservation so the coupon is not lost when the grant fails.
+      await supabase.from('access_coupons').update({ redemption_count: previousCount, status: 'active' }).eq('id', coupon.id).eq('redemption_count', nextCount);
+      throw grantError;
+    }
     await supabase.from('membership_events').insert({ profile_id: user.id, provider: 'coupon', tier: coupon.tier, status: 'active', metadata: { coupon_id: coupon.id, grant_id: grant.id, expires_at: expiresAt } });
     return NextResponse.json({ redeemed: true, grant, membership: await getMembershipSummary(supabase, user.id) });
   } catch (error) {

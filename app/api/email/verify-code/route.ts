@@ -34,14 +34,21 @@ export async function POST(request: NextRequest) {
       await supabase.from('email_verification_codes').update({ status: 'failed', updated_at: new Date().toISOString() }).eq('id', row.id);
       throw new Error('Too many attempts. Request a new code.');
     }
-    const expected = hashVerificationCode(user.id, email, code);
-    if (expected !== row.code_hash) {
-      await supabase.from('email_verification_codes').update({ attempts: Number(row.attempts || 0) + 1, updated_at: new Date().toISOString() }).eq('id', row.id);
-      throw new Error('Verification code did not match.');
-    }
+    // Count this attempt atomically (compare-and-set on the attempts value we read),
+    // so parallel requests cannot make more than the allowed number of guesses.
+    const previousAttempts = Number(row.attempts || 0);
     const now = new Date().toISOString();
-    const { error: updateCodeError } = await supabase.from('email_verification_codes').update({ status: 'verified', verified_at: now, attempts: Number(row.attempts || 0) + 1, updated_at: now }).eq('id', row.id);
-    if (updateCodeError) throw updateCodeError;
+    const expected = hashVerificationCode(user.id, email, code);
+    const matched = expected === row.code_hash;
+    const { data: counted, error: countError } = await supabase.from('email_verification_codes')
+      .update(matched ? { status: 'verified', verified_at: now, attempts: previousAttempts + 1, updated_at: now } : { attempts: previousAttempts + 1, updated_at: now })
+      .eq('id', row.id)
+      .eq('status', 'pending')
+      .eq('attempts', previousAttempts)
+      .select('id');
+    if (countError) throw countError;
+    if (!counted?.length) throw new Error('Another verification attempt is in progress. Please try again.');
+    if (!matched) throw new Error('Verification code did not match.');
     const { data: updatedProfile, error: updateProfileError } = await supabase.from('profiles').update({ email_verified_at: now, updated_at: now }).eq('id', user.id).select('*').single();
     if (updateProfileError) throw updateProfileError;
     await supabase.from('verification_requests').insert({ profile_id: user.id, provider: 'email', requested_scopes: [purpose], status: 'verified', provider_subject: email, metadata: { verified_from: 'code' }, reviewed_at: now });
