@@ -10,8 +10,8 @@ export const metadata: Metadata = {
   applicationName: 'MyPetID',
   appleWebApp: { capable: true, title: 'MyPetID', statusBarStyle: 'black-translucent' },
   icons: {
-    icon: '/images/logo/MyPetID-Logo_Resized.jpg',
-    apple: '/images/logo/MyPetID-Logo_Resized.jpg',
+    icon: [{ url: '/images/logo/icon-192.png', sizes: '192x192', type: 'image/png' }],
+    apple: '/images/logo/apple-touch-icon.png',
   },
 };
 
