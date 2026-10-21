@@ -50,11 +50,21 @@ function ageFromBirthday(value?: string | null) {
   return years > 0 ? `${years} yr ${months} mo` : `${Math.max(0, months)} mo`;
 }
 
-function localDashboardPet(): Partial<Pet> | null {
+const DEMO_TAG = 'demo-tag-001';
+
+const emptyPet: Pet = { id: '', name: '', breed: null, photo_url: null, medical_public: null, behavior_public: null, contact_public: null, lost_mode: false };
+
+type LoadStatus = 'loading' | 'demo' | 'local' | 'cloud' | 'missing';
+
+// The owner's own dashboard draft (saved in this browser) is only a preview for
+// the tag it belongs to. It must never be overlaid on someone else's pet: a
+// finder who also uses MyPetID would otherwise see their own dog and phone
+// number on every tag they scan.
+function localDashboardPet(tag: string): Partial<Pet> | null {
   if (typeof window === 'undefined') return null;
   try {
     const saved = JSON.parse(localStorage.getItem('mypetid.dashboard') || '{}');
-    if (!saved.pet) return null;
+    if (!saved.pet || !tag || saved.pet.tagId !== tag) return null;
     return {
       name: saved.pet.name,
       breed: saved.pet.breed,
@@ -74,58 +84,90 @@ function localDashboardPet(): Partial<Pet> | null {
   }
 }
 
-function readTag() {
-  if (typeof window === 'undefined') return 'demo-tag-001';
-  return new URLSearchParams(window.location.search).get('tag') || 'demo-tag-001';
-}
-
-function readPetId() {
-  if (typeof window === 'undefined') return '';
-  return new URLSearchParams(window.location.search).get('pet') || '';
-}
-
-function readMode() {
-  if (typeof window === 'undefined') return 'owner';
-  return new URLSearchParams(window.location.search).get('mode') || 'owner';
-}
-
 export function PublicPetProfile() {
-  const tag = readTag();
-  const petId = readPetId();
-  const mode = readMode();
+  // Query params are read after mount. Reading window.location during render
+  // made the static HTML (built without a query string) differ from the first
+  // client render, which threw React hydration error #418 on every visit.
+  const [query, setQuery] = useState<{ tag: string; petId: string; mode: string } | null>(null);
+  const tag = query?.tag ?? DEMO_TAG;
+  const mode = query?.mode ?? 'owner';
   const [pet, setPet] = useState<Pet>(fallbackPet);
+  const [loadStatus, setLoadStatus] = useState<LoadStatus>('loading');
   const [contactStatus, setContactStatus] = useState('Choose a contact action. Nothing writes location data from this public view.');
   const demoMap = useMemo(() => 'https://maps.google.com/maps?q=44.097371370963934,-70.16535158888728&z=13&output=embed', []);
 
   useEffect(() => {
-    const localPet = localDashboardPet();
-    if (localPet) setPet((current) => ({ ...current, ...localPet }));
-    async function loadPet() {
-      if (!supabase) return;
-      if (petId) {
-        const { data: directPet, error: directError } = await supabase
-          .from('pets')
-          .select('id,name,breed,photo_url,medical_public,behavior_public,contact_public,lost_mode')
-          .eq('id', petId)
-          .maybeSingle();
-        if (!directError && directPet) {
-          setPet((current) => ({ ...current, ...directPet }));
-          return;
+    const params = new URLSearchParams(window.location.search);
+    const petId = params.get('pet') || '';
+    setQuery({ tag: params.get('tag') || (petId ? '' : DEMO_TAG), petId, mode: params.get('mode') || 'owner' });
+  }, []);
+
+  useEffect(() => {
+    if (!query) return;
+    const { tag: queryTag, petId } = query;
+    let cancelled = false;
+    const isDemo = queryTag === DEMO_TAG && !petId;
+    const localPet = localDashboardPet(queryTag);
+    async function loadCloudPet(): Promise<Pet | null> {
+      if (!supabase) return null;
+      try {
+        if (petId) {
+          const { data: directPet, error: directError } = await supabase
+            .from('pets')
+            .select('id,name,breed,photo_url,medical_public,behavior_public,contact_public,lost_mode')
+            .eq('id', petId)
+            .maybeSingle();
+          if (!directError && directPet) return directPet as Pet;
         }
+        if (!queryTag) return null;
+        const { data, error } = await supabase
+          .from('tags')
+          .select('pet:pets(id,name,breed,photo_url,medical_public,behavior_public,contact_public,lost_mode)')
+          .eq('tag_code', queryTag)
+          .maybeSingle();
+        const loaded = data?.pet;
+        if (error || !loaded) return null;
+        return (Array.isArray(loaded) ? loaded[0] : loaded) as Pet;
+      } catch {
+        return null;
       }
-      const { data, error } = await supabase
-        .from('tags')
-        .select('pet:pets(id,name,breed,photo_url,medical_public,behavior_public,contact_public,lost_mode)')
-        .eq('tag_code', tag)
-        .maybeSingle();
-      const loaded = data?.pet;
-      if (!error && loaded) setPet((current) => ({ ...current, ...(Array.isArray(loaded) ? loaded[0] : loaded) }));
     }
-    loadPet();
-  }, [tag, petId]);
+    loadCloudPet().then((cloudPet) => {
+      if (cancelled) return;
+      // Never fall back to the demo dog for a real tag: a finder would see the
+      // wrong pet. Show an explicit "not available" state instead.
+      if (cloudPet) { setPet({ ...emptyPet, ...cloudPet }); setLoadStatus('cloud'); }
+      else if (localPet) { setPet({ ...emptyPet, ...localPet }); setLoadStatus('local'); }
+      else if (isDemo) { setPet(fallbackPet); setLoadStatus('demo'); }
+      else setLoadStatus('missing');
+    });
+    return () => { cancelled = true; };
+  }, [query]);
 
   const publicPhone = typeof pet.contact_public?.phone === 'string' ? pet.contact_public.phone : '';
   const publicEmail = typeof pet.contact_public?.email === 'string' ? pet.contact_public.email : '';
+  const showDemoExtras = loadStatus === 'demo';
+  const coat = [pet.coat_color, pet.coat_type].filter(Boolean).join(' ');
+  const chips = [pet.birthday ? ageFromBirthday(pet.birthday) : '', pet.weight || '', pet.eye_color ? `${pet.eye_color} eyes` : '', coat ? `${coat} coat` : ''].filter(Boolean);
+
+  if (loadStatus === 'loading' || loadStatus === 'missing') {
+    return (
+      <main className="publicShell">
+        <section className="publicHero">
+          <Link className="brandLockup" href="/"><img src="/images/logo/MyPetID-Logo_Resized.jpg" alt="MyPetID" /><span>MyPetID</span></Link>
+          <article className="panel wide" aria-live="polite">
+            {loadStatus === 'loading' ? <><p className="eyebrow">Pet profile</p><h1>Loading pet profile…</h1></> : <>
+              <p className="eyebrow">Pet profile{tag ? ` • tag ${tag}` : ''}</p>
+              <h1>This pet profile is not available right now.</h1>
+              <p className="lead">The tag may not be linked to a pet yet, or MyPetID cloud services are temporarily unavailable.</p>
+              <p>If you found this pet, keep it safe and contact local animal control, a nearby shelter, or a vet, who can also scan for a microchip.</p>
+              {tag && <div className="actions"><Link className="button primary" href={`/scan/?tag=${encodeURIComponent(tag)}&mode=finder`}>Open finder scan page</Link></div>}
+            </>}
+          </article>
+        </section>
+      </main>
+    );
+  }
 
   return (
     <main className="publicShell">
@@ -137,7 +179,7 @@ export function PublicPetProfile() {
             <p className="eyebrow">{mode === 'owner' ? 'Owner-safe public profile' : 'Public pet profile'} • tag {tag}</p>
             <h1>{pet.name}</h1>
             <p className="lead">{pet.behavior_public}</p>
-            <div className="chipCloud"><span>{ageFromBirthday(pet.birthday)}</span><span>{pet.weight}</span><span>{pet.eye_color} eyes</span><span>{pet.coat_color} {pet.coat_type} coat</span></div>
+            {chips.length > 0 && <div className="chipCloud">{chips.map((chip) => <span key={chip}>{chip}</span>)}</div>}
             <div className="lostRibbon">{mode === 'owner' ? 'Owner link — no location prompt on load' : pet.lost_mode ? 'Marked lost — contact owner now' : 'Not marked lost — public profile view'}</div><div className="publicProfileActions">{publicPhone ? <a className="button primary" href={`tel:${publicPhone}`}>Call owner</a> : <button className="primary" type="button" onClick={() => setContactStatus('Owner has not published a phone route yet.')}>Contact owner</button>}<Link className="button" href={`/scan/?tag=${encodeURIComponent(tag)}&mode=finder`}>Finder scan / share location</Link></div>
           </div>
         </div>
@@ -146,7 +188,7 @@ export function PublicPetProfile() {
       <section className="publicGrid">
         <article className="panel publicInfoCard">
           <div className="panelTitleRow"><h2>Owner-approved info</h2><span>🐾</span></div>
-          <dl className="infoList"><dt>Medical</dt><dd>{pet.medical_public}</dd><dt>Behavior</dt><dd>{pet.behavior_public}</dd><dt>Vet route</dt><dd>{pet.vet_name || 'Vet hidden until owner shares it.'}</dd><dt>Contact</dt><dd>{publicPhone || publicEmail ? [publicPhone, publicEmail].filter(Boolean).join(' • ') : 'Owner contact buttons will appear here once contact preferences are enabled.'}</dd></dl>
+          <dl className="infoList"><dt>Medical</dt><dd>{pet.medical_public || 'No public medical note.'}</dd><dt>Behavior</dt><dd>{pet.behavior_public || 'No public behavior note.'}</dd><dt>Vet route</dt><dd>{pet.vet_name || 'Vet hidden until owner shares it.'}</dd><dt>Contact</dt><dd>{publicPhone || publicEmail ? [publicPhone, publicEmail].filter(Boolean).join(' • ') : 'Owner contact buttons will appear here once contact preferences are enabled.'}</dd></dl>
           <div className="actions">{publicPhone ? <a className="button primary" href={`tel:${publicPhone}`}>Call owner</a> : <button className="primary" type="button" onClick={() => setContactStatus('Owner has not published a phone route yet.')}>Contact owner</button>}{publicEmail && <a className="button" href={`mailto:${publicEmail}`}>Email owner</a>}<button type="button" onClick={() => setContactStatus('Lost sighting reports belong on the NFC scan gate so consent + GPS are explicit.')}>Report lost sighting</button></div>
           <p className="notice">{contactStatus}</p>
         </article>
@@ -157,6 +199,9 @@ export function PublicPetProfile() {
           <div className="actions"><Link className="button primary" href={`/scan/?tag=${encodeURIComponent(tag)}&mode=finder`}>Open finder scan gate</Link><Link className="button" href={`/dashboard/?tag=${encodeURIComponent(tag)}`}>Owner dashboard</Link></div>
         </article>
 
+        {/* The map location and care routine below are hard-coded demo content,
+            so they are only shown on the demo profile, never on a real pet. */}
+        {showDemoExtras && <>
         <article className="panel wide">
           <h2>Last eligible scan map</h2>
           <div className="mapBox"><iframe title="Demo last scan map" src={demoMap} loading="lazy" /></div>
@@ -172,6 +217,7 @@ export function PublicPetProfile() {
         <article className="panel careStrip">
           <span className="bouncer">🎾</span><div><strong>Play</strong><p>Tug toy and backyard fetch</p></div>
         </article>
+        </>}
       </section>
     </main>
   );
