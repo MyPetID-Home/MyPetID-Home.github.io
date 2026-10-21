@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
+import { apiFetch, bearer } from '../lib/api-client';
 
 type Provider = 'patreon' | 'google';
 
@@ -20,8 +21,6 @@ const providerCopy: Record<Provider, { title: string; body: string; permissions:
     approve: 'Approve Google connection preview',
   },
 };
-
-function av(token: string) { return [String.fromCharCode(66, 101, 97, 114, 101, 114), token].join(' '); }
 
 export function VerifyProviderClient({ provider }: { provider: Provider }) {
   const copy = providerCopy[provider];
@@ -41,9 +40,9 @@ export function VerifyProviderClient({ provider }: { provider: Provider }) {
     if (!data.session) return setStatus('Sign in first, then connect Patreon from this page.');
     setStatus('Opening Patreon OAuth…');
     try {
-      const response = await fetch('/api/patreon/oauth/start/', {
+      const response = await apiFetch('/api/patreon/oauth/start/', {
         method: 'POST',
-        headers: { Authorization: av(data.session.access_token) },
+        headers: { Authorization: bearer(data.session.access_token) },
       });
       const json = await response.json();
       if (!response.ok) return setStatus(json.error || 'Could not start Patreon OAuth.');

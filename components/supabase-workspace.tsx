@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import { hasSupabaseConfig, isAdminEmail, supabase } from '../lib/supabase';
+import { apiFetch, bearer } from '../lib/api-client';
 
 type Profile = {
   id: string;
@@ -254,7 +255,6 @@ async function sha256Hex(value: string) {
   const hash = await crypto.subtle.digest('SHA-256', bytes);
   return Array.from(new Uint8Array(hash)).map((byte) => byte.toString(16).padStart(2, '0')).join('');
 }
-function authValue(token: string) { return [String.fromCharCode(66, 101, 97, 114, 101, 114), token].join(' '); }
 function limitLabel(value: number | null) { return value === null ? 'Unlimited' : String(value); }
 function money(cents?: number | null, currency = 'usd') { return cents == null ? 'n/a' : new Intl.NumberFormat(undefined, { style: 'currency', currency: currency || 'usd' }).format(cents / 100); }
 function shippingSummary(shipTo?: Record<string, any> | null) {
@@ -384,7 +384,7 @@ export function SupabaseWorkspace() {
     try {
       const nextProfile = await ensureProfile(activeSession.user);
       setProfile(nextProfile);
-      const membershipResponse = await fetch('/api/account/membership/', { headers: { Authorization: authValue(activeSession.access_token) } });
+      const membershipResponse = await apiFetch('/api/account/membership/', { headers: { Authorization: bearer(activeSession.access_token) } });
       const membershipJson = await membershipResponse.json();
       if (membershipResponse.ok) setMembership(membershipJson.membership as MembershipSummary);
       else setMembership(null);
@@ -445,14 +445,14 @@ export function SupabaseWorkspace() {
         const orderParams = new URLSearchParams();
         if (fulfillmentFilter !== 'all') orderParams.set('status', fulfillmentFilter);
         if (fulfillmentSearch.trim()) orderParams.set('search', fulfillmentSearch.trim());
-        const ordersResponse = await fetch(`/api/admin/tag-orders/?${orderParams.toString()}`, { headers: { Authorization: authValue(activeSession.access_token) } });
+        const ordersResponse = await apiFetch(`/api/admin/tag-orders/?${orderParams.toString()}`, { headers: { Authorization: bearer(activeSession.access_token) } });
         const ordersJson = await ordersResponse.json();
         if (ordersResponse.ok) setFulfillmentOrders((ordersJson.orders || []) as FulfillmentOrder[]);
         else setFulfillmentOrders([]);
 
         const memberParams = new URLSearchParams();
         if (adminSearch.trim()) memberParams.set('search', adminSearch.trim());
-        const membersResponse = await fetch(`/api/admin/memberships/?${memberParams.toString()}`, { headers: { Authorization: authValue(activeSession.access_token) } });
+        const membersResponse = await apiFetch(`/api/admin/memberships/?${memberParams.toString()}`, { headers: { Authorization: bearer(activeSession.access_token) } });
         const membersJson = await membersResponse.json();
         if (membersResponse.ok) {
           setAdminMembershipAccounts((membersJson.accounts || []) as AdminMembershipAccount[]);
@@ -462,7 +462,7 @@ export function SupabaseWorkspace() {
           setAdminCoupons([]);
         }
 
-        const providerResponse = await fetch('/api/admin/providers/', { headers: { Authorization: authValue(activeSession.access_token) } });
+        const providerResponse = await apiFetch('/api/admin/providers/', { headers: { Authorization: bearer(activeSession.access_token) } });
         const providerJson = await providerResponse.json();
         if (providerResponse.ok) setProviderSnapshot(providerJson as ProviderAdminSnapshot);
         else setProviderSnapshot(null);
@@ -516,7 +516,7 @@ export function SupabaseWorkspace() {
   async function sendEmailCode() {
     if (!session?.user || !profile?.email) return setMessage('Sign in first.');
     setBusy(true);
-    const response = await fetch('/api/email/send-code/', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: authValue(session.access_token) }, body: JSON.stringify({ purpose: 'signup' }) });
+    const response = await apiFetch('/api/email/send-code/', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: bearer(session.access_token) }, body: JSON.stringify({ purpose: 'signup' }) });
     const json = await response.json();
     setBusy(false);
     if (!response.ok) return setMessage(json.error || 'Email code could not be sent.');
@@ -526,7 +526,7 @@ export function SupabaseWorkspace() {
   async function verifyEmailCode() {
     if (!session?.user) return setMessage('Sign in first.');
     setBusy(true);
-    const response = await fetch('/api/email/verify-code/', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: authValue(session.access_token) }, body: JSON.stringify({ purpose: 'signup', code: emailCode }) });
+    const response = await apiFetch('/api/email/verify-code/', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: bearer(session.access_token) }, body: JSON.stringify({ purpose: 'signup', code: emailCode }) });
     const json = await response.json();
     setBusy(false);
     if (!response.ok) return setMessage(json.error || 'Email verification failed.');
@@ -538,7 +538,7 @@ export function SupabaseWorkspace() {
   async function redeemCoupon() {
     if (!session?.user) return setMessage('Sign in first.');
     setBusy(true);
-    const response = await fetch('/api/coupons/redeem/', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: authValue(session.access_token) }, body: JSON.stringify({ code: couponCode }) });
+    const response = await apiFetch('/api/coupons/redeem/', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: bearer(session.access_token) }, body: JSON.stringify({ code: couponCode }) });
     const json = await response.json();
     setBusy(false);
     if (!response.ok) return setMessage(json.error || 'Coupon redemption failed.');
@@ -550,7 +550,7 @@ export function SupabaseWorkspace() {
   async function adminGrantMembership() {
     if (!session?.user) return setMessage('Sign in first.');
     setBusy(true);
-    const response = await fetch('/api/admin/memberships/', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: authValue(session.access_token) }, body: JSON.stringify({ action: 'grant_membership', profileId: grantDraft.profileId, tier: grantDraft.tier, durationDays: Number(grantDraft.durationDays || 0), note: grantDraft.note }) });
+    const response = await apiFetch('/api/admin/memberships/', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: bearer(session.access_token) }, body: JSON.stringify({ action: 'grant_membership', profileId: grantDraft.profileId, tier: grantDraft.tier, durationDays: Number(grantDraft.durationDays || 0), note: grantDraft.note }) });
     const json = await response.json();
     setBusy(false);
     if (!response.ok) return setMessage(json.error || 'Admin grant failed.');
@@ -561,7 +561,7 @@ export function SupabaseWorkspace() {
   async function adminGenerateCoupon() {
     if (!session?.user) return setMessage('Sign in first.');
     setBusy(true);
-    const response = await fetch('/api/admin/memberships/', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: authValue(session.access_token) }, body: JSON.stringify({ action: 'generate_coupon', tier: couponDraft.tier, durationDays: Number(couponDraft.durationDays || 30), maxRedemptions: Number(couponDraft.maxRedemptions || 1), expiresInDays: Number(couponDraft.expiresInDays || 30), recipientEmail: couponDraft.recipientEmail, emailCode: couponDraft.emailCode, createStripePromotion: couponDraft.createStripePromotion }) });
+    const response = await apiFetch('/api/admin/memberships/', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: bearer(session.access_token) }, body: JSON.stringify({ action: 'generate_coupon', tier: couponDraft.tier, durationDays: Number(couponDraft.durationDays || 30), maxRedemptions: Number(couponDraft.maxRedemptions || 1), expiresInDays: Number(couponDraft.expiresInDays || 30), recipientEmail: couponDraft.recipientEmail, emailCode: couponDraft.emailCode, createStripePromotion: couponDraft.createStripePromotion }) });
     const json = await response.json();
     setBusy(false);
     if (!response.ok) return setMessage(json.error || 'Coupon generation failed.');
@@ -572,7 +572,7 @@ export function SupabaseWorkspace() {
   async function adminUpdateGrant(grantId: string, status: string) {
     if (!session?.user) return setMessage('Sign in first.');
     setBusy(true);
-    const response = await fetch('/api/admin/memberships/', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: authValue(session.access_token) }, body: JSON.stringify({ action: 'update_grant', grantId, status }) });
+    const response = await apiFetch('/api/admin/memberships/', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: bearer(session.access_token) }, body: JSON.stringify({ action: 'update_grant', grantId, status }) });
     const json = await response.json();
     setBusy(false);
     if (!response.ok) return setMessage(json.error || 'Grant update failed.');
@@ -583,7 +583,7 @@ export function SupabaseWorkspace() {
   async function adminProviderAction(action: string, body: Record<string, unknown> = {}) {
     if (!session?.user) return setMessage('Sign in first.');
     setBusy(true);
-    const response = await fetch('/api/admin/providers/', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: authValue(session.access_token) }, body: JSON.stringify({ action, ...body }) });
+    const response = await apiFetch('/api/admin/providers/', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: bearer(session.access_token) }, body: JSON.stringify({ action, ...body }) });
     const json = await response.json();
     setBusy(false);
     if (!response.ok) return setMessage(json.error || 'Provider action failed.');
@@ -621,7 +621,7 @@ export function SupabaseWorkspace() {
   async function refreshMembership() {
     if (!session?.user) return setMessage('Sign in first.');
     setBusy(true);
-    const response = await fetch('/api/account/membership/', { headers: { Authorization: authValue(session.access_token) } });
+    const response = await apiFetch('/api/account/membership/', { headers: { Authorization: bearer(session.access_token) } });
     const json = await response.json();
     setBusy(false);
     if (!response.ok) return setMessage(json.error || 'Membership refresh failed.');
@@ -632,7 +632,7 @@ export function SupabaseWorkspace() {
   async function manageBilling() {
     if (!session?.user) return setMessage('Sign in first.');
     setBusy(true);
-    const response = await fetch('/api/subscriptions/portal/', { method: 'POST', headers: { Authorization: authValue(session.access_token) } });
+    const response = await apiFetch('/api/subscriptions/portal/', { method: 'POST', headers: { Authorization: bearer(session.access_token) } });
     const json = await response.json();
     setBusy(false);
     if (!response.ok) return setMessage(json.error || 'Stripe billing portal is not available for this account.');
@@ -642,9 +642,9 @@ export function SupabaseWorkspace() {
   async function updateOrderStatus(order: FulfillmentOrder, status: string) {
     if (!session?.user) return setMessage('Sign in first.');
     setBusy(true);
-    const response = await fetch('/api/admin/tag-orders/', {
+    const response = await apiFetch('/api/admin/tag-orders/', {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', Authorization: authValue(session.access_token) },
+      headers: { 'Content-Type': 'application/json', Authorization: bearer(session.access_token) },
       body: JSON.stringify({ id: order.id, status, note: fulfillmentNote }),
     });
     const json = await response.json();
@@ -689,9 +689,9 @@ export function SupabaseWorkspace() {
     const code = tagCode.trim();
     if (!code) return setMessage('Enter a tag code to activate.');
     setBusy(true);
-    const response = await fetch('/api/tags/activate/', {
+    const response = await apiFetch('/api/tags/activate/', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: authValue(session.access_token) },
+      headers: { 'Content-Type': 'application/json', Authorization: bearer(session.access_token) },
       body: JSON.stringify({ tagCode: code, claimCode, petId: selectedPet.id }),
     });
     const json = await response.json();
@@ -817,7 +817,7 @@ export function SupabaseWorkspace() {
 
   async function startGoogleConnect() {
     if (!supabase || !session?.user) return setMessage('Sign in before connecting Google.');
-    const response = await fetch('/api/google/oauth/start', { headers: { Authorization: authValue(session.access_token) } });
+    const response = await apiFetch('/api/google/oauth/start/', { headers: { Authorization: bearer(session.access_token) } });
     const json = await response.json();
     if (!response.ok) return setMessage(json.error || 'Google connect failed.');
     window.location.href = json.url;
@@ -825,7 +825,7 @@ export function SupabaseWorkspace() {
 
   async function createPackInvite() {
     if (!supabase || !session?.user) return setMessage('Sign in before creating Dog Pack invites.');
-    const response = await fetch('/api/dog-pack/invites', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: authValue(session.access_token) }, body: JSON.stringify({ petId: selectedPet?.id || null }) });
+    const response = await apiFetch('/api/dog-pack/invites/', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: bearer(session.access_token) }, body: JSON.stringify({ petId: selectedPet?.id || null }) });
     const json = await response.json();
     if (!response.ok) return setMessage(json.error || 'Invite creation failed.');
     setInviteUrl(json.inviteUrl);
@@ -843,7 +843,7 @@ export function SupabaseWorkspace() {
     form.set('title', uploadTitle || file.name);
     if (selectedPet?.id) form.set('petId', selectedPet.id);
     setBusy(true);
-    const response = await fetch('/api/uploads', { method: 'POST', headers: { Authorization: authValue(session.access_token) }, body: form });
+    const response = await apiFetch('/api/uploads/', { method: 'POST', headers: { Authorization: bearer(session.access_token) }, body: form });
     const json = await response.json();
     setBusy(false);
     if (!response.ok) return setMessage(json.error || 'Upload failed.');

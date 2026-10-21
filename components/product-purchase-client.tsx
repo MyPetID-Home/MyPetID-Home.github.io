@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { supabase } from '../lib/supabase';
+import { apiFetch, bearer } from '../lib/api-client';
 
 type TagProduct = { id: string; slug: string; name: string; description: string; price_cents: number; stripe_price_id: string | null; patreon_label: string | null; metadata?: { includes?: string[] } | null };
 type MembershipTier = { tier: string; monthly_price: number; max_tags: number; max_users: number; notes: string | null; stripe_price_id: string | null; checkout_enabled: boolean };
@@ -12,8 +13,6 @@ type ProductPurchaseClientProps = { compact?: boolean };
 
 function dollars(cents: number) { return `$${(cents / 100).toFixed(2)}`; }
 function monthlyDollars(value: number) { return `$${Number(value).toFixed(2)}/mo`; }
-function authValue(token: string) { return [String.fromCharCode(66, 101, 97, 114, 101, 114), token].join(' '); }
-
 export function ProductPurchaseClient({ compact = false }: ProductPurchaseClientProps) {
   const [products, setProducts] = useState<TagProduct[]>([]);
   const [tiers, setTiers] = useState<MembershipTier[]>([]);
@@ -50,9 +49,9 @@ export function ProductPurchaseClient({ compact = false }: ProductPurchaseClient
     setMessage('Starting secure Stripe checkout…');
     try {
       const session = await requireSession();
-      const response = await fetch('/api/checkout', {
+      const response = await apiFetch('/api/checkout/', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: authValue(session.access_token) },
+        headers: { 'Content-Type': 'application/json', Authorization: bearer(session.access_token) },
         body: JSON.stringify({ productSlug: product.slug, priceId: product.stripe_price_id, petId: selectedPetId || undefined, provider: 'stripe' }),
       });
       const json = await response.json();
@@ -70,9 +69,9 @@ export function ProductPurchaseClient({ compact = false }: ProductPurchaseClient
     setMessage(`Starting ${tier.tier} subscription checkout…`);
     try {
       const session = await requireSession();
-      const response = await fetch('/api/subscriptions/checkout', {
+      const response = await apiFetch('/api/subscriptions/checkout/', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: authValue(session.access_token) },
+        headers: { 'Content-Type': 'application/json', Authorization: bearer(session.access_token) },
         body: JSON.stringify({ tier: tier.tier, priceId: tier.stripe_price_id }),
       });
       const json = await response.json();

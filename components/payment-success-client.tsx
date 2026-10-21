@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from 'react';
+import { apiFetch } from '../lib/api-client';
 
 export function PaymentSuccessClient() {
   const [message, setMessage] = useState('Confirming Stripe payment and updating your MyPetID order…');
@@ -12,7 +13,7 @@ export function PaymentSuccessClient() {
       const order = params.get('order');
       if (!sessionId || !order) return setMessage('Stripe returned without an order/session id. The payment may still have succeeded; admin can reconcile from Stripe.');
       try {
-        const response = await fetch(`/api/checkout/confirm?session_id=${encodeURIComponent(sessionId)}&order=${encodeURIComponent(order)}`);
+        const response = await apiFetch(`/api/checkout/confirm/?session_id=${encodeURIComponent(sessionId)}&order=${encodeURIComponent(order)}`);
         const json = await response.json();
         if (!response.ok) return setMessage(json.error || 'Could not confirm payment automatically.');
         setMessage(json.paid ? 'Payment confirmed. Your tag order is marked paid and ready for QR/NFC prep.' : 'Stripe session found, but payment is not marked paid yet. Admin review is queued.');
