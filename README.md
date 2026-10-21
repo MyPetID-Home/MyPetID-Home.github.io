@@ -30,7 +30,7 @@ Clydius-maintained rebuild for the MyPetID NFC/QR pet profile, tracker, Dog Pack
 ```bash
 pnpm install
 pnpm build                  # Vercel/server API mode
-BUILD_STATIC_EXPORT=1 pnpm build  # GitHub Pages/static mode; app/api must be absent or moved for static export
+BUILD_STATIC_EXPORT=1 pnpm build  # GitHub Pages/static mode; app/api and proxy.ts must be moved aside for static export
 ```
 
 Copy `.env.example` to `.env.local` and add only browser-safe public values locally. Private provider secrets belong in deployment/profile env stores, never in the repo.
@@ -39,7 +39,11 @@ Copy `.env.example` to `.env.local` and add only browser-safe public values loca
 
 - Vercel project `mypetid` is the functional app host for server routes and provider callbacks.
 - GitHub Pages remains a static export fallback/marketing host.
-- `.github/workflows/deploy-pages.yml` temporarily moves `app/api` during the GitHub Pages static build and restores it afterward.
+- `.github/workflows/deploy-pages.yml` temporarily moves `app/api` and `proxy.ts` during the GitHub Pages static build and restores them afterward.
+- The GitHub Pages build sets `NEXT_PUBLIC_API_BASE_URL` (default `https://mypetid.vercel.app`, overridable with a repository variable) so server features call the Vercel API. The Vercel build allows those origins via CORS on `/api/*` (`next.config.mjs`; override with `CORS_ALLOWED_ORIGINS`, comma-separated).
+- Vercel should set `NEXT_PUBLIC_APP_BASE_URL=https://mypetid.vercel.app` so Stripe/OAuth return URLs use the production domain.
+- `/api/*` routes answer with and without a trailing slash (no 308), so the Stripe webhook works at either URL; pages still redirect to the trailing-slash form (`proxy.ts`).
+- Database security: apply `docs/migrations/2026-10-security-hardening.sql` and check it with `node scripts/verify-rls.mjs` (anon key only). See `docs/migrations/2026-10-security-hardening.README.md`.
 
 ## Provider status
 
