@@ -13,7 +13,7 @@ export function AppFooter() {
         <Link href="/privacy/">Privacy</Link>
         <Link href="/terms/">Terms</Link>
       </nav>
-      <small>Help: dev.mypetid-help@yahoo.com • Support: dev.mypetid-sup@yahoo.com • Admin: real_cak3d@yahoo.com. Verification codes may come from mypetid@yahoo.com; do not reply there.</small>
+      <small>Help: <a href="mailto:dev.mypetid-help@yahoo.com">dev.mypetid-help@yahoo.com</a> • Support: <a href="mailto:dev.mypetid-sup@yahoo.com">dev.mypetid-sup@yahoo.com</a> • Admin: <a href="mailto:real_cak3d@yahoo.com">real_cak3d@yahoo.com</a>. Verification codes may come from mypetid@yahoo.com; do not reply there.</small>
     </footer>
   );
 }
