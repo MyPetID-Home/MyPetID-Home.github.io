@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mypetid-shell-v1';
+const CACHE_NAME = 'mypetid-shell-v2';
 const CORE_ASSETS = ['/', '/dashboard/', '/manifest.webmanifest', '/images/logo/MyPetID-Logo_Resized.jpg'];
 
 self.addEventListener('install', (event) => {
@@ -10,10 +10,25 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  if (event.request.method !== 'GET') return;
-  event.respondWith(fetch(event.request).then((response) => {
-    const clone = response.clone();
-    caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+  const request = event.request;
+  if (request.method !== 'GET') return;
+  const url = new URL(request.url);
+  // Only handle this site's own files. Cross-origin calls (Supabase REST/auth,
+  // Google Maps, Stripe) and /api routes go straight to the network so that
+  // signed-in API responses are never written to a shared on-device cache.
+  if (url.origin !== self.location.origin || url.pathname.startsWith('/api/')) return;
+
+  event.respondWith(fetch(request).then((response) => {
+    if (response.ok && response.type === 'basic') {
+      const clone = response.clone();
+      caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+    }
     return response;
-  }).catch(() => caches.match(event.request).then((cached) => cached || caches.match('/'))));
+  }).catch(() => caches.match(request).then((cached) => {
+    if (cached) return cached;
+    // Offline fallback to the app shell only for page navigations; returning
+    // HTML for a missing script or image would just cause a second error.
+    if (request.mode === 'navigate') return caches.match('/');
+    return Response.error();
+  })));
 });
