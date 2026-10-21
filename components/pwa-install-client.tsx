@@ -40,11 +40,14 @@ export function PwaInstallClient() {
 
 export function InstallSettingsButton() {
   const [installEvent, setInstallEvent] = useState<BeforeInstallPromptEvent | undefined>();
+  // Resolved after mount; calling matchMedia during render caused a hydration mismatch.
+  const [installed, setInstalled] = useState(false);
   const [status, setStatus] = useState('Install prompt not available yet. On Android Chrome, use the browser menu → Add to Home screen if the button stays disabled.');
 
   useEffect(() => {
     const sync = () => {
       setInstallEvent(window.__mypetidInstallEvent);
+      setInstalled(isInstalled());
       if (isInstalled()) setStatus('MyPetID is already installed on this device.');
       else if (window.__mypetidInstallEvent) setStatus('Ready to install MyPetID on this device.');
     };
@@ -69,5 +72,5 @@ export function InstallSettingsButton() {
     setStatus(choice.outcome === 'accepted' ? 'Install accepted. MyPetID should now open like an app.' : 'Install dismissed. You can try again here later or use the browser menu.');
   }
 
-  return <div className="installSettingsCard"><h3>Install MyPetID app</h3><p>Put MyPetID on the home screen for app-style launch, Android location prompts, and quick tag access.</p><button type="button" onClick={install} disabled={isInstalled()}>Install / add to home screen</button><small>{status}</small></div>;
+  return <div className="installSettingsCard"><h3>Install MyPetID app</h3><p>Put MyPetID on the home screen for app-style launch, Android location prompts, and quick tag access.</p><button type="button" onClick={install} disabled={installed}>Install / add to home screen</button><small>{status}</small></div>;
 }
