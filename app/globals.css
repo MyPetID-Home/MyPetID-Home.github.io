@@ -404,3 +404,8 @@ textarea { min-height: 96px; resize: vertical; }
 .compactLegalFooter nav { display: flex; }
 .compactLegalFooter small { color: var(--muted); }
 @media (max-width: 620px) { .mobileSectionNav { display: none; } }
+
+/* Respect the OS "reduce motion" setting for the decorative animations above. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+}

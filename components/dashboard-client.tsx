@@ -433,7 +433,7 @@ export function DashboardClient({ initialTab = 'overview' }: { initialTab?: Tab 
 
   return (
     <main className="appShell proApp">
-      <button className="hamburger topLeft" type="button" onClick={() => setMenuOpen(!menuOpen)} aria-expanded={menuOpen}>☰</button>
+      <button className="hamburger topLeft" type="button" onClick={() => setMenuOpen(!menuOpen)} aria-expanded={menuOpen} aria-label={menuOpen ? 'Close menu' : 'Open menu'}><span aria-hidden="true">☰</span></button>
       <aside className={`sidebar ${menuOpen ? 'open' : ''}`}>
         <nav className="sideNav" aria-label="Dashboard sections">{navTabs.map((tab) => <button key={tab} className={activeTab === tab ? 'active' : ''} onClick={() => navigateTab(tab)} type="button">{tabLabels[tab]}{tab === 'lost' && lostAlertCount > 0 ? <span className="alertDot">{lostAlertCount}</span> : null}</button>)}</nav>
         <div className={`tierBadge ${state.tier === 'admin' ? 'red' : 'green'}`}><span>{state.adminMode ? 'Admin view' : tiers[activeTier].label}</span><strong>{state.adminMode ? 'CAK3D admin dashboard' : `${petLimitLabel} pets • ${tiers[activeTier].users} users`}</strong><small>{state.adminMode ? 'Admin tools are visible. Switch back to test as a normal user.' : state.subscription.patreonLinked ? state.subscription.patreonStatus : 'Patreon not linked — Free limits active'}</small>{isAdminAccount && <button type="button" onClick={() => { const next = !state.adminMode; setState({ ...state, adminMode: next }); if (!next && activeTab === 'admin') navigateTab('overview'); else if (next) navigateTab('admin'); }}>{state.adminMode ? 'Switch to user view' : 'Enter admin dashboard'}</button>}</div>
