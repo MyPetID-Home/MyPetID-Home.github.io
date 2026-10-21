@@ -295,13 +295,12 @@ async function ensureProfile(user: User) {
   if (readError) throw readError;
   if (existing) return existing as Profile;
 
-  const admin = isAdminEmail(user.email);
+  // tier/is_admin are not sent: the database forces new self-created profiles
+  // to free/non-admin (2026-10-security-hardening.sql).
   const fallback = {
     id: user.id,
     email: user.email ?? null,
     display_name: user.user_metadata?.display_name ?? user.email?.split('@')[0] ?? 'MyPetID User',
-    tier: admin ? 'admin' : 'free',
-    is_admin: admin,
   };
 
   const { data, error } = await supabase

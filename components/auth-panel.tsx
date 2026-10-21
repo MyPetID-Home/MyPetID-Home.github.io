@@ -58,8 +58,8 @@ export function AuthPanel() {
         id: user.id,
         email: user.email ?? null,
         display_name: user.user_metadata?.display_name ?? user.email?.split('@')[0] ?? 'MyPetID User',
-        tier: isAdminEmail(user.email) ? 'admin' : 'free',
-        is_admin: isAdminEmail(user.email),
+        // tier/is_admin are not sent: the database forces new self-created profiles
+        // to free/non-admin (2026-10-security-hardening.sql).
       };
       const { data: inserted, error: insertError } = await supabase.from('profiles').insert(fallback).select('*').single();
       if (insertError) setMessage(insertError.message);

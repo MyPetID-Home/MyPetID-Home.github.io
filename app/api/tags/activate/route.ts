@@ -37,13 +37,13 @@ export async function POST(request: NextRequest) {
       assertTagAllowance(summary);
     }
 
-    const { data, error } = await supabase
-      .from('tags')
-      .update({ pet_id: body.petId, created_by: user.id, claimed_at: new Date().toISOString(), status: 'claimed' })
-      .eq('tag_code', tagCode)
-      .select('*')
-      .single();
+    // Atomic claim in the database: only succeeds if the tag is still unclaimed, the
+    // claim-code hash matches and the pet belongs to this user. This closes the race
+    // where two requests could both pass the checks above.
+    const { data: claimed, error } = await supabase.rpc('claim_tag', { p_tag_code: tagCode, p_claim_code_hash: hashClaimCode(claimCode), p_pet_id: body.petId, p_profile_id: user.id });
     if (error) throw error;
+    const data = Array.isArray(claimed) ? claimed[0] : claimed;
+    if (!data) throw new Error('This card could not be claimed. It may have just been claimed, or the claim code does not match.');
     const nextSummary = await getMembershipSummary(supabase, user.id);
     return NextResponse.json({ tag: data, membership: nextSummary, petName: pet.name, claimProtected: true });
   } catch (error) {

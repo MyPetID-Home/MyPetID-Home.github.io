@@ -7,7 +7,6 @@ import { isServiceRestrictionMessage, queueFallbackSync } from '../lib/fallback-
 
 type Pet = {
   id: string;
-  owner_id?: string | null;
   name: string;
   breed: string | null;
   photo_url: string | null;
@@ -16,7 +15,8 @@ type Pet = {
   lost_mode: boolean;
 };
 
-type TagRecord = { id: string; tag_code: string; pet: Pet | Pet[] | null };
+// Row returned by the get_public_pet RPC (public fields only, plus is_owner).
+type PublicPetRow = Pet & { tag_id: string | null; tag_code: string | null; is_owner: boolean };
 type DeviceRecord = { trusted: boolean; label?: string | null };
 
 const fallbackPet: Pet = {
@@ -84,19 +84,17 @@ export function ScanLanding() {
         if (tag !== DEMO_TAG) setPet(unknownPet);
         return;
       }
-      const { data, error } = await supabase
-        .from('tags')
-        .select('id,tag_code,pet:pets(id,owner_id,name,breed,photo_url,medical_public,behavior_public,lost_mode)')
-        .eq('tag_code', tag)
-        .maybeSingle();
-      if (!error && data) {
-        const record = data as TagRecord;
-        setTagId(record.id);
-        const loaded = Array.isArray(record.pet) ? record.pet[0] : record.pet;
-        if (loaded) {
-          setPet(loaded);
+      // pets/tags are not publicly readable; get_public_pet returns the public
+      // fields and whether the signed-in user owns the pet.
+      const { data, error } = await supabase.rpc('get_public_pet', { p_tag_code: tag });
+      const record = (Array.isArray(data) ? data[0] : data) as PublicPetRow | null | undefined;
+      if (!error && record) {
+        setTagId(record.tag_id);
+        {
+          const loaded = record;
+          setPet({ id: loaded.id, name: loaded.name, breed: loaded.breed, photo_url: loaded.photo_url, medical_public: loaded.medical_public, behavior_public: loaded.behavior_public, lost_mode: loaded.lost_mode });
           const { data: auth } = await supabase.auth.getUser();
-          if (auth.user?.id && loaded.owner_id === auth.user.id) {
+          if (auth.user?.id && loaded.is_owner) {
             const fingerprint = scannerInstallId();
             const { data: device } = await supabase.from('devices').select('trusted,label').eq('profile_id', auth.user.id).eq('device_fingerprint', fingerprint).maybeSingle() as { data: DeviceRecord | null };
             setActor('owner');
@@ -122,26 +120,29 @@ export function ScanLanding() {
   async function savePosition(position: GeolocationPosition, note: string) {
     const coords = position.coords;
     const installId = scannerInstallId();
+    // Arguments for the submit_finder_report RPC, which validates the report,
+    // rate-limits per tag and derives pet/actor server-side.
     const payload = {
-      tag_id: tagId,
-      pet_id: pet.id || null,
-      actor: 'stranger',
-      latitude: coords.latitude,
-      longitude: coords.longitude,
-      accuracy_meters: coords.accuracy,
-      reported_lost: reportedLost,
-      note: `${note}; install=${installId}`,
-      finder_note: finderNote || null,
-      finder_contact: finderContact || null,
-      found_status: reportedLost ? 'Found report received' : 'scan_only',
-      owner_follow_up: reportedLost ? 'Needs owner review' : 'not_required',
+      p_tag_code: tag,
+      p_latitude: coords.latitude,
+      p_longitude: coords.longitude,
+      p_accuracy_meters: coords.accuracy,
+      p_reported_lost: reportedLost,
+      p_note: `${note}; install=${installId}`,
+      p_finder_note: finderNote || null,
+      p_finder_contact: finderContact || null,
     };
     if (!supabase) {
       queueFallbackSync('scan_event', `Finder scan queued for ${pet.name}`, payload);
       setStatus(`Location captured on this device: ${coords.latitude.toFixed(5)}, ${coords.longitude.toFixed(5)}. Cloud save is paused; this scan is queued locally for later sync.`);
       return;
     }
-    const { error } = await supabase.from('scan_events').insert(payload);
+    if (!tagId) {
+      queueFallbackSync('scan_event', `Finder scan queued for tag ${tag}`, payload);
+      setStatus(`Location captured: ${coords.latitude.toFixed(5)}, ${coords.longitude.toFixed(5)}. MyPetID could not confirm an owner for this tag, so the report could not be delivered. Please contact local animal control or a nearby shelter.`);
+      return;
+    }
+    const { error } = await supabase.rpc('submit_finder_report', payload);
     if (error && isServiceRestrictionMessage(error.message)) {
       queueFallbackSync('scan_event', `Finder scan queued for ${pet.name}`, payload);
       setStatus(`Location captured, but cloud save is restricted. This scan is queued locally for later sync.`);

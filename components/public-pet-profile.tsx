@@ -111,23 +111,12 @@ export function PublicPetProfile() {
     async function loadCloudPet(): Promise<Pet | null> {
       if (!supabase) return null;
       try {
-        if (petId) {
-          const { data: directPet, error: directError } = await supabase
-            .from('pets')
-            .select('id,name,breed,photo_url,medical_public,behavior_public,contact_public,lost_mode')
-            .eq('id', petId)
-            .maybeSingle();
-          if (!directError && directPet) return directPet as Pet;
-        }
-        if (!queryTag) return null;
-        const { data, error } = await supabase
-          .from('tags')
-          .select('pet:pets(id,name,breed,photo_url,medical_public,behavior_public,contact_public,lost_mode)')
-          .eq('tag_code', queryTag)
-          .maybeSingle();
-        const loaded = data?.pet;
-        if (error || !loaded) return null;
-        return (Array.isArray(loaded) ? loaded[0] : loaded) as Pet;
+        // pets/tags are not publicly readable; get_public_pet returns only the
+        // owner-approved public fields (docs/migrations/2026-10-security-hardening.sql).
+        const { data, error } = await supabase.rpc('get_public_pet', petId ? { p_pet_id: petId } : { p_tag_code: queryTag });
+        const row = Array.isArray(data) ? data[0] : data;
+        if (error || !row) return null;
+        return row as Pet;
       } catch {
         return null;
       }
