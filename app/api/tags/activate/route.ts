@@ -40,7 +40,18 @@ export async function POST(request: NextRequest) {
     // Atomic claim in the database: only succeeds if the tag is still unclaimed, the
     // claim-code hash matches and the pet belongs to this user. This closes the race
     // where two requests could both pass the checks above.
-    const { data: claimed, error } = await supabase.rpc('claim_tag', { p_tag_code: tagCode, p_claim_code_hash: hashClaimCode(claimCode), p_pet_id: body.petId, p_profile_id: user.id });
+    let { data: claimed, error } = await supabase.rpc('claim_tag', { p_tag_code: tagCode, p_claim_code_hash: hashClaimCode(claimCode), p_pet_id: body.petId, p_profile_id: user.id });
+    if (error?.code === 'PGRST202') {
+      // claim_tag() not installed yet (migration pending): conditional update instead.
+      ({ data: claimed, error } = await supabase
+        .from('tags')
+        .update({ pet_id: body.petId, created_by: user.id, claimed_at: new Date().toISOString(), status: 'claimed' })
+        .eq('tag_code', tagCode)
+        .is('pet_id', null)
+        .is('claimed_at', null)
+        .eq('claim_code_hash', hashClaimCode(claimCode))
+        .select('*'));
+    }
     if (error) throw error;
     const data = Array.isArray(claimed) ? claimed[0] : claimed;
     if (!data) throw new Error('This card could not be claimed. It may have just been claimed, or the claim code does not match.');

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '../lib/supabase';
 import { isServiceRestrictionMessage, queueFallbackSync } from '../lib/fallback-local';
+import { fetchPublicPet, submitFinderReport, type PublicPet } from '../lib/public-pet';
 
 type Pet = {
   id: string;
@@ -15,8 +16,6 @@ type Pet = {
   lost_mode: boolean;
 };
 
-// Row returned by the get_public_pet RPC (public fields only, plus is_owner).
-type PublicPetRow = Pet & { tag_id: string | null; tag_code: string | null; is_owner: boolean };
 type DeviceRecord = { trusted: boolean; label?: string | null };
 
 const fallbackPet: Pet = {
@@ -86,9 +85,8 @@ export function ScanLanding() {
       }
       // pets/tags are not publicly readable; get_public_pet returns the public
       // fields and whether the signed-in user owns the pet.
-      const { data, error } = await supabase.rpc('get_public_pet', { p_tag_code: tag });
-      const record = (Array.isArray(data) ? data[0] : data) as PublicPetRow | null | undefined;
-      if (!error && record) {
+      const record: PublicPet | null = await fetchPublicPet({ tagCode: tag });
+      if (record) {
         setTagId(record.tag_id);
         {
           const loaded = record;
@@ -142,7 +140,8 @@ export function ScanLanding() {
       setStatus(`Location captured: ${coords.latitude.toFixed(5)}, ${coords.longitude.toFixed(5)}. MyPetID could not confirm an owner for this tag, so the report could not be delivered. Please contact local animal control or a nearby shelter.`);
       return;
     }
-    const { error } = await supabase.rpc('submit_finder_report', payload);
+    const errorMessage = await submitFinderReport(payload, { tagId, petId: pet.id || null });
+    const error = errorMessage ? { message: errorMessage } : null;
     if (error && isServiceRestrictionMessage(error.message)) {
       queueFallbackSync('scan_event', `Finder scan queued for ${pet.name}`, payload);
       setStatus(`Location captured, but cloud save is restricted. This scan is queued locally for later sync.`);

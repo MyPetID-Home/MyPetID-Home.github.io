@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '../lib/supabase';
+import { fetchPublicPet } from '../lib/public-pet';
 
 type Pet = {
   id: string;
@@ -113,10 +114,8 @@ export function PublicPetProfile() {
       try {
         // pets/tags are not publicly readable; get_public_pet returns only the
         // owner-approved public fields (docs/migrations/2026-10-security-hardening.sql).
-        const { data, error } = await supabase.rpc('get_public_pet', petId ? { p_pet_id: petId } : { p_tag_code: queryTag });
-        const row = Array.isArray(data) ? data[0] : data;
-        if (error || !row) return null;
-        return row as Pet;
+        const row = await fetchPublicPet(petId ? { petId } : { tagCode: queryTag });
+        return row ? (row as unknown as Pet) : null;
       } catch {
         return null;
       }
