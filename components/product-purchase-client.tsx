@@ -19,8 +19,12 @@ export function ProductPurchaseClient({ compact = false }: ProductPurchaseClient
   const [selectedPetId, setSelectedPetId] = useState('');
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState('');
-  const accountShareUrl = typeof window === 'undefined' ? 'https://mypetid-home.github.io/dashboard/pack/' : `${window.location.origin}/dashboard/pack/?join=account-demo`;
-  const petProfileUrl = useMemo(() => selectedPetId ? `${typeof window === 'undefined' ? 'https://mypetid-home.github.io' : window.location.origin}/pet/?pet=${selectedPetId}` : 'Save a dog profile to generate its public QR code.', [selectedPetId]);
+  // The origin is resolved after mount so the static HTML matches the first
+  // client render (reading window during render caused hydration error #418).
+  const [origin, setOrigin] = useState('https://mypetid-home.github.io');
+  useEffect(() => setOrigin(window.location.origin), []);
+  const accountShareUrl = `${origin}/dashboard/pack/?join=account-demo`;
+  const petProfileUrl = useMemo(() => selectedPetId ? `${origin}/pet/?pet=${selectedPetId}` : 'Save a dog profile to generate its public QR code.', [origin, selectedPetId]);
 
   useEffect(() => {
     async function load() {
@@ -31,7 +35,11 @@ export function ProductPurchaseClient({ compact = false }: ProductPurchaseClient
       const { data: tierData, error: tierError } = await supabase.from('membership_tiers').select('tier,monthly_price,max_tags,max_users,notes,stripe_price_id,checkout_enabled').eq('checkout_enabled', true).order('monthly_price', { ascending: true });
       if (tierError) setMessage(tierError.message);
       else setTiers((tierData || []) as MembershipTier[]);
-      const { data: pets } = await supabase.from('pets').select('id,name').limit(1);
+      // Only the signed-in owner's own pet may be used for the QR preview.
+      const { data: auth } = await supabase.auth.getSession();
+      const ownerId = auth.session?.user.id;
+      if (!ownerId) return;
+      const { data: pets } = await supabase.from('pets').select('id,name').eq('owner_id', ownerId).order('created_at', { ascending: false }).limit(1);
       if (pets?.[0]) setSelectedPetId(pets[0].id);
     }
     load();
@@ -89,7 +97,7 @@ export function ProductPurchaseClient({ compact = false }: ProductPurchaseClient
       <div className="workspaceTitle">
         <div>
           <p className="eyebrow">Tags, subscriptions, and QR setup</p>
-          <h2>Choose a tag, save a dog profile, ship a scannable MyPetID.</h2>
+          {compact ? <h2>Choose a tag, save a dog profile, ship a scannable MyPetID.</h2> : <h1>Choose a tag, save a dog profile, ship a scannable MyPetID.</h1>}
           <p>Every saved dog profile gets a public QR destination. CAK3D prints that QR onto the NFC tag/card before shipping, so finders can tap the NFC chip or scan with a camera.</p>
         </div>
         <Link className="button" href="/verify/patreon/">Link Patreon</Link>
@@ -98,12 +106,12 @@ export function ProductPurchaseClient({ compact = false }: ProductPurchaseClient
         <article className="panel">
           <h3>Dog profile QR</h3>
           <p>Create an account, save a dog profile, then use this URL/QR for the physical tag order.</p>
-          <div className="qrPreviewBox"><QRCodeSVG value={selectedPetId ? petProfileUrl : 'https://mypetid-home.github.io/pet/?tag=demo-tag-001'} size={132} /><small>{petProfileUrl}</small></div>
+          <div className="qrPreviewBox"><QRCodeSVG value={selectedPetId ? petProfileUrl : `${origin}/pet/?tag=demo-tag-001`} size={132} title={selectedPetId ? 'QR code for your dog profile' : 'Demo QR code for the sample dog profile'} /><small>{petProfileUrl}</small></div>
         </article>
         <article className="panel">
           <h3>Account share QR</h3>
           <p>Your account also gets a separate QR/share link so another owner can scan or open a link and join your Dog Pack.</p>
-          <div className="qrPreviewBox"><QRCodeSVG value={accountShareUrl} size={132} /><small>{accountShareUrl}</small></div>
+          <div className="qrPreviewBox"><QRCodeSVG value={accountShareUrl} size={132} title="Account share QR code" /><small>{accountShareUrl}</small></div>
         </article>
       </div>
       <div className="tagProductGrid">
