@@ -472,4 +472,9 @@ alter table public.membership_events
   add constraint membership_events_provider_check
   check (provider in ('stripe', 'patreon', 'manual', 'admin', 'coupon'));
 
+-- Pin search_path on the remaining helpers (Supabase linter: function_search_path_mutable).
+alter function public.touch_updated_at() set search_path = public;
+alter function public.mypetid_is_trusted_caller() set search_path = public;
+alter function public.mypetid_redact_headers(text) set search_path = public;
+
 commit;
