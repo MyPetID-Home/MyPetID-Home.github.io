@@ -133,6 +133,50 @@ export const DEFAULT_LAYOUT: CardLayout = {
   },
 };
 
+/**
+ * Layout for uploaded artwork that already has the state name, the PET DRIVERS LICENSE banner and
+ * any seal drawn in (like the owner-made Alabama to Colorado cards). Matches the template kit guide.
+ */
+export const ARTWORK_LAYOUT: CardLayout = {
+  bannerBox: { ...DEFAULT_LAYOUT.bannerBox, hidden: true },
+  text: {
+    ...DEFAULT_LAYOUT.text,
+    state: { ...DEFAULT_LAYOUT.text.state, hidden: true },
+    banner: { ...DEFAULT_LAYOUT.text.banner, hidden: true },
+    country: { ...DEFAULT_LAYOUT.text.country, hidden: true },
+    species: { x: 840, y: 157, size: 32, weight: 700, color: '#111111' },
+    scan: { x: 840, y: 226, size: 15, weight: 700, color: '#1c2430' },
+    license: { x: 399, y: 410, size: 18, weight: 700, color: '#1c2430' },
+    tags: { x: 560, y: 410, size: 14, weight: 700 },
+    issued: { x: 770, y: 410, size: 15, weight: 700, color: '#1c2430' },
+    name: { x: 399, y: 230, size: 40, weight: 700, color: '#111111' },
+    address1: { x: 399, y: 278, size: 32, weight: 700, color: '#111111' },
+    address2: { x: 399, y: 324, size: 32, weight: 700, color: '#111111' },
+    phone: { x: 399, y: 380, size: 42, weight: 700, color: '#e3121b' },
+    labelHeight: { x: 407, y: 452, size: 26, weight: 700, color: '#111111' },
+    labelWeight: { x: 555, y: 452, size: 26, weight: 700, color: '#111111' },
+    labelEyes: { x: 700, y: 452, size: 26, weight: 700, color: '#111111' },
+    labelCoat: { x: 795, y: 452, size: 26, weight: 700, color: '#111111' },
+    labelSex: { x: 905, y: 452, size: 26, weight: 700, color: '#111111' },
+    height: { x: 407, y: 490, size: 25, weight: 700, color: '#111111' },
+    weight: { x: 555, y: 490, size: 25, weight: 700, color: '#111111' },
+    eyes: { x: 700, y: 490, size: 25, weight: 700, color: '#111111' },
+    coat: { x: 795, y: 490, size: 20, weight: 700, color: '#111111' },
+    sex: { x: 905, y: 490, size: 25, weight: 700, color: '#111111' },
+    labelDob: { x: 407, y: 532, size: 26, weight: 700, color: '#111111' },
+    labelRestrictions: { x: 569, y: 532, size: 26, weight: 700, color: '#111111' },
+    dob: { x: 407, y: 570, size: 24, weight: 700, color: '#111111' },
+    restrictions: { x: 569, y: 570, size: 20, weight: 700, color: '#111111' },
+    signature: { x: 40, y: 588, size: 30, font: 'script', color: '#111111' },
+  },
+  boxes: {
+    photo: { x: 40, y: 150, w: 320, h: 340 },
+    qr: { x: 840, y: 232, w: 130, h: 130 },
+    seal: { ...DEFAULT_LAYOUT.boxes.seal, hidden: true },
+    barcode: { x: 40, y: 500, w: 300, h: 34 },
+  },
+};
+
 export function mergeLayout(saved?: Partial<CardLayout> | null): CardLayout {
   return {
     bannerBox: { ...DEFAULT_LAYOUT.bannerBox, ...(saved?.bannerBox || {}) },

@@ -1,0 +1,28 @@
+﻿field,what it is,filled from,sample,x (card px),y (card px),size / w,height,font,color
+photo,Dog photo,From the dog profile (cropped to fill the box),,40,150,320,340,,
+species,Species line,Canine / Service Canine / Support Canine / Therapy Canine / K9,Canine,840,157,32,,Arial Bold,#111111
+name,Dog name,Dog profile name,Clyde,399,230,40,,Arial Bold,#111111
+address1,Street,Owner card address line 1 (+ apt),123 Main Street,399,278,32,,Arial Bold,#111111
+address2,"City, state ZIP",Owner card address,"Lewiston, ME 04240",399,324,32,,Arial Bold,#111111
+phone,Phone,Phone printed on the card,(555) 555-0123,399,380,42,,Arial Bold,#e3121b
+license,License number,Rabies tag number + account number (3 digits): 8397 + 001,LIC # 8397001,399,410,18,,Arial Bold,#1c2430
+tags,Status tags,"Service, Support, Medical alert, Rescue… (small boxed words)",SERVICE,560,410,14,,Arial Bold,
+issued,Issued date,Set in the card desk; saved when the print file is made,ISS 10/25/2026,770,410,15,,Arial Bold,#1c2430
+qr,QR code,Opens the dog's scan page,,840,232,130,130,,
+scan,Scan if found,Fixed text above the QR code,SCAN IF FOUND,840,226,15,,Arial Bold,#1c2430
+labelHeight,HEIGHT label,Fixed text,HEIGHT,407,452,26,,Arial Bold,#111111
+labelWeight,WEIGHT label,Fixed text,WEIGHT,555,452,26,,Arial Bold,#111111
+labelEyes,EYES label,Fixed text,EYES,700,452,26,,Arial Bold,#111111
+labelCoat,COAT label,Fixed text,COAT,795,452,26,,Arial Bold,#111111
+labelSex,SEX label,Fixed text,SEX,905,452,26,,Arial Bold,#111111
+height,Height,"Shoulder height, e.g. 2'3""","2'3""",407,490,25,,Arial Bold,#111111
+weight,Weight,Pounds,88lbs,555,490,25,,Arial Bold,#111111
+eyes,Eyes,"3-letter code (BRO, BLU, HAZ, AMB…)",BRO,700,490,25,,Arial Bold,#111111
+coat,Coat color,"Short code (BRDL, BLK/WHT…)",BRDL,795,490,20,,Arial Bold,#111111
+sex,Sex,M / F,M,905,490,25,,Arial Bold,#111111
+labelDob,DOB label,Fixed text,DOB:,407,532,26,,Arial Bold,#111111
+labelRestrictions,RESTRICTIONS label,Fixed text,RESTRICTIONS:,569,532,26,,Arial Bold,#111111
+dob,Date of birth,MM/DD/YYYY,04/13/2024,407,570,24,,Arial Bold,#111111
+restrictions,Restrictions,"Owner's fun line, up to 34 characters",Stay off the couch,569,570,20,,Arial Bold,#111111
+signature,Signature,Full name in the chosen script style,Clyde Rio Evensen,40,588,30,,script,#111111
+barcode,Barcode,Tag code (under the photo by default),,40,500,300,34,,

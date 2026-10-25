@@ -1,0 +1,52 @@
+﻿code,state,nickname,main color,second color,accent color,file name to save
+AL,Alabama,Heart of Dixie,#9e1b32,#9e1b32,#c9a227,AL.png
+AK,Alaska,The Last Frontier,#0f2d6b,#123f8f,#f2c14e,AK.png
+AZ,Arizona,Grand Canyon State,#002868,#bf5b04,#ce5c17,AZ.png
+AR,Arkansas,The Natural State,#a51c30,#1d3f8a,#a51c30,AR.png
+CA,California,The Golden State,#1a3d7c,#1a3d7c,#c8102e,CA.png
+CO,Colorado,Centennial State,#0c3c8c,#0c3c8c,#d4a017,CO.png
+CT,Connecticut,Constitution State,#14306b,#1f4f9c,#c9a227,CT.png
+DE,Delaware,The First State,#1d5a8f,#2271b3,#c9a227,DE.png
+DC,District of Columbia,The Capital,#b31942,#b31942,#1c2430,DC.png
+FL,Florida,Sunshine State,#c8102e,#0b74b8,#f28c28,FL.png
+GA,Georgia,Peach State,#1c3f8c,#b22234,#f4a259,GA.png
+HI,Hawaii,The Aloha State,#0b4f8c,#0b7fa8,#d9a21b,HI.png
+ID,Idaho,Gem State,#14306b,#1f4f9c,#c29b2c,ID.png
+IL,Illinois,Land of Lincoln,#1c2b5a,#2c4a8f,#c9a227,IL.png
+IN,Indiana,The Hoosier State,#1e3a8a,#1e3a8a,#d4a017,IN.png
+IA,Iowa,Hawkeye State,#1d4f9c,#c8102e,#1d4f9c,IA.png
+KS,Kansas,Sunflower State,#1a3d8c,#1a3d8c,#e8b923,KS.png
+KY,Kentucky,Bluegrass State,#102a6b,#1f3f8f,#c9a227,KY.png
+LA,Louisiana,Pelican State,#0b3a6e,#0b3a6e,#d4a017,LA.png
+ME,Maine,The Pine Tree State,#2a74b8,#1f6fd1,#c97a2b,ME.png
+MD,Maryland,Old Line State,#b31942,#1c1c1c,#e8b923,MD.png
+MA,Massachusetts,Bay State,#14306b,#1f4f9c,#d4a017,MA.png
+MI,Michigan,Great Lakes State,#0b3a7a,#0b5aa8,#c9a227,MI.png
+MN,Minnesota,"Land of 10,000 Lakes",#0b3a7a,#0b5aa8,#4f9d69,MN.png
+MS,Mississippi,Magnolia State,#1c3f8c,#b22234,#d4a017,MS.png
+MO,Missouri,Show-Me State,#1c3f8c,#b22234,#1c3f8c,MO.png
+MT,Montana,Treasure State,#14306b,#1f4f9c,#c29b2c,MT.png
+NE,Nebraska,Cornhusker State,#14306b,#1f4f9c,#c9a227,NE.png
+NV,Nevada,Silver State,#0b3a7a,#0b5aa8,#9aa3ad,NV.png
+NH,New Hampshire,Granite State,#14306b,#1f4f9c,#c9a227,NH.png
+NJ,New Jersey,Garden State,#8a6d1f,#4b84c4,#c9a227,NJ.png
+NM,New Mexico,Land of Enchantment,#b31942,#c8102e,#f2c14e,NM.png
+NY,New York,The Empire State,#0b2d6b,#0b4a9c,#e09b1a,NY.png
+NC,North Carolina,Tar Heel State,#14306b,#b22234,#1f4f9c,NC.png
+ND,North Dakota,Peace Garden State,#14306b,#1f4f9c,#c9a227,ND.png
+OH,Ohio,The Buckeye State,#b31942,#1c2b5a,#b31942,OH.png
+OK,Oklahoma,Sooner State,#1a6fa3,#1a6fa3,#8a5a2b,OK.png
+OR,Oregon,Beaver State,#102a6b,#1d3f8a,#e8b923,OR.png
+PA,Pennsylvania,Keystone State,#14306b,#1f4f9c,#c9a227,PA.png
+RI,Rhode Island,The Ocean State,#1d3f8a,#1d3f8a,#d4a017,RI.png
+SC,South Carolina,Palmetto State,#14306b,#14457a,#9aa3ad,SC.png
+SD,South Dakota,Mount Rushmore State,#1a5a96,#1a5a96,#d4a017,SD.png
+TN,Tennessee,Volunteer State,#b31942,#1c3f8c,#b31942,TN.png
+TX,Texas,The Lone Star State,#002868,#bf0a30,#002868,TX.png
+UT,Utah,Beehive State,#14306b,#1f4f9c,#c29b2c,UT.png
+VT,Vermont,Green Mountain State,#0b4f3c,#0b6e4f,#c9a227,VT.png
+VA,Virginia,Old Dominion,#14306b,#1f4f9c,#b22234,VA.png
+WA,Washington,The Evergreen State,#0b5a3c,#0b6e4f,#c9a227,WA.png
+WV,West Virginia,Mountain State,#14306b,#1f4f9c,#e8b923,WV.png
+WI,Wisconsin,America's Dairyland,#14306b,#1f4f9c,#c9a227,WI.png
+WY,Wyoming,Equality State,#b31942,#1d3f8a,#b31942,WY.png

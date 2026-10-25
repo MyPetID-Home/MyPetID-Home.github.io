@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { IdCardSvg, downloadCardPng } from './id-card';
-import { CARD_H, CARD_W, DEFAULT_LAYOUT, US_STATES, coatCode, eyeCode, licenseNumber, todayIso, formatDob, formatHeight, mergeLayout, sexCode, statusTag, type CardBox, type CardData, type CardField, type CardLayout } from '../lib/id-card';
+import { ARTWORK_LAYOUT, CARD_H, CARD_W, DEFAULT_LAYOUT, US_STATES, coatCode, eyeCode, licenseNumber, todayIso, formatDob, formatHeight, mergeLayout, sexCode, statusTag, type CardBox, type CardData, type CardField, type CardLayout } from '../lib/id-card';
 
 /** Admin card desk: pick a dog, pick its state template, adjust the layout, export for print. */
 type QueueRow = { pet_id: string; pet_name: string; breed: string | null; photo_url: string | null; pet_profile: Record<string, any> | null; owner_id: string | null; owner_name: string | null; owner_email: string | null; owner_phone: string | null; owner_details: Record<string, any> | null; tag_code: string | null; created_at: string; owner_account_number?: number | null };
@@ -226,10 +226,11 @@ export function CardDesigner() {
             {'size' in sel && <label>Color<input type="color" value={String(sel.color || '#141414')} onChange={(e) => patchSelected({ color: e.target.value })} /></label>}
             <label className="toggleRow"><input type="checkbox" checked={Boolean(sel.hidden)} onChange={(e) => patchSelected({ hidden: e.target.checked })} /> Hide</label>
           </div>}
-          <label>Background for {state}<input type="file" accept="image/png,image/jpeg" onChange={(e) => upload(e.target.files?.[0])} /></label>
+          <label>Background for {state} (1088 x 714 px with bleed)<input type="file" accept="image/png,image/jpeg,image/webp" onChange={(e) => upload(e.target.files?.[0])} /></label>
           <div className="actions compact">
             {background && <button type="button" onClick={() => setBackground(null)}>Use MyPetID artwork</button>}
             <button type="button" onClick={() => setLayout(DEFAULT_LAYOUT)}>Reset layout</button>
+            <button type="button" onClick={() => setLayout(ARTWORK_LAYOUT)} title="For art with the state name and banner already drawn in (template kit layout)">Artwork layout</button>
             <button className="primary" type="button" onClick={save}>Save {state} template</button>
           </div>
           <div className="actions compact">

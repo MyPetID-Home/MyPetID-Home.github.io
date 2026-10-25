@@ -101,7 +101,8 @@ export function IdCardSvg({ data, layout: savedLayout, background, hideCodes = f
       <defs><clipPath id="card-photo-clip"><rect x={L.boxes.photo.x} y={L.boxes.photo.y} width={L.boxes.photo.w} height={L.boxes.photo.h} /></clipPath></defs>
       {/* Bleed area repeats the paper colour so trimming never shows white */}
       {bleed && <rect x={-pad} y={-pad} width={CARD_W + pad * 2} height={CARD_H + pad * 2} fill="#efece0" />}
-      {background ? <image href={background} x="0" y="0" width={CARD_W} height={CARD_H} preserveAspectRatio="xMidYMid slice" /> : <StateArt code={state.code} colors={state.colors} />}
+      {/* Uploaded art is made at bleed size (1088 x 714) so it fills the trim margin; the card view crops to the card. */}
+      {background ? <image href={background} x={-BLEED} y={-BLEED} width={CARD_W + BLEED * 2} height={CARD_H + BLEED * 2} preserveAspectRatio="xMidYMid slice" /> : <StateArt code={state.code} colors={state.colors} />}
 
       {!L.boxes.seal.hidden && !background && <Seal box={L.boxes.seal} colors={state.colors} stateName={state.name} />}
       {!L.text.state.hidden && <text x={L.text.state.x} y={L.text.state.y} fontSize={stateSize} fontWeight={700} fontFamily={FONTS.serif} fill={L.text.state.color || ink} letterSpacing="2" stroke="#ffffff" strokeWidth="1.2" paintOrder="stroke">{state.name.toUpperCase()}</text>}
