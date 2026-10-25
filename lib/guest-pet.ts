@@ -72,4 +72,13 @@ export async function guestUpdate(patch: Partial<Pick<GuestPet, 'name' | 'breed'
   return { pet: (Array.isArray(data) ? data[0] : data) as GuestPet };
 }
 
+export async function guestDelete(): Promise<string | null> {
+  const saved = savedGuest();
+  if (!supabase || !saved) return 'Please log in to your dog’s profile again.';
+  const { error } = await supabase.rpc('guest_delete_pet', { p_token: saved.token });
+  if (error) return friendly(error.message);
+  save(null);
+  return null;
+}
+
 export function guestLogout() { save(null); }

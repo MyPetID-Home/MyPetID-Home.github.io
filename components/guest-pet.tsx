@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { AuthPanel } from './auth-panel';
 import { PetProfileCard } from './pet-profile-card';
 import { GetTheApp } from './pwa-install-client';
-import { guestCreate, guestLoad, guestLogin, guestLogout, guestUpdate, type GuestPet } from '../lib/guest-pet';
+import { guestCreate, guestDelete, guestLoad, guestLogin, guestLogout, guestUpdate, type GuestPet } from '../lib/guest-pet';
 import { BREED_NAMES } from '../lib/breeds';
 import { Check, Heart, Lock, PawPrint, ShieldCheck, Sparkles } from './icons';
 
@@ -126,7 +126,7 @@ export function GuestPetHome({ onExit }: { onExit: () => void }) {
           </div>
           <label>About {draft.name || 'your dog'}<textarea value={draft.about} onChange={(e) => setDraft({ ...draft, about: e.target.value })} maxLength={1000} placeholder="Friendly, a little shy with strangers, loves treats…" /></label>
           <label>Health notes finders should know<textarea value={draft.health} onChange={(e) => setDraft({ ...draft, health: e.target.value })} maxLength={1000} placeholder="Allergies, medications, conditions…" /></label>
-          <div className="actions"><button className="primary" type="submit">Save</button></div>
+          <div className="actions"><button className="primary" type="submit">Save</button><button className="ghost" type="button" onClick={async () => { if (!window.confirm(`Delete ${pet.name}’s profile for good? This can’t be undone.`)) return; const problem = await guestDelete(); if (problem) setMessage(problem); else onExit(); }}>Delete this profile</button></div>
         </form>}
         <section className="panel upgradePanel">
           <h2>Want the full MyPetID?</h2>
