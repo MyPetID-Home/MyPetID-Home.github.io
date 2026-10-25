@@ -4,7 +4,8 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '../lib/supabase';
 import { fetchPublicPet } from '../lib/public-pet';
-import { Bell, Check, Footprints, Heart, MapPinned, PawPrint, ShieldCheck, Stethoscope } from './icons';
+import { PawPrint } from './icons';
+import { PetProfileCard } from './pet-profile-card';
 
 type Pet = {
   id: string;
@@ -16,6 +17,12 @@ type Pet = {
   contact_public?: Record<string, unknown> | null;
   lost_mode: boolean;
   tag_code?: string | null;
+  is_owner?: boolean;
+  cover_url?: string | null;
+  public_extra?: { details?: Record<string, string>; vet?: Record<string, string>; care?: Record<string, string> } | null;
+  last_seen_at?: string | null;
+  last_seen_lat?: number | null;
+  last_seen_lng?: number | null;
   birthday?: string | null;
   eye_color?: string | null;
   coat_color?: string | null;
@@ -166,61 +173,19 @@ export function PublicPetProfile() {
 
   return (
     <main className="publicShell">
-      <section className="publicHero">
-        {brand}
-        <div className="scanCard">
-          <div className="scanPhotoWrap"><img src={pet.photo_url || '/images/logo/MyPetID-Logo_Resized.jpg'} alt={pet.name} /><span className="scanPulse" /></div>
-          <div>
-            <p className="eyebrow">{mode === 'owner' ? 'Your public profile preview' : 'Hi, my name is'}{finderTag ? ` · tag ${finderTag}` : ''}</p>
-            <h1>{pet.name}</h1>
-            {pet.behavior_public && <p className="lead">{pet.behavior_public}</p>}
-            {chips.length > 0 && <div className="chipCloud">{chips.map((chip) => <span key={chip}>{chip}</span>)}</div>}
-            <div className="lostRibbon" style={pet.lost_mode ? { background: 'var(--danger-soft)', color: 'var(--danger)', marginTop: 16 } : { marginTop: 16 }}>{pet.lost_mode ? <><Bell /> I’m lost! Please contact my owner.</> : <><Heart /> I’m safe at home. Thanks for checking on me!</>}</div>
-            <div className="publicProfileActions">
-              {publicPhone && <a className="button primary" href={`tel:${publicPhone}`}>Call my owner</a>}
-              {publicEmail && <a className="button" href={`mailto:${publicEmail}`}>Email my owner</a>}
-              {finderHref && <Link className={`button ${publicPhone ? '' : 'primary'}`} href={finderHref}><MapPinned /> I found this pet</Link>}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="publicGrid">
-        <article className="panel wide publicInfoCard">
-          <div className="panelTitleRow"><h2>About {pet.name}</h2><span className="iconBubble"><PawPrint /></span></div>
-          <dl className="infoList">
-            <dt>Personality</dt><dd>{pet.behavior_public || 'My owner hasn’t added a personality note yet.'}</dd>
-            <dt>Health notes</dt><dd>{pet.medical_public || 'No public health notes.'}</dd>
-            {pet.vet_name && <><dt>Vet</dt><dd>{pet.vet_name}</dd></>}
-            <dt>Contact</dt><dd>{publicPhone || publicEmail ? [publicPhone, publicEmail].filter(Boolean).join(' · ') : finderHref ? 'Use “I found this pet” and my owner is alerted right away.' : 'My owner hasn’t shared contact details yet.'}</dd>
-          </dl>
-          {contactStatus && !contactStatus.startsWith('Choose a contact action') && <p className="notice">{contactStatus}</p>}
-        </article>
-
-        <article className="panel wide">
-          <div className="panelTitleRow"><h2>Found me?</h2><span className="iconBubble green"><ShieldCheck /></span></div>
-          <ul className="checklist">
-            <li>Keep me somewhere safe, with water if you can.</li>
-            <li>{publicPhone ? 'Call or text my owner using the button above.' : 'Tap “I found this pet” to alert my owner.'}</li>
-            <li>Sharing your location is optional and only happens if you say yes.</li>
-          </ul>
-          {finderHref && <div className="actions"><Link className="button primary" href={finderHref}>I found this pet</Link></div>}
-        </article>
-
-        {/* The map location and care routine below are hard-coded demo content,
-            so they are only shown on the demo profile, never on a real pet. */}
-        {showDemoExtras && <>
-        <article className="panel wide">
-          <h2>Last safe scan</h2>
-          <div className="mapBox"><iframe title="Demo last scan map" src={demoMap} loading="lazy" /></div>
-          <p className="formHint">Only scans the finder agreed to share show up here.</p>
-        </article>
-        <article className="panel careStrip"><span className="iconBubble"><Heart /></span><div><strong>Feeding</strong><p>Breakfast 7 AM · Dinner 6 PM</p></div></article>
-        <article className="panel careStrip"><span className="iconBubble green"><Footprints /></span><div><strong>Walks</strong><p>Morning loop · evening sniff break</p></div></article>
-        <article className="panel careStrip"><span className="iconBubble blue"><Stethoscope /></span><div><strong>Health</strong><p>Vaccines up to date</p></div></article>
-        <article className="panel careStrip"><span className="iconBubble violet"><Check /></span><div><strong>Demo profile</strong><p><Link href="/dashboard/">Make one for your dog</Link></p></div></article>
-        </>}
-      </section>
+      <section className="publicHero">{brand}</section>
+      <PetProfileCard
+        mode={pet.is_owner || mode === 'owner' ? 'owner' : 'public'}
+        finderHref={finderHref}
+        pet={{
+          name: pet.name, breed: pet.breed, photoUrl: pet.photo_url, coverUrl: pet.cover_url, about: pet.behavior_public, health: pet.medical_public,
+          details: pet.public_extra?.details, vet: pet.public_extra?.vet, care: pet.public_extra?.care,
+          phone: publicPhone, email: publicEmail, lost: pet.lost_mode, tagCode: finderTag,
+          lastSeen: pet.last_seen_lat != null && pet.last_seen_lng != null ? { lat: pet.last_seen_lat, lng: pet.last_seen_lng, at: pet.last_seen_at } : null,
+        }}
+        ownerTools={pet.is_owner ? <Link className="button primary" href="/dashboard/pet/">Edit in the app</Link> : undefined}
+      />
+      {showDemoExtras && <p className="formHint" style={{ textAlign: 'center', marginTop: 18 }}>This is a demo profile. <Link href="/">Make one for your dog</Link>.</p>}
     </main>
   );
 }

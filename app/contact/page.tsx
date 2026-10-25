@@ -13,16 +13,13 @@ export default function Page() {
 
 <ul>
 <li>Support: <a href="mailto:dev.mypetid-sup@yahoo.com">dev.mypetid-sup@yahoo.com</a></li>
-<li>Admin/security/customer service: <a href="mailto:real_cak3d@yahoo.com">real_cak3d@yahoo.com</a></li>
+<li>Admin/security/customer service: <a href="mailto:dev.mypetid-adm@yahoo.com">dev.mypetid-adm@yahoo.com</a></li>
 <li>Help: <a href="mailto:dev.mypetid-help@yahoo.com">dev.mypetid-help@yahoo.com</a></li>
-<li>Verification/no-reply sender: mypetid@yahoo.com</li>
-<li>Business phone, admin-escalated inquiries only: (207) 613-5454</li>
 </ul>
 
 <p>For lost-pet emergencies, also contact local animal control, nearby shelters, local authorities when appropriate, and trusted people in the area. MyPetID helps organize information but is not an emergency service.</p>
 
 <h2>Email verification</h2>
-<p>MyPetID uses <code>mypetid@yahoo.com</code> only as a verification/no-reply sender for signup, password recovery, email changes, and 6-digit account codes. Do not reply to that mailbox for support. Use Help, Support, then Admin escalation for communication. Phone numbers may still be stored as optional owner contact details, but MyPetID is not planning automated SMS/PIN verification at this time.</p>
 
 <h2>Trademark notice</h2>
 

@@ -26,11 +26,11 @@ Users must not submit false reports, harass owners, misuse finder contact tools,
 
 ## 5. Accounts and security
 
-Users must keep login credentials secure and should report suspected account compromise. Password resets, email changes, and verification workflows may require email confirmation codes sent from `mypetid@yahoo.com`.
+Users must keep login credentials secure and should report suspected account compromise. Password resets, email changes, and verification workflows may require email confirmation codes sent from MyPetID’s no-reply address.
 
 ## 6. Email and verification
 
-MyPetID may use email verification codes and confirmation links from `mypetid@yahoo.com` to help confirm signups, password changes, email changes, and account recovery requests. That address is a verification/no-reply sender, not a support mailbox. MyPetID is not planning automated SMS or phone PIN verification at this time.
+MyPetID may use email verification codes and confirmation links from MyPetID’s no-reply address to help confirm signups, password changes, email changes, and account recovery requests. That address is a verification/no-reply sender, not a support mailbox. MyPetID is not planning automated SMS or phone PIN verification at this time.
 
 ## 7. Subscription and admin access
 
@@ -70,9 +70,7 @@ For support, legal, privacy, or security concerns:
 
 - Support: dev.mypetid-sup@yahoo.com
 - Help: dev.mypetid-help@yahoo.com
-- Admin: real_cak3d@yahoo.com
-- Verification/no-reply sender: mypetid@yahoo.com
-- Business phone, admin-escalated inquiries only: (207) 613-5454
+- Admin: dev.mypetid-adm@yahoo.com
 
 ## 14. Changes to terms
 

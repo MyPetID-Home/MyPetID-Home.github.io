@@ -40,6 +40,7 @@ export function DogPackCloud({ dogName }: { dogName: string }) {
   const [notice, setNotice] = useState('');
   const [friends, setFriends] = useState<Friend[]>([]);
   const [invite, setInvite] = useState('');
+  const [packCode, setPackCode] = useState('');
   const [chatWith, setChatWith] = useState<Friend | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [draft, setDraft] = useState('');
@@ -82,6 +83,16 @@ export function DogPackCloud({ dogName }: { dogName: string }) {
       const { data: isVerified, error } = await supabase!.rpc('mypetid_is_verified');
       if (handle(error)) return;
       setVerified(Boolean(isVerified));
+      const { data: myCode } = await supabase!.rpc('my_pack_code');
+      if (typeof myCode === 'string') setPackCode(myCode);
+      // Joining by someone's personal Dog Pack QR (?join=CODE), possibly saved from before sign-in
+      let joinCode = new URLSearchParams(window.location.search).get('join') || '';
+      try { joinCode = joinCode || localStorage.getItem('mypetid.pendingJoin') || ''; localStorage.removeItem('mypetid.pendingJoin'); } catch { /* storage blocked */ }
+      if (joinCode) {
+        const { data: who, error: joinError } = await supabase!.rpc('join_pack_by_code', { p_code: joinCode });
+        if (!handle(joinError)) setNotice(`You’re now in ${who || 'their'}’s Dog Pack!`);
+        const url = new URL(window.location.href); url.searchParams.delete('join'); window.history.replaceState(null, '', url.toString());
+      }
       const code = new URLSearchParams(window.location.search).get('invite');
       if (code) {
         const { error: acceptError } = await supabase!.rpc('accept_pack_invite', { p_code: code });
@@ -236,7 +247,8 @@ export function DogPackCloud({ dogName }: { dogName: string }) {
           {friends.length === 0 ? <p className="formHint">No friends yet. Send an invite to start your pack.</p> : <ul className="friendList">{friends.map((f) => (
             <li key={f.profile_id}><button type="button" className={chatWith?.profile_id === f.profile_id ? 'activeMini' : ''} onClick={() => setChatWith(f)}><span className="avatarDot">{f.name.slice(0, 1)}</span><span><strong>{f.name}</strong><small>{f.dog_name ? `with ${f.dog_name}` : 'Dog Pack friend'}</small></span><Chat /></button></li>
           ))}</ul>}
-          <button className="primary" type="button" onClick={createInvite}>My Dog Pack QR / invite</button>
+          {packCode && <div className="inviteBox myPackQr"><p className="eyebrow">My Dog Pack QR</p><div className="codeBox"><QRCodeSVG value={`${window.location.origin}/dashboard/pack/?join=${packCode}`} size={150} marginSize={2} /></div><p className="formHint">Friends scan this with their phone camera to join your pack. Code <code>{packCode}</code></p></div>}
+          <button type="button" onClick={createInvite}>Send an invite link</button>
           {invite && <div className="inviteBox"><div className="codeBox"><QRCodeSVG value={invite} size={132} marginSize={2} /></div><input readOnly value={invite} onFocus={(e) => e.target.select()} aria-label="Invite link" /><button type="button" onClick={() => navigator.clipboard?.writeText(invite).then(() => setNotice('Invite link copied.'))}>Copy link</button></div>}
         </article>
 

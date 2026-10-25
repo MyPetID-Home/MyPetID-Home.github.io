@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { AchievementAdmin } from './achievement-admin';
 import type { Session, User } from '@supabase/supabase-js';
 import { hasSupabaseConfig, isAdminEmail, supabase } from '../lib/supabase';
 import { apiFetch, bearer } from '../lib/api-client';
@@ -926,7 +927,7 @@ export function SupabaseWorkspace() {
         <article className="panel emailVerifyPanel">
           <p className="eyebrow">Email verification</p>
           <h3>{profile?.email_verified_at ? 'Email verified' : 'Verify signup email'}</h3>
-          <p>{profile?.email || session.user.email} • {profile?.email_verified_at ? `verified ${fmtDate(profile.email_verified_at)}` : 'verification code comes from mypetid@yahoo.com'}</p>
+          <p>{profile?.email || session.user.email} • {profile?.email_verified_at ? `verified ${fmtDate(profile.email_verified_at)}` : 'not verified yet: we’ll email you a 6-digit code'}</p>
           {!profile?.email_verified_at && <>
             <label>6-digit code<input inputMode="numeric" maxLength={6} value={emailCode} onChange={(event) => setEmailCode(event.target.value.replace(/\D/g, '').slice(0, 6))} placeholder="123456" /></label>
             <div className="actions"><button type="button" disabled={busy} onClick={sendEmailCode}>Send code</button><button className="primary" type="button" disabled={busy || emailCode.length !== 6} onClick={verifyEmailCode}>Verify email</button></div>
@@ -1145,16 +1146,7 @@ export function SupabaseWorkspace() {
           </div>
         </article>}
 
-        {isAdmin && adminSection === 'awards' && <article className="panel wide adminLivePanel">
-          <h3>Admin award rules</h3>
-          <p>Live Supabase rules: admins can tune XP and targets. Customers can earn/log progress but cannot change rule values.</p>
-          <div className="adminLookupGrid">{awardRules.map((rule) => <div className="adminLookupCard" key={rule.id}>
-            <strong>{rule.icon} {rule.title}</strong>
-            <small>{rule.category} • trigger: {rule.trigger_key} • {rule.active ? 'active' : 'inactive'}</small>
-            <span>{rule.points} XP • target {rule.target}</span>
-            <div className="actions compact"><button type="button" disabled={busy} onClick={() => saveAwardRule(rule, { points: rule.points + 10 })}>+10 XP</button><button type="button" disabled={busy} onClick={() => saveAwardRule(rule, { target: Number(rule.target) + 1 })}>+1 target</button><button type="button" disabled={busy} onClick={() => saveAwardRule(rule, { active: !rule.active })}>{rule.active ? 'Pause' : 'Activate'}</button></div>
-          </div>)}</div>
-        </article>}
+        {isAdmin && adminSection === 'awards' && <AchievementAdmin />}
 
         {isAdmin && adminSection === 'lookup' && <article className="panel wide adminLivePanel">
           <h3>Admin dashboard: live lookup + audit trail</h3>

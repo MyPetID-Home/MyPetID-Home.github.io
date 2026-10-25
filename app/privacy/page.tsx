@@ -62,7 +62,7 @@ export default function Page() {
 
 <h2>6. Sharing and third-party services</h2>
 
-<p>MyPetID does not sell pet owner data. Data may be processed by services used to operate the app, such as hosting, authentication, database, storage, email, analytics, payment, membership, or OAuth providers. Examples may include Supabase, GitHub Pages, Vercel, Google services, Stripe, Patreon, and email providers used to send signup/verification messages from <code>mypetid@yahoo.com</code>.</p>
+<p>MyPetID does not sell pet owner data. Data may be processed by services used to operate the app, such as hosting, authentication, database, storage, email, analytics, payment, membership, or OAuth providers. Examples may include Supabase, GitHub Pages, Vercel, Google services, Stripe, Patreon, and email providers used to send signup/verification messages from MyPetID’s no-reply address.</p>
 
 <p>Sensitive server-side credentials, service-role keys, OAuth secrets, webhook secrets, and payment secrets must remain in private environment or provider secret stores and must not be included in public source code.</p>
 
@@ -85,9 +85,7 @@ export default function Page() {
 <ul>
 <li>Support: <a href="mailto:dev.mypetid-sup@yahoo.com">dev.mypetid-sup@yahoo.com</a></li>
 <li>Help: <a href="mailto:dev.mypetid-help@yahoo.com">dev.mypetid-help@yahoo.com</a></li>
-<li>Admin: <a href="mailto:real_cak3d@yahoo.com">real_cak3d@yahoo.com</a></li>
-<li>Verification/no-reply sender: mypetid@yahoo.com</li>
-<li>Business phone, admin-escalated inquiries only: (207) 613-5454</li>
+<li>Admin: <a href="mailto:dev.mypetid-adm@yahoo.com">dev.mypetid-adm@yahoo.com</a></li>
 </ul>
 
 <h2>11. Changes to this policy</h2>

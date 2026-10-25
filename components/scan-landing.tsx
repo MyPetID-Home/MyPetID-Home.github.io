@@ -2,7 +2,9 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Heart, MapPinned, PawPrint, ShieldCheck } from './icons';
+import { MapPinned, PawPrint } from './icons';
+import { PetProfileCard } from './pet-profile-card';
+import { savedGuest } from '../lib/guest-pet';
 import { supabase } from '../lib/supabase';
 import { isServiceRestrictionMessage, queueFallbackSync } from '../lib/fallback-local';
 import { fetchPublicPet, submitFinderReport, type PublicPet } from '../lib/public-pet';
@@ -57,6 +59,7 @@ export function ScanLanding() {
   const [tagId, setTagId] = useState<string | null>(null);
   const [pet, setPet] = useState<Pet>(unknownPet);
   const [petLoaded, setPetLoaded] = useState(false);
+  const [record, setRecord] = useState<PublicPet | null>(null);
   const [status, setStatus] = useState(FINDER_STATUS);
   const [actor, setActor] = useState<'owner' | 'linked_user' | 'stranger'>('stranger');
   const [saving, setSaving] = useState(false);
@@ -90,6 +93,13 @@ export function ScanLanding() {
       const record: PublicPet | null = await fetchPublicPet({ tagCode: tag });
       if (record) {
         setTagId(record.tag_id);
+        // The owner scanning their own dog's card goes to the private profile, not the public one.
+        const guest = savedGuest();
+        if (record.is_owner || (guest && guest.petId === record.id)) {
+          window.location.replace(`/dashboard/pet/?from=scan&tag=${encodeURIComponent(tag)}`);
+          return;
+        }
+        setRecord(record);
         {
           const loaded = record;
           setPet({ id: loaded.id, name: loaded.name, breed: loaded.breed, photo_url: loaded.photo_url, medical_public: loaded.medical_public, behavior_public: loaded.behavior_public, lost_mode: loaded.lost_mode });
@@ -195,18 +205,14 @@ export function ScanLanding() {
         </div>
       </div>}
       <div className="scanProfileFrame" aria-hidden={!consentDismissed}>
-      <section className="publicHero">
-        <Link className="brandLockup" href="/"><img src="/images/logo/MyPetID-Logo_Resized.jpg" alt="" /><span>MyPet<b>ID</b></span></Link>
-        <div className="scanCard">
-          <div className="scanPhotoWrap"><img src={pet.photo_url || '/images/logo/MyPetID-Logo_Resized.jpg'} alt={pet.id ? pet.name : 'MyPetID'} /><span className="scanPulse" /></div>
-          <div>
-            <p className="eyebrow">{scanMode === 'owner' ? 'Your tag page' : 'Hi, my name is'} · tag {tag}</p>
-            <h1>{pet.id ? pet.name : petLoaded ? 'Pet profile unavailable' : 'Loading…'}</h1>
-            {pet.behavior_public && <p className="lead">{pet.behavior_public}</p>}
-            <div className="lostRibbon" style={pet.lost_mode ? { background: 'var(--danger-soft)', color: 'var(--danger)' } : undefined}>{pet.lost_mode ? <><PawPrint /> I’m lost! Please help me get home.</> : <><Heart /> Thanks for scanning my tag!</>}</div>
-          </div>
-        </div>
-      </section>
+      <section className="publicHero"><Link className="brandLockup" href="/"><img src="/images/logo/MyPetID-Logo_Resized.jpg" alt="" /><span>MyPet<b>ID</b></span></Link></section>
+      {pet.id ? <PetProfileCard mode="public" onAlert={scanMode === 'owner' ? undefined : acceptFinderLocation} pet={{
+        name: pet.name, breed: pet.breed, photoUrl: pet.photo_url, coverUrl: record?.cover_url, about: pet.behavior_public, health: pet.medical_public,
+        details: record?.public_extra?.details, vet: record?.public_extra?.vet, care: record?.public_extra?.care,
+        phone: typeof record?.contact_public?.phone === 'string' ? record.contact_public.phone : '', email: typeof record?.contact_public?.email === 'string' ? record.contact_public.email : '',
+        lost: pet.lost_mode, tagCode: tag,
+        lastSeen: record?.last_seen_lat != null && record?.last_seen_lng != null ? { lat: record.last_seen_lat, lng: record.last_seen_lng, at: record.last_seen_at } : null,
+      }} /> : <article className="panel" style={{ maxWidth: 720 }}><h1>{petLoaded ? 'Pet profile unavailable' : 'Loading…'}</h1>{petLoaded && <p>This tag isn’t linked to a dog yet. If you found a dog, please contact local animal control or a shelter.</p>}</article>}
 
       <section className="publicGrid">
         <article className="panel wide consentPanel">
@@ -225,11 +231,7 @@ export function ScanLanding() {
           {status && status !== FINDER_STATUS && <p className="authMessage" role="status">{status}</p>}
         </article>
 
-        <article className="panel wide publicInfoCard">
-          <div className="panelTitleRow"><h2>About {petName}</h2><span className="iconBubble green"><ShieldCheck /></span></div>
-          <dl className="infoList"><dt>Breed</dt><dd>{pet.breed || 'Not listed'}</dd><dt>Personality</dt><dd>{pet.behavior_public || 'No public note yet.'}</dd><dt>Health notes</dt><dd>{pet.medical_public || 'No public health notes.'}</dd></dl>
-          <p className="formHint">Only the details the owner chose to make public are shown here.</p>
-        </article>
+
       </section>
       </div>
     </main>

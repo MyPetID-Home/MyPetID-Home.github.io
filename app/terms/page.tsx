@@ -32,11 +32,11 @@ export default function Page() {
 
 <h2>5. Accounts and security</h2>
 
-<p>Users must keep login credentials secure and should report suspected account compromise. Password resets, email changes, and verification workflows may require email confirmation codes sent from <code>mypetid@yahoo.com</code>.</p>
+<p>Users must keep login credentials secure and should report suspected account compromise. Password resets, email changes, and verification workflows may require email confirmation codes sent from MyPetID’s no-reply address.</p>
 
 <h2>6. Email and verification</h2>
 
-<p>MyPetID may use email verification codes and confirmation links from <code>mypetid@yahoo.com</code> to help confirm signups, password changes, email changes, and account recovery requests. That address is a verification/no-reply sender, not a support mailbox. MyPetID is not planning automated SMS or phone PIN verification at this time.</p>
+<p>MyPetID may use email verification codes and confirmation links from MyPetID’s no-reply address to help confirm signups, password changes, email changes, and account recovery requests. That address is a verification/no-reply sender, not a support mailbox. MyPetID is not planning automated SMS or phone PIN verification at this time.</p>
 
 <h2>7. Subscription and admin access</h2>
 
@@ -79,9 +79,7 @@ export default function Page() {
 <ul>
 <li>Support: <a href="mailto:dev.mypetid-sup@yahoo.com">dev.mypetid-sup@yahoo.com</a></li>
 <li>Help: <a href="mailto:dev.mypetid-help@yahoo.com">dev.mypetid-help@yahoo.com</a></li>
-<li>Admin: <a href="mailto:real_cak3d@yahoo.com">real_cak3d@yahoo.com</a></li>
-<li>Verification/no-reply sender: mypetid@yahoo.com</li>
-<li>Business phone, admin-escalated inquiries only: (207) 613-5454</li>
+<li>Admin: <a href="mailto:dev.mypetid-adm@yahoo.com">dev.mypetid-adm@yahoo.com</a></li>
 </ul>
 
 <h2>14. Changes to terms</h2>
