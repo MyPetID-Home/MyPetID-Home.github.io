@@ -1261,3 +1261,36 @@ button.memoRow:hover { border-color: var(--brand); transform: none; }
 .templateTile em { font-style: normal; font-size: .78rem; color: var(--muted); }
 .templateTile em.custom { color: var(--brand); font-weight: 700; }
 .templateTile.current, .templateTile:hover { border-color: var(--brand); transform: none; }
+
+.linkButton { display: inline; min-height: 0; padding: 0; border: 0; background: none; box-shadow: none; color: var(--brand2); font: inherit; font-weight: 700; text-decoration: underline; cursor: pointer; }
+
+/* Cloud documents */
+.docGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
+.docTile { min-height: 0; padding: 10px; display: grid; gap: 6px; align-content: start; text-align: left; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--panel); box-shadow: none; color: var(--text); }
+.docTile:hover { border-color: var(--brand); transform: none; }
+.docTile img, .docTileIcon { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 10px; background: var(--panel-strong); }
+.docTileIcon { display: grid; place-items: center; align-content: center; gap: 4px; color: var(--brand); }
+.docTileIcon svg { width: 34px; height: 34px; }
+.docTileIcon em { font-style: normal; font-size: .72rem; font-weight: 800; letter-spacing: .08em; }
+.docTile strong { overflow-wrap: anywhere; }
+.docTile small { color: var(--muted); }
+.docPreview { width: 100%; max-height: 50vh; object-fit: contain; border-radius: 12px; margin-bottom: 10px; background: var(--panel); }
+.legacyDetails.full { grid-column: 1 / -1; }
+
+.lostToggles { display: grid; gap: 10px; }
+.lostToggle { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; border-radius: var(--radius-sm); border: 1px solid var(--line); background: var(--panel); }
+.lostToggle div { display: grid; min-width: 0; }
+.lostToggle small { color: var(--muted); }
+.lostToggle.on { border-color: var(--danger); background: var(--danger-soft); }
+.dangerButton { background: var(--danger) !important; color: #fff !important; border-color: transparent !important; }
+.scanRow.resolved { opacity: .7; }
+
+/* QA fixes */
+html { background: color-mix(in srgb, var(--bg) 84%, var(--brand) 16%); }
+.readerDone { display: flex; align-items: flex-end; gap: 10px; margin: -4px 0 12px; }
+.readerDone p { margin: 0 0 6px; font-weight: 700; color: var(--brand); }
+.storeBadge.homeScreen small { color: #071008; opacity: .8; }
+/* Cards inside a panel must not get the bone frame (its outset pushed them past the panel edge). */
+.panel .panel, .panel .compactItemCard { margin: 12px 0 0 !important; border-image: none !important; border: 1px solid var(--line) !important; max-width: 100%; }
+.cardMiniHead { flex-wrap: wrap; }
+.cardMiniHead strong { white-space: normal; overflow: visible; text-overflow: clip; min-width: 0; }

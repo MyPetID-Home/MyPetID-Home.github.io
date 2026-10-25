@@ -38,10 +38,22 @@ export type ProfileCardPet = {
 type TabKey = 'about' | 'health' | 'vet' | 'contact' | 'seen' | 'scans' | 'app';
 const LABELS: Record<string, string> = { sex: 'Sex', age: 'Age', birthday: 'Birthday', size: 'Size', weight: 'Weight', coat: 'Coat', colors: 'Colors', pattern: 'Pattern', eyes: 'Eyes', ears: 'Ears', tail: 'Tail', markings: 'Markings', microchip: 'Microchip', status: 'Status', clinic: 'Clinic', doctor: 'Vet', phone: 'Phone', address: 'Address', emergency: 'Emergency clinic', feeding: 'Feeding', allergies: 'Allergies', medications: 'Medications', notes: 'Notes' };
 
+// Cloud profile keys (pets.profile.details) with units, shown with friendly labels and formatting.
+const UNIT_LABELS: Record<string, string> = { weight_lb: 'Weight', height_in: 'Height', neck_in: 'Neck', rabies_tag: 'Rabies tag', microchip_registry: 'Microchip registry', vaccines: 'Vaccines', email: 'Email', vaccine_clinic: 'Vaccine clinic' };
+// Never shown to finders even if present in the data.
+const HIDDEN_KEYS = new Set(['issued_at', 'signature_style', 'full_name']);
+function formatValue(key: string, value: string) {
+  if (key === 'weight_lb') return `${value} lb`;
+  if (key === 'neck_in') return `${value} in`;
+  if (key === 'height_in') { const n = Number(value); return Number.isFinite(n) && n >= 12 ? `${Math.floor(n / 12)}' ${Math.round(n % 12)}"` : `${value} in`; }
+  if (key === 'birthday' && /^\d{4}-\d{2}-\d{2}/.test(value)) return new Date(`${value.slice(0, 10)}T12:00:00`).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' });
+  return value;
+}
+
 function Rows({ data }: { data?: Record<string, string | undefined> | null }) {
-  const entries = Object.entries(data || {}).filter(([, v]) => v && String(v).trim());
+  const entries = Object.entries(data || {}).filter(([k, v]) => !HIDDEN_KEYS.has(k) && v !== null && v !== undefined && String(v).trim());
   if (!entries.length) return null;
-  return <dl className="profileRows">{entries.map(([k, v]) => <div key={k}><dt>{LABELS[k] || k.replace(/_/g, ' ')}</dt><dd>{v}</dd></div>)}</dl>;
+  return <dl className="profileRows">{entries.map(([k, v]) => <div key={k}><dt>{LABELS[k] || UNIT_LABELS[k] || k.replace(/_/g, ' ').replace(/^./, (c) => c.toUpperCase())}</dt><dd>{formatValue(k, String(v))}</dd></div>)}</dl>;
 }
 
 export function PetProfileCard({ pet, mode, finderHref, ownerTools, onAlert }: { pet: ProfileCardPet; mode: 'public' | 'owner'; finderHref?: string; ownerTools?: React.ReactNode; onAlert?: () => void }) {

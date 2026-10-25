@@ -71,7 +71,6 @@ export function DailyReader({ facts, onXp }: { facts: DogFacts; onXp?: (xp: numb
   return (
     <section className="memoCard readerCard">
       <header className="memoCardHead"><h3>Daily reads for {facts.name}</h3><span className="readerMeta">{dog.breed?.name || facts.breed || 'Your dog'} · {STAGE_LABELS[dog.stage]}</span></header>
-      <MascotPeek size={58} className="readerMascot" message={done.length >= reads.length && reads.length ? 'All read today. Nice!' : undefined} />
       <ul className="readList">{reads.map((r) => {
         const isDone = done.includes(r.id);
         return (
@@ -83,6 +82,7 @@ export function DailyReader({ facts, onXp }: { facts: DogFacts; onXp?: (xp: numb
           </li>
         );
       })}</ul>
+      {reads.length > 0 && done.length >= reads.length && <div className="readerDone"><MascotPeek size={54} /><p>All read today. Nice work!</p></div>}
       <div className="recBox">
         <div className="recTabs" role="tablist" aria-label="Recommendations">{TOPICS.map((t) => <button key={t} type="button" role="tab" aria-selected={topic === t} className={topic === t ? 'active' : ''} onClick={() => setTopic(t)}>{TOPIC_LABELS[t]}</button>)}</div>
         <p className="recText">{recs.items.find((i) => i.topic === topic)?.text}</p>

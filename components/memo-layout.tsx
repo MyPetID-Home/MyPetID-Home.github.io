@@ -188,7 +188,7 @@ export function AppointmentsSection() {
 
 export type HomeData = {
   petName: string; ownerName: string; ownerPhone: string; vetName: string; vetPhone: string; microchip: string; age: string;
-  documents: { id: number; title: string; kind: string; url?: string }[];
+  documents: { id: number | string; title: string; kind: string; url?: string }[];
   latestWalk: { label: string; detail: string } | null;
   lastScan: string; alertCount: number;
 };
