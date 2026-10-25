@@ -719,20 +719,23 @@ textarea { min-height: 96px; resize: vertical; }
 
 /* Dog-bone outline borders: a bone knob at each corner, straight sides as the shaft.
    Drawn with border-image so they fit any card size; outset keeps the layout unchanged. */
-.card, .stepCard, .panel.stat, .overviewHero, .boneCard {
+.card, .stepCard, .panel, .overviewHero, .boneCard, .legalDocument, .splitPanel, .formPanel, .petPublic {
   border: 2px solid transparent; border-radius: 0; background-clip: padding-box;
   border-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96' viewBox='0 0 96 96'%3E%3Cg fill='none' stroke='rgba%28135%2C224%2C111%2C.5%29' stroke-width='2.6' stroke-linejoin='round' stroke-linecap='round'%3E%3Cpath d='M 48 24 L 32.8 24 A 12 12 0 1 0 16.5 16.5 A 12 12 0 1 0 24 32.8 L 24 48'/%3E%3Cpath d='M 48 24 L 32.8 24 A 12 12 0 1 0 16.5 16.5 A 12 12 0 1 0 24 32.8 L 24 48' transform='matrix%28-1 0 0 1 96 0%29'/%3E%3Cpath d='M 48 24 L 32.8 24 A 12 12 0 1 0 16.5 16.5 A 12 12 0 1 0 24 32.8 L 24 48' transform='matrix%281 0 0 -1 0 96%29'/%3E%3Cpath d='M 48 24 L 32.8 24 A 12 12 0 1 0 16.5 16.5 A 12 12 0 1 0 24 32.8 L 24 48' transform='matrix%28-1 0 0 -1 96 96%29'/%3E%3C/g%3E%3C/svg%3E") 42 / 42px / 24px stretch;
   box-shadow: none;
   margin: 22px; transition: transform .3s var(--ease), filter .3s ease;
 }
-:root[data-theme="light"] .card, :root[data-theme="light"] .stepCard, :root[data-theme="light"] .panel.stat, :root[data-theme="light"] .overviewHero, :root[data-theme="light"] .boneCard {
+:root[data-theme="light"] .card, :root[data-theme="light"] .stepCard, :root[data-theme="light"] .panel, :root[data-theme="light"] .overviewHero, :root[data-theme="light"] .boneCard, :root[data-theme="light"] .legalDocument, :root[data-theme="light"] .splitPanel, :root[data-theme="light"] .formPanel, :root[data-theme="light"] .petPublic {
   border-image-source: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96' viewBox='0 0 96 96'%3E%3Cg fill='none' stroke='rgba%2835%2C138%2C66%2C.5%29' stroke-width='2.6' stroke-linejoin='round' stroke-linecap='round'%3E%3Cpath d='M 48 24 L 32.8 24 A 12 12 0 1 0 16.5 16.5 A 12 12 0 1 0 24 32.8 L 24 48'/%3E%3Cpath d='M 48 24 L 32.8 24 A 12 12 0 1 0 16.5 16.5 A 12 12 0 1 0 24 32.8 L 24 48' transform='matrix%28-1 0 0 1 96 0%29'/%3E%3Cpath d='M 48 24 L 32.8 24 A 12 12 0 1 0 16.5 16.5 A 12 12 0 1 0 24 32.8 L 24 48' transform='matrix%281 0 0 -1 0 96%29'/%3E%3Cpath d='M 48 24 L 32.8 24 A 12 12 0 1 0 16.5 16.5 A 12 12 0 1 0 24 32.8 L 24 48' transform='matrix%28-1 0 0 -1 96 96%29'/%3E%3C/g%3E%3C/svg%3E");
 }
-.card:hover, .panel.stat:hover, .stepCard:hover, .boneCard:hover { transform: translateY(-4px); filter: drop-shadow(0 14px 30px var(--shadow)); border-image-source: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96' viewBox='0 0 96 96'%3E%3Cg fill='none' stroke='rgba%2887%2C215%2C255%2C.85%29' stroke-width='2.6' stroke-linejoin='round' stroke-linecap='round'%3E%3Cpath d='M 48 24 L 32.8 24 A 12 12 0 1 0 16.5 16.5 A 12 12 0 1 0 24 32.8 L 24 48'/%3E%3Cpath d='M 48 24 L 32.8 24 A 12 12 0 1 0 16.5 16.5 A 12 12 0 1 0 24 32.8 L 24 48' transform='matrix%28-1 0 0 1 96 0%29'/%3E%3Cpath d='M 48 24 L 32.8 24 A 12 12 0 1 0 16.5 16.5 A 12 12 0 1 0 24 32.8 L 24 48' transform='matrix%281 0 0 -1 0 96%29'/%3E%3Cpath d='M 48 24 L 32.8 24 A 12 12 0 1 0 16.5 16.5 A 12 12 0 1 0 24 32.8 L 24 48' transform='matrix%28-1 0 0 -1 96 96%29'/%3E%3C/g%3E%3C/svg%3E"); }
+.card:hover, .panel.stat:hover, .stepCard:hover, .boneCard:hover, .tagProductCard:hover { transform: translateY(-4px); filter: drop-shadow(0 14px 30px var(--shadow)); border-image-source: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96' viewBox='0 0 96 96'%3E%3Cg fill='none' stroke='rgba%2887%2C215%2C255%2C.85%29' stroke-width='2.6' stroke-linejoin='round' stroke-linecap='round'%3E%3Cpath d='M 48 24 L 32.8 24 A 12 12 0 1 0 16.5 16.5 A 12 12 0 1 0 24 32.8 L 24 48'/%3E%3Cpath d='M 48 24 L 32.8 24 A 12 12 0 1 0 16.5 16.5 A 12 12 0 1 0 24 32.8 L 24 48' transform='matrix%28-1 0 0 1 96 0%29'/%3E%3Cpath d='M 48 24 L 32.8 24 A 12 12 0 1 0 16.5 16.5 A 12 12 0 1 0 24 32.8 L 24 48' transform='matrix%281 0 0 -1 0 96%29'/%3E%3Cpath d='M 48 24 L 32.8 24 A 12 12 0 1 0 16.5 16.5 A 12 12 0 1 0 24 32.8 L 24 48' transform='matrix%28-1 0 0 -1 96 96%29'/%3E%3C/g%3E%3C/svg%3E"); }
 .cards, .stepsRow { gap: 6px; }
 .dashboardGrid { gap: 6px 16px; }
-.dashboardGrid > .panel:not(.stat):not(.overviewHero) { margin: 20px 0; }
-@media (max-width: 620px) { .card, .stepCard, .panel.stat, .overviewHero, .boneCard { margin: 18px 20px; } }
+.dashboardGrid > .panel, .publicGrid > .panel { margin: 22px; }
+.splitPanel { margin: 40px auto 72px; }
+.legalDocument { margin: 46px 22px 22px; }
+.panel .panel { margin: 14px 4px; }
+@media (max-width: 620px) { .card, .stepCard, .panel, .overviewHero, .boneCard, .legalDocument, .splitPanel, .formPanel, .petPublic { margin: 18px 20px; } }
 
 /* Bone-shaped progress bars */
 .progress { position: relative; overflow: visible; height: 9px; margin: 14px 6px; border-radius: 6px; }
@@ -865,3 +868,32 @@ textarea { min-height: 96px; resize: vertical; }
 .meetupBody .actions { margin-top: 8px; }
 .meetupBody .actions button, .meetupBody .actions .button { padding: 7px 13px; font-size: .86rem; }
 @media (max-width: 900px) { .packGrid, .meetupForm { grid-template-columns: 1fr; } }
+
+/* Footer: centered stack */
+.legalFooter { justify-items: center; text-align: center; gap: 10px; }
+.legalFooter nav { justify-content: center; }
+
+/* Bone menu button: whole bone = open the menu, broken bone = close it */
+.hamburger .boneMenu { width: 28px; height: 28px; overflow: visible; fill: currentColor; color: var(--brand); }
+.boneHalf { transition: transform .45s var(--spring); transform-box: view-box; }
+.boneHalf.left { transform-origin: 12px 12px; }
+.boneHalf.right { transform-origin: 12px 12px; }
+.boneMenu.broken .boneHalf.left { transform: translate(-2.2px, 1.6px) rotate(-24deg); }
+.boneMenu.broken .boneHalf.right { transform: translate(2.2px, 1.6px) rotate(24deg); }
+.hamburger:hover .boneMenu:not(.broken) { animation: boneWiggle .6s var(--spring); }
+.hamburger[aria-expanded="true"] .boneMenu { color: #071008; }
+@keyframes boneWiggle { 0%, 100% { transform: rotate(0); } 30% { transform: rotate(-12deg); } 60% { transform: rotate(8deg); } }
+
+/* Get the app: store badges + add to home screen */
+.storeBadges { display: flex; flex-wrap: wrap; gap: 12px; }
+.storeBadge { display: inline-flex; align-items: center; gap: 12px; min-width: 200px; padding: 10px 18px 10px 14px; border-radius: 16px; border: 1px solid var(--line-strong); background: #0b0f0c; color: #fff; text-decoration: none; font-family: var(--font-display); font-weight: 700; font-size: 1.12rem; line-height: 1.05; transition: transform .25s var(--spring), border-color .2s ease, box-shadow .2s ease; cursor: pointer; }
+.storeBadge:hover { transform: translateY(-3px); border-color: var(--brand); box-shadow: var(--glow); }
+.storeBadge svg { width: 28px; height: 28px; flex: 0 0 auto; }
+.storeBadge span { display: grid; text-align: left; }
+.storeBadge small { font-family: var(--font-body); font-size: .68rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; opacity: .75; }
+.storeBadge.soon { opacity: .78; }
+.storeBadge.homeScreen { background: var(--grad); color: #071008; border-color: transparent; }
+.storeBadge.homeScreen:disabled { opacity: .6; cursor: default; transform: none; }
+.getApp { display: grid; gap: 12px; }
+.getApp.compact .storeBadge { min-width: 0; flex: 1 1 180px; font-size: 1rem; }
+:root[data-theme="light"] .storeBadge:not(.homeScreen) { background: #111; }

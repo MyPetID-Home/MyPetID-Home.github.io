@@ -95,8 +95,8 @@ export function ShareKit({ petName, tagId, photoUrl, breed, ownerName, ownerPhon
 
   return (
     <section className="panel full shareKit" data-tour="share">
-      <div className="panelTitleRow"><div><p className="eyebrow">Share & connect</p><h2>{petName}’s ID kit</h2></div><span className="iconBubble"><QrCode /></span></div>
-      <p className="formHint">Every option opens the same finder page for tag <strong>{tagId}</strong>, so whoever finds {petName} can reach you.</p>
+      <div className="panelTitleRow"><div><p className="eyebrow">Admin · tag programming</p><h2>{petName}’s tag kit</h2></div><span className="iconBubble"><QrCode /></span></div>
+      <p className="formHint">For producing the physical NFC card: every code opens the finder page for tag <strong>{tagId}</strong>. Only admins see this.</p>
       <div className="shareGrid">
         <article className="shareTile">
           <h3><ArrowRight /> Link</h3>

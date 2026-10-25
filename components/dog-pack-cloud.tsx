@@ -236,7 +236,7 @@ export function DogPackCloud({ dogName }: { dogName: string }) {
           {friends.length === 0 ? <p className="formHint">No friends yet. Send an invite to start your pack.</p> : <ul className="friendList">{friends.map((f) => (
             <li key={f.profile_id}><button type="button" className={chatWith?.profile_id === f.profile_id ? 'activeMini' : ''} onClick={() => setChatWith(f)}><span className="avatarDot">{f.name.slice(0, 1)}</span><span><strong>{f.name}</strong><small>{f.dog_name ? `with ${f.dog_name}` : 'Dog Pack friend'}</small></span><Chat /></button></li>
           ))}</ul>}
-          <button className="primary" type="button" onClick={createInvite}>Invite a friend</button>
+          <button className="primary" type="button" onClick={createInvite}>My Dog Pack QR / invite</button>
           {invite && <div className="inviteBox"><div className="codeBox"><QRCodeSVG value={invite} size={132} marginSize={2} /></div><input readOnly value={invite} onFocus={(e) => e.target.select()} aria-label="Invite link" /><button type="button" onClick={() => navigator.clipboard?.writeText(invite).then(() => setNotice('Invite link copied.'))}>Copy link</button></div>}
         </article>
 

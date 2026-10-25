@@ -22,3 +22,12 @@ export function Nfc(props: IconProps) { return <svg viewBox="0 0 24 24" {...comm
 export function ArrowRight(props: IconProps) { return <svg viewBox="0 0 24 24" {...common} {...props}><path d="M5 12h14M13 6l6 6-6 6"/></svg>; }
 export function Check(props: IconProps) { return <svg viewBox="0 0 24 24" {...common} {...props}><path d="m5 12 5 5 9-10"/></svg>; }
 export function Google(props: IconProps) { return <svg viewBox="0 0 24 24" aria-hidden="true" {...props}><path fill="#4285F4" d="M22.6 12.3c0-.8-.1-1.6-.2-2.3H12v4.3h6a5.1 5.1 0 0 1-2.2 3.4v2.8h3.6c2-1.9 3.2-4.7 3.2-8.2Z"/><path fill="#34A853" d="M12 23c3 0 5.5-1 7.4-2.7l-3.6-2.8c-1 .7-2.3 1.1-3.8 1.1-2.9 0-5.4-2-6.3-4.6H2v2.9A11 11 0 0 0 12 23Z"/><path fill="#FBBC05" d="M5.7 14a6.6 6.6 0 0 1 0-4.2V7H2a11 11 0 0 0 0 9.9Z"/><path fill="#EA4335" d="M12 5.4c1.6 0 3.1.6 4.2 1.7l3.2-3.2A11 11 0 0 0 2 7l3.7 2.8C6.6 7.3 9.1 5.4 12 5.4Z"/></svg>; }
+/** Menu button icon: a dog bone in two halves that snaps apart ("broken") when the menu is open. */
+export function BoneMenu({ broken = false }: { broken?: boolean }) {
+  return (
+    <svg viewBox="0 0 24 24" className={`boneMenu ${broken ? 'broken' : ''}`} aria-hidden="true">
+      <g className="boneHalf left"><circle cx="5" cy="9.2" r="2.7" /><circle cx="5" cy="14.8" r="2.7" /><path d="M5.5 10.3H12l.9 1.2-1 .9.8 1.3H5.5Z" /></g>
+      <g className="boneHalf right"><circle cx="19" cy="9.2" r="2.7" /><circle cx="19" cy="14.8" r="2.7" /><path d="M12 10.3h6.5v3.4h-5.8l-.8-1.3 1-.9Z" /></g>
+    </svg>
+  );
+}

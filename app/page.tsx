@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { AuthPanel } from '../components/auth-panel';
+import { GetTheApp } from '../components/pwa-install-client';
 import { PawPrint, ShieldCheck, MapPinned, Users, QrCode, Bell, FileText, Nfc, Check, ArrowRight, Heart } from '../components/icons';
 
 const features = [
@@ -103,6 +104,15 @@ export default function HomePage() {
           <li>Medical notes are public only if you turn them on</li>
           <li>Turn lost mode on or off in one tap</li>
         </ul>
+      </section>
+
+      <section className="shell landingSection appSection">
+        <div className="sectionHead">
+          <p className="eyebrow">On the web, Android and iPhone</p>
+          <h2>Take MyPetID everywhere.</h2>
+          <p>Use it in any browser today, add it to your home screen in one tap, and grab the Android app when it lands on Google Play.</p>
+        </div>
+        <GetTheApp />
       </section>
 
       <section className="shell ctaBand">
