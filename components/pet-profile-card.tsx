@@ -5,6 +5,7 @@ import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { Bell, Heart, MapPinned, PawPrint, Stethoscope, User, Sparkles, ShieldCheck } from './icons';
 import { GetTheApp } from './pwa-install-client';
+import { statusTag, TAG_COLORS } from '../lib/id-card';
 
 const WalkMap3D = dynamic(() => import('./walk-map-3d').then((m) => m.WalkMap3D), { ssr: false, loading: () => <div className="map3dCanvas mapLoading" style={{ height: 300 }}>Loading map…</div> });
 
@@ -30,6 +31,8 @@ export type ProfileCardPet = {
   /** Recent shared scans, newest first (shown on the Scans tab). */
   scans?: { lat: number; lng: number; at: string }[] | null;
   tagCode?: string | null;
+  /** Status tag keys (service, medical_alert, rescue...). Always shown so finders know how to help. */
+  statusTags?: string[] | null;
 };
 
 type TabKey = 'about' | 'health' | 'vet' | 'contact' | 'seen' | 'scans' | 'app';
@@ -66,6 +69,7 @@ export function PetProfileCard({ pet, mode, finderHref, ownerTools, onAlert }: {
         <div className="petTitle">
           <p className="eyebrow">{mode === 'owner' ? 'Your dog' : 'Hi, my name is'}{pet.tagCode ? ` · tag ${pet.tagCode}` : ''}</p>
           <h1>{pet.name}</h1>
+          {pet.statusTags && pet.statusTags.length > 0 && <div className="statusTags">{pet.statusTags.map((key) => { const t = statusTag(key); return t ? <span key={key} style={{ borderColor: TAG_COLORS[t.tone], color: TAG_COLORS[t.tone] }}>{t.label}</span> : null; })}</div>}
           <div className="chipCloud">{[pet.breed, pet.details?.age, pet.details?.size, pet.details?.sex].filter(Boolean).map((chip) => <span key={chip}>{chip}</span>)}</div>
         </div>
         <div className="petActions">

@@ -210,7 +210,7 @@ export function ScanLanding() {
         name: pet.name, breed: pet.breed, photoUrl: pet.photo_url, coverUrl: record?.cover_url, about: pet.behavior_public, health: pet.medical_public,
         details: record?.public_extra?.details, vet: record?.public_extra?.vet, care: record?.public_extra?.care,
         phone: typeof record?.contact_public?.phone === 'string' ? record.contact_public.phone : '', email: typeof record?.contact_public?.email === 'string' ? record.contact_public.email : '',
-        lost: pet.lost_mode, tagCode: tag,
+        lost: pet.lost_mode, tagCode: tag, statusTags: record?.public_extra?.status_tags,
         lastSeen: record?.last_seen_lat != null && record?.last_seen_lng != null ? { lat: record.last_seen_lat, lng: record.last_seen_lng, at: record.last_seen_at } : null,
       }} /> : <article className="panel" style={{ maxWidth: 720 }}><h1>{petLoaded ? 'Pet profile unavailable' : 'Loading…'}</h1>{petLoaded && <p>This tag isn’t linked to a dog yet. If you found a dog, please contact local animal control or a shelter.</p>}</article>}
 

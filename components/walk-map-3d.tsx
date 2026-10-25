@@ -47,12 +47,71 @@ function kindOf(tags: Record<string, string>): SpotKind {
   return 'bin';
 }
 
-export function WalkMap3D({ start, current, end, pins, height = 420 }: { start?: MapPoint; current?: MapPoint; end?: MapPoint; pins?: MapPin[]; height?: number }) {
+/** [lng, lat] pair, the GeoJSON order. */
+export type LngLat = [number, number];
+/**
+ * A planned or saved route drawn as a solid line. `path` is the full line; when `vertices`
+ * is given (e.g. the waypoints of a path-snapped route) the draggable markers sit on those
+ * instead of on every point of `path`.
+ */
+export type MapRoute = { path: LngLat[]; loop?: boolean; color?: string; vertices?: LngLat[] };
+
+export type WalkMap3DProps = {
+  start?: MapPoint;
+  current?: MapPoint;
+  end?: MapPoint;
+  pins?: MapPin[];
+  height?: number;
+  /** Fires when the map itself is tapped (not a marker). While set, the cursor is a crosshair. */
+  onMapClick?: (p: { lat: number; lng: number }) => void;
+  route?: MapRoute | null;
+  /** Shows small numbered, draggable markers on the route's vertices. */
+  editableRoute?: boolean;
+  /** Called after a vertex is dragged, with the edited vertex list (route.vertices if given, else route.path). */
+  onRouteChange?: (path: LngLat[]) => void;
+  /**
+   * What to frame. Left out: the old behaviour (the map frames `pins` whenever they change).
+   * 'route' / 'pins': frame that when it changes. null: never auto-frame.
+   */
+  fitTo?: 'route' | 'pins' | null;
+  /** Fly the camera to a point; pass a new object (e.g. with a fresh `key`) to fly again. */
+  flyTo?: { lat: number; lng: number; zoom?: number; key?: number } | null;
+};
+
+const ROUTE_COLOR = '#57d7ff';
+
+function vertexElement(index: number, color: string) {
+  const el = document.createElement('div');
+  const dot = document.createElement('div');
+  dot.textContent = String(index + 1);
+  dot.setAttribute('aria-label', `Point ${index + 1}, drag to move`);
+  Object.assign(dot.style, {
+    width: '24px', height: '24px', borderRadius: '50%', display: 'grid', placeItems: 'center',
+    font: '800 11px/1 system-ui, sans-serif', cursor: 'grab', touchAction: 'none', userSelect: 'none',
+    border: `2px solid ${color}`, boxShadow: '0 2px 8px rgba(0,0,0,.45)',
+    background: index === 0 ? color : '#0d1510', color: index === 0 ? '#071008' : '#fff',
+  } as Partial<CSSStyleDeclaration>);
+  el.appendChild(dot);
+  el.addEventListener('click', (event) => event.stopPropagation());
+  return el;
+}
+
+function closedPath(path: LngLat[], loop?: boolean): LngLat[] {
+  if (!loop || path.length < 3) return path;
+  const [a, b] = [path[0], path[path.length - 1]];
+  return a[0] === b[0] && a[1] === b[1] ? path : [...path, a];
+}
+
+export function WalkMap3D({ start, current, end, pins, height = 420, onMapClick, route, editableRoute, onRouteChange, fitTo, flyTo }: WalkMap3DProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const markersRef = useRef<Marker[]>([]);
   const meRef = useRef<Marker | null>(null);
   const pinRefs = useRef<Marker[]>([]);
+  const vertexRefs = useRef<Marker[]>([]);
+  const onMapClickRef = useRef(onMapClick);
+  const onRouteChangeRef = useRef(onRouteChange);
+  useEffect(() => { onMapClickRef.current = onMapClick; onRouteChangeRef.current = onRouteChange; });
   const orbitRef = useRef<number | null>(null);
   const libRef = useRef<typeof import('maplibre-gl') | null>(null);
   const [ready, setReady] = useState(false);
@@ -96,7 +155,15 @@ export function WalkMap3D({ start, current, end, pins, height = 420 }: { start?:
         map.addSource('walk', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
         map.addLayer({ id: 'walk-glow', type: 'line', source: 'walk', paint: { 'line-color': '#87e06f', 'line-width': 12, 'line-opacity': 0.25, 'line-blur': 6 } });
         map.addLayer({ id: 'walk-line', type: 'line', source: 'walk', layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': '#87e06f', 'line-width': 4, 'line-dasharray': [1.2, 1.4] } });
+        map.addSource('route', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+        map.addLayer({ id: 'route-glow', type: 'line', source: 'route', layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': ROUTE_COLOR, 'line-width': 13, 'line-opacity': 0.25, 'line-blur': 6 } });
+        map.addLayer({ id: 'route-line', type: 'line', source: 'route', layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': ROUTE_COLOR, 'line-width': 5 } });
         setReady(true);
+      });
+      map.on('click', (event) => {
+        const target = event.originalEvent?.target as HTMLElement | null;
+        if (target?.closest?.('.maplibregl-marker, .maplibregl-popup, .maplibregl-ctrl')) return;
+        onMapClickRef.current?.({ lat: event.lngLat.lat, lng: event.lngLat.lng });
       });
     })();
     return () => { cancelled = true; if (orbitRef.current) cancelAnimationFrame(orbitRef.current); mapRef.current?.remove(); mapRef.current = null; };
@@ -134,11 +201,65 @@ export function WalkMap3D({ start, current, end, pins, height = 420 }: { start?:
       (el.querySelector('.mapPinLabel') as HTMLElement).textContent = pin.label;
       return new lib.Marker({ element: el, anchor: 'bottom' }).setLngLat([pin.lng, pin.lat]).addTo(map);
     });
+    // Without a fitTo prop the map frames the pins as it always did; fitTo picks (or turns off) framing.
+    if (fitTo !== undefined && fitTo !== 'pins') return;
     if (pins && pins.length > 1) {
       const lngs = pins.map((p) => p.lng); const lats = pins.map((p) => p.lat);
       map.fitBounds([[Math.min(...lngs), Math.min(...lats)], [Math.max(...lngs), Math.max(...lats)]], { padding: 70, maxZoom: 16.5, pitch: 55, duration: 1200 });
     } else if (pins && pins.length === 1) map.easeTo({ center: [pins[0].lng, pins[0].lat], zoom: 16, duration: 900 });
-  }, [ready, pins]);
+  }, [ready, pins, fitTo]);
+
+  // Crosshair while the page wants map taps (adding route points, dropping a pin)
+  const wantsClicks = Boolean(onMapClick);
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!ready || !map) return;
+    map.getCanvas().style.cursor = wantsClicks ? 'crosshair' : '';
+  }, [ready, wantsClicks]);
+
+  // Planned / saved route line, plus numbered draggable vertices when editable
+  useEffect(() => {
+    const map = mapRef.current;
+    const lib = libRef.current;
+    if (!ready || !map || !lib) return;
+    const color = route?.color || ROUTE_COLOR;
+    const source = map.getSource('route') as GeoJSONSource | undefined;
+    const draw = (path: LngLat[]) => source?.setData({ type: 'FeatureCollection', features: path.length > 1 ? [{ type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: closedPath(path, route?.loop) } }] : [] });
+    draw(route?.path || []);
+    map.setPaintProperty('route-line', 'line-color', color);
+    map.setPaintProperty('route-glow', 'line-color', color);
+    vertexRefs.current.forEach((m) => m.remove());
+    vertexRefs.current = [];
+    if (!route || !editableRoute) return;
+    const vertices = route.vertices || route.path;
+    const live = vertices.map((v) => [v[0], v[1]] as LngLat);
+    vertexRefs.current = vertices.map((v, index) => {
+      const marker = new lib.Marker({ element: vertexElement(index, color), draggable: true }).setLngLat(v).addTo(map);
+      marker.on('drag', () => {
+        const p = marker.getLngLat();
+        live[index] = [p.lng, p.lat];
+        if (!route.vertices) draw(live);
+      });
+      marker.on('dragend', () => onRouteChangeRef.current?.(live.map((x) => [x[0], x[1]] as LngLat)));
+      return marker;
+    });
+  }, [ready, route, editableRoute]);
+
+  // Frame the route when asked
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!ready || !map || fitTo !== 'route' || !route || route.path.length === 0) return;
+    if (route.path.length === 1) { map.easeTo({ center: route.path[0], zoom: 16, duration: 900 }); return; }
+    const lngs = route.path.map((p) => p[0]); const lats = route.path.map((p) => p[1]);
+    map.fitBounds([[Math.min(...lngs), Math.min(...lats)], [Math.max(...lngs), Math.max(...lats)]], { padding: 60, maxZoom: 17, duration: 1200 });
+  }, [ready, route, fitTo]);
+
+  // Fly to a point on request
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!ready || !map || !flyTo) return;
+    map.flyTo({ center: [flyTo.lng, flyTo.lat], zoom: flyTo.zoom ?? 16.5, duration: 1600, essential: true });
+  }, [ready, flyTo]);
 
   // Draw dog-friendly spots as markers
   useEffect(() => {

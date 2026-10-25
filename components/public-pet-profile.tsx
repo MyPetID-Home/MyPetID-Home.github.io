@@ -19,7 +19,7 @@ type Pet = {
   tag_code?: string | null;
   is_owner?: boolean;
   cover_url?: string | null;
-  public_extra?: { details?: Record<string, string>; vet?: Record<string, string>; care?: Record<string, string> } | null;
+  public_extra?: { details?: Record<string, string>; vet?: Record<string, string>; care?: Record<string, string>; status_tags?: string[]; species?: string } | null;
   last_seen_at?: string | null;
   last_seen_lat?: number | null;
   last_seen_lng?: number | null;
@@ -180,7 +180,7 @@ export function PublicPetProfile() {
         pet={{
           name: pet.name, breed: pet.breed, photoUrl: pet.photo_url, coverUrl: pet.cover_url, about: pet.behavior_public, health: pet.medical_public,
           details: pet.public_extra?.details, vet: pet.public_extra?.vet, care: pet.public_extra?.care,
-          phone: publicPhone, email: publicEmail, lost: pet.lost_mode, tagCode: finderTag,
+          phone: publicPhone, email: publicEmail, lost: pet.lost_mode, tagCode: finderTag, statusTags: pet.public_extra?.status_tags,
           // The demo dog shows sample scan history so visitors can see how it works.
           scans: finderTag === DEMO_TAG ? [{ lat: 44.0974, lng: -70.1654, at: new Date(Date.now() - 2 * 3600e3).toISOString() }, { lat: 44.0928, lng: -70.1749, at: new Date(Date.now() - 22 * 3600e3).toISOString() }] : null,
           lastSeen: pet.last_seen_lat != null && pet.last_seen_lng != null ? { lat: pet.last_seen_lat, lng: pet.last_seen_lng, at: pet.last_seen_at } : null,

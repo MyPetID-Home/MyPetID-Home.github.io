@@ -997,3 +997,54 @@ textarea { min-height: 96px; resize: vertical; }
 .mapPin.blue .mapPinDot { background: #57d7ff; } .mapPin.red .mapPinDot { background: #ff7a7a; } .mapPin.gold .mapPinDot { background: #ffce6b; } .mapPin.violet .mapPinDot { background: #b99cff; }
 .mapPinLabel { order: -1; padding: 4px 9px; border-radius: 999px; background: rgba(16,23,18,.9); color: #f5f7ef; font: 700 12px var(--font-body); white-space: nowrap; box-shadow: 0 4px 12px rgba(0,0,0,.35); }
 @keyframes pinDropIn { from { opacity: 0; transform: translateY(-16px); } to { opacity: 1; transform: none; } }
+
+/* ---------- ID card (pet license) ---------- */
+.idCardSvg { display: block; width: 100%; height: auto; border-radius: 14px; box-shadow: 0 18px 40px rgba(0,0,0,.4); background: #efece0; }
+.cardDeskBar { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1.4fr) auto; gap: 12px; align-items: end; }
+.cardStage { display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: 18px; margin-top: 12px; align-items: start; }
+.cardCanvas { position: relative; }
+.cardHandles { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; }
+.cardHandles rect { fill: transparent; stroke: transparent; cursor: move; }
+.cardHandles rect:hover { stroke: #57d7ff; stroke-dasharray: 6 4; stroke-width: 2; }
+.cardHandles rect.on { stroke: #87e06f; stroke-width: 3; fill: rgba(135,224,111,.12); }
+.cardTools { display: grid; gap: 10px; }
+.cardTools h4 { margin: 0; }
+.cardNums { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.cardNums label { margin: 0; font-size: .74rem; }
+.cardNums input { padding: 7px 8px; font-size: .9rem; }
+.cardNums input[type="color"] { padding: 2px; height: 36px; }
+.cardExportHost { position: absolute; left: -10000px; top: 0; width: 1100px; pointer-events: none; }
+.cardMini { max-width: 520px; }
+@media (max-width: 980px) { .cardStage, .cardDeskBar { grid-template-columns: 1fr; } }
+.cardDetailsGrid { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 26px; }
+.cardDetailsGrid h3 { margin: 18px 0 6px; }
+.cardDetailsGrid > div > h3:first-child { margin-top: 0; }
+.tagPicker button { padding: 7px 12px; font-size: .86rem; }
+@media (max-width: 980px) { .cardDetailsGrid { grid-template-columns: 1fr; } }
+
+/* Notifications */
+.noteBox { position: relative; }
+.noteBell { position: relative; width: 48px; height: 48px; padding: 0; border-radius: 15px; }
+.noteBell svg { width: 22px; height: 22px; }
+.noteBell .redAlert { position: absolute; top: -6px; right: -6px; }
+.notePanel { position: absolute; right: 0; top: calc(100% + 10px); z-index: 130; width: min(380px, calc(100vw - 24px)); max-height: 70vh; overflow-y: auto; padding: 12px; border-radius: 22px; border: 1px solid var(--line-strong); background: var(--glass); backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px); box-shadow: var(--shadow-lg); animation: rise .25s var(--ease) both; }
+.notePanelHead { display: flex; justify-content: space-between; align-items: center; padding: 4px 6px 10px; }
+.notePanelHead button { padding: 6px 10px; font-size: .8rem; }
+.notePanel ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.notePanel li button { width: 100%; display: flex; gap: 10px; align-items: flex-start; justify-content: flex-start; text-align: left; border: 0; border-radius: 14px; background: transparent; box-shadow: none; padding: 10px; }
+.notePanel li button:hover { background: var(--panel-strong); transform: none; }
+.notePanel li button.unread { background: var(--brand-soft); }
+.notePanel li span { display: grid; gap: 2px; min-width: 0; }
+.notePanel li small { color: var(--muted); font-weight: 500; font-size: .84rem; overflow-wrap: anywhere; }
+.notePanel li em { color: var(--faint); font-style: normal; font-size: .74rem; }
+.noteDot { flex: 0 0 10px; width: 10px; height: 10px; border-radius: 50%; margin-top: 6px; background: var(--brand2); }
+.noteDot.alert { background: var(--danger); } .noteDot.scan { background: var(--warn); } .noteDot.pack, .noteDot.meetup { background: var(--violet); } .noteDot.announcement { background: var(--brand); }
+.noteEnable { width: 100%; margin-top: 8px; }
+@media (max-width: 620px) { .noteBell { width: 40px; height: 40px; border-radius: 12px; } .notePanel { position: fixed; left: 12px; right: 12px; top: 84px; width: auto; } }
+.statusTags { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 8px; }
+.statusTags span { padding: 5px 10px; border: 2px solid; border-radius: 6px; background: rgba(255,255,255,.92); font-weight: 800; font-size: .78rem; letter-spacing: .06em; text-transform: uppercase; }
+.headerActions { display: flex !important; align-items: center; gap: 10px; }
+.upgradeButton { padding: 10px 16px; }
+.adminStack { display: grid; gap: 18px; }
+.adminStack > .panel { margin: 24px 22px; }
+@media (max-width: 620px) { .upgradeButton { padding: 8px 11px; font-size: .82rem; } .headerActions { gap: 6px; } }

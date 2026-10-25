@@ -1,0 +1,46 @@
+.planner { display: grid; gap: 14px; }
+
+.tabs { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+.tabs::-webkit-scrollbar { display: none; }
+.tabs button { flex: 0 0 auto; padding: 9px 14px; font-size: .9rem; }
+
+.mapWrap { border-radius: var(--radius-sm); overflow: hidden; }
+
+.controls { display: grid; gap: 12px; }
+
+.stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.stat { border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface-sunken); padding: 10px 12px; display: grid; gap: 2px; }
+.stat small { color: var(--faint); font-size: .74rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; }
+.stat strong { font-size: 1.15rem; }
+
+.toggles { display: flex; flex-wrap: wrap; gap: 8px 18px; }
+.toggle { display: inline-flex !important; align-items: center; gap: 8px; margin: 0 !important; cursor: pointer; }
+
+.row { display: flex; gap: 8px; align-items: stretch; }
+.row input { flex: 1 1 auto; min-width: 0; }
+.row button { flex: 0 0 auto; }
+
+.list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.item { display: flex; align-items: center; gap: 12px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface-sunken); padding: 10px 12px; }
+.item .itemIcon { width: 38px; height: 38px; border-radius: 12px; font-size: 1.05rem; }
+.itemMain { flex: 1 1 auto; min-width: 0; display: grid; gap: 3px; text-align: left; background: none; border: 0; padding: 0; box-shadow: none; justify-content: stretch; color: inherit; }
+.itemMain:hover { transform: none; background: none; }
+.itemMain strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.itemMain small { color: var(--muted); font-size: .84rem; font-weight: 500; }
+.itemActions { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
+.itemActions button, .small { padding: 7px 12px; font-size: .84rem; }
+
+.walkItem { display: grid; gap: 10px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface-sunken); padding: 12px; }
+.walkHead { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.walkHead strong { flex: 1 1 auto; min-width: 0; }
+.badge { display: inline-flex; align-items: center; border-radius: 999px; padding: 3px 9px; font-size: .74rem; font-weight: 800; background: var(--brand-soft); color: var(--brand); }
+.shown { border-color: color-mix(in srgb, var(--brand2) 55%, transparent); }
+
+.kinds { display: flex; flex-wrap: wrap; gap: 6px; }
+.kinds button { padding: 7px 11px; font-size: .84rem; }
+
+.danger { color: var(--danger) !important; }
+
+@media (min-width: 900px) {
+  .stats { max-width: 520px; }
+}
