@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useLayoutEffect, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { Bell, Footprints, Menu, PawPrint, Sparkles, User, Check } from './icons';
 import { MascotPeek } from './mascot';
@@ -52,6 +52,7 @@ export function Walkthrough() {
     return () => { cancelled = true; window.clearTimeout(timer); window.removeEventListener(EVENT, replay); };
   }, []);
 
+  const cardRef = useRef<HTMLDivElement>(null);
   const measure = useCallback(() => {
     if (!open) return;
     const el = step.target ? document.querySelector<HTMLElement>(`[data-tour="${step.target}"]`) : null;
@@ -60,17 +61,21 @@ export function Walkthrough() {
     const vw = window.innerWidth;
     const vh = window.innerHeight;
     const cardW = Math.min(380, vw - 24);
-    const cardH = 250;
+    // Real card height (it grows with the text); room above it for the peeking mascot.
+    const cardH = Math.min(cardRef.current?.offsetHeight || 260, vh - 90);
+    const MASCOT = 62;
+    const clampTop = (t: number) => Math.min(Math.max(MASCOT + 8, t), Math.max(MASCOT + 8, vh - cardH - 12));
     if (!visible || !box) {
       setRect(null);
-      setCardPos({ top: Math.max(12, vh / 2 - cardH / 2), left: Math.max(12, vw / 2 - cardW / 2) });
+      setCardPos({ top: clampTop(vh / 2 - cardH / 2), left: Math.max(12, vw / 2 - cardW / 2) });
       return;
     }
     const pad = 8;
     const r = { top: box.top - pad, left: box.left - pad, width: box.width + pad * 2, height: box.height + pad * 2 };
     setRect(r);
     const below = r.top + r.height + 14;
-    const top = below + cardH < vh ? below : Math.max(12, r.top - cardH - 14);
+    const above = r.top - cardH - 14;
+    const top = clampTop(below + cardH + 12 <= vh ? below : above >= MASCOT + 8 ? above : vh - cardH - 12);
     const left = Math.min(Math.max(12, r.left + r.width / 2 - cardW / 2), vw - cardW - 12);
     setCardPos({ top, left });
   }, [open, step]);
@@ -85,9 +90,10 @@ export function Walkthrough() {
       window.setTimeout(measure, 380);
     }
     measure();
+    const again = window.setTimeout(measure, 60);
     window.addEventListener('resize', measure);
     window.addEventListener('scroll', measure, true);
-    return () => { window.removeEventListener('resize', measure); window.removeEventListener('scroll', measure, true); };
+    return () => { window.clearTimeout(again); window.removeEventListener('resize', measure); window.removeEventListener('scroll', measure, true); };
   }, [open, step, measure]);
 
   const finish = useCallback(async () => {
@@ -113,7 +119,7 @@ export function Walkthrough() {
     <div role="dialog" aria-modal="true" aria-labelledby="tour-title">
       <div className="tourScrim" onClick={finish} />
       <div className={`tourSpot ${rect ? '' : 'center'}`} style={rect ? { top: rect.top, left: rect.left, width: rect.width, height: rect.height } : { top: '50%', left: '50%', width: 0, height: 0 }} />
-      <div className="tourCard" key={index} style={{ top: cardPos.top, left: cardPos.left }}>
+      <div className="tourCard" ref={cardRef} key={index} style={{ top: cardPos.top, left: cardPos.left }}>
         <MascotPeek size={68} className="tourMascot" />
         {!last && <button className="tourSkip" type="button" onClick={finish}>Skip tour</button>}
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}><span className="iconBubble"><Icon /></span></div>

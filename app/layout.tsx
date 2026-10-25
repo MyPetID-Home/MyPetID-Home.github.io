@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   applicationName: 'MyPetID',
   appleWebApp: { capable: true, title: 'MyPetID', statusBarStyle: 'black-translucent' },
   icons: {
-    icon: [{ url: '/images/logo/icon-192.png', sizes: '192x192', type: 'image/png' }],
+    icon: [{ url: '/images/logo/favicon-32.png', sizes: '32x32', type: 'image/png' }, { url: '/images/logo/favicon-48.png', sizes: '48x48', type: 'image/png' }, { url: '/images/logo/icon-192.png', sizes: '192x192', type: 'image/png' }],
     apple: '/images/logo/apple-touch-icon.png',
   },
 };

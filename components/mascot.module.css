@@ -8,19 +8,19 @@
 .bubble::after { content: ''; position: absolute; top: 100%; left: 50%; margin-left: -7px; border: 7px solid transparent; border-top-color: var(--line-strong); }
 @keyframes peekUp { from { transform: translateY(60%); opacity: 0; } to { transform: none; opacity: 1; } }
 
-.walker { display: block; overflow: visible; filter: drop-shadow(0 2px 2px rgba(0,0,0,.35)); }
-.legFront, .legBack, .tail, .headBob { transform-box: fill-box; }
-.legFront, .legBack { transform-origin: 50% 0; }
-.tail { transform-origin: 100% 100%; }
-.headBob { transform-origin: 50% 100%; }
-.walking .legFront { animation: stride .5s ease-in-out infinite alternate; }
-.walking .legBack { animation: stride .5s ease-in-out infinite alternate-reverse; }
-.walking .tail { animation: wag .35s ease-in-out infinite alternate; }
-.walking .headBob { animation: bob .5s ease-in-out infinite alternate; }
-@keyframes stride { from { transform: rotate(22deg); } to { transform: rotate(-22deg); } }
-@keyframes wag { from { transform: rotate(-12deg); } to { transform: rotate(14deg); } }
-@keyframes bob { from { transform: translateY(0); } to { transform: translateY(2px); } }
+.walker { display: block; overflow: visible; filter: drop-shadow(0 2px 2px rgba(0,0,0,.35)); transition: transform .25s ease; }
+.leg, .tail, .headBob { transform-box: view-box; }
+.tail { transform-origin: 36px 50px; }
+.headBob { transform-origin: 112px 40px; }
+/* A dog's walk: diagonal legs move together, about 1.4 strides a second. */
+.walking .phaseA { animation: legSwing .72s ease-in-out infinite; }
+.walking .phaseB { animation: legSwing .72s ease-in-out infinite; animation-delay: -.36s; }
+.walking .tail { animation: wag .36s ease-in-out infinite alternate; }
+.walking .headBob { animation: bob .36s ease-in-out infinite alternate; }
+@keyframes legSwing { 0% { transform: rotate(-20deg); } 50% { transform: rotate(18deg); } 100% { transform: rotate(-20deg); } }
+@keyframes wag { from { transform: rotate(-10deg); } to { transform: rotate(16deg); } }
+@keyframes bob { from { transform: translateY(0); } to { transform: translateY(1.6px); } }
 
 @media (prefers-reduced-motion: reduce) {
-  .blink .eyes, .peek, .walking .legFront, .walking .legBack, .walking .tail, .walking .headBob { animation: none; }
+  .blink .eyes, .peek, .walking .phaseA, .walking .phaseB, .walking .tail, .walking .headBob { animation: none; }
 }

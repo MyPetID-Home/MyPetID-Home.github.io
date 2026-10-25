@@ -46,28 +46,51 @@ export function MascotPeek({ size = 72, message, className = '' }: { size?: numb
   );
 }
 
-/** Side view, facing right. Legs and tail move while `walking`. */
-export function MascotWalker({ size = 56, walking = true, heading = 0 }: { size?: number; walking?: boolean; heading?: number }) {
-  // Face the way we're going: flip when heading west.
-  const flip = heading > 180 && heading < 360;
+/**
+ * Side view of the logo dog (a muscular, prick-eared yellow pit mix), facing right. While
+ * `walking`, the legs move in a real dog walk: diagonal pairs swing together, with the far legs
+ * a shade darker. `facing` flips him to face left. He stands still when not walking.
+ */
+export function MascotWalker({ size = 64, walking = true, facing = 'right' }: { size?: number; walking?: boolean; facing?: 'left' | 'right' }) {
+  // One shape per leg, paw included: a tapered leg that ends in a rounded paw on the ground line.
+  const leg = (x: number, y: number, far: boolean, phase: 'a' | 'b', front: boolean) => (
+    <g className={`${styles.leg} ${phase === 'a' ? styles.phaseA : styles.phaseB}`} style={{ transformOrigin: `${x + 6}px ${y}px` }}>
+      <path d={front
+        ? `M${x} ${y} C${x} ${y + 12} ${x + 1} ${y + 24} ${x + 1} ${y + 33} C${x - 2} ${y + 34} ${x - 3} ${y + 38} ${x} ${y + 39} L${x + 13} ${y + 39} C${x + 15} ${y + 36} ${x + 13} ${y + 33} ${x + 11} ${y + 33} C${x + 11} ${y + 22} ${x + 12} ${y + 12} ${x + 12} ${y} Z`
+        : `M${x - 3} ${y - 4} C${x - 4} ${y + 8} ${x + 2} ${y + 14} ${x + 2} ${y + 20} C${x + 1} ${y + 26} ${x + 1} ${y + 30} ${x + 1} ${y + 34} C${x - 2} ${y + 35} ${x - 3} ${y + 39} ${x} ${y + 40} L${x + 13} ${y + 40} C${x + 15} ${y + 37} ${x + 13} ${y + 34} ${x + 11} ${y + 34} C${x + 11} ${y + 26} ${x + 13} ${y + 18} ${x + 15} ${y + 10} C${x + 16} ${y + 4} ${x + 14} ${y - 2} ${x + 12} ${y - 4} Z`}
+        fill={far ? SHADE : FUR} stroke={INK} strokeWidth="2.8" strokeLinejoin="round" />
+      <path d={`M${x + 3} ${y + 36} v3 M${x + 7} ${y + 36} v3`} stroke={INK} strokeWidth="1.4" strokeLinecap="round" opacity=".55" />
+    </g>
+  );
   return (
-    <svg className={`${styles.walker} ${walking ? styles.walking : ''}`} width={size} height={size * 0.66} viewBox="0 0 140 92" style={flip ? { transform: 'scaleX(-1)' } : undefined} aria-hidden="true">
-      <ellipse cx="72" cy="86" rx="48" ry="5" fill="rgba(0,0,0,.25)" />
-      <path className={styles.tail} d="M34 44 Q16 34 20 16" fill="none" stroke={INK} strokeWidth="9" strokeLinecap="round" />
-      <path className={styles.tail} d="M34 44 Q16 34 20 16" fill="none" stroke={FUR} strokeWidth="5" strokeLinecap="round" />
-      <g className={styles.legBack}><rect x="40" y="50" width="11" height="32" rx="5.5" fill={SHADE} stroke={INK} strokeWidth="3" /></g>
-      <g className={styles.legFront}><rect x="92" y="50" width="11" height="32" rx="5.5" fill={SHADE} stroke={INK} strokeWidth="3" /></g>
-      <ellipse cx="72" cy="48" rx="42" ry="19" fill={FUR} stroke={INK} strokeWidth="3.5" />
-      <path d="M48 56 Q72 64 96 56" fill="none" stroke={LIGHT} strokeWidth="4" strokeLinecap="round" />
-      <g className={styles.legFront}><rect x="54" y="52" width="11" height="32" rx="5.5" fill={FUR} stroke={INK} strokeWidth="3" /></g>
-      <g className={styles.legBack}><rect x="104" y="52" width="11" height="32" rx="5.5" fill={FUR} stroke={INK} strokeWidth="3" /></g>
+    <svg className={`${styles.walker} ${walking ? styles.walking : ''}`} width={size} height={size * 0.72} viewBox="0 0 150 108" style={facing === 'left' ? { transform: 'scaleX(-1)' } : undefined} aria-hidden="true">
+      <ellipse cx="74" cy="102" rx="50" ry="5" fill="rgba(0,0,0,.28)" />
+      {/* far legs (behind the body) */}
+      {leg(44, 58, true, 'b', false)}
+      {leg(100, 60, true, 'a', true)}
+      {/* tail */}
+      <path className={styles.tail} d="M36 50 Q22 46 18 30" fill="none" stroke={INK} strokeWidth="8" strokeLinecap="round" />
+      <path className={styles.tail} d="M36 50 Q22 46 18 30" fill="none" stroke={FUR} strokeWidth="4" strokeLinecap="round" />
+      {/* body: deep chest at the front, tucked waist, strong hindquarters */}
+      <path d="M34 50 C33 38 46 33 62 35 C78 37 90 33 104 31 C116 29 122 36 121 48 C120 60 112 68 101 68 C92 68 86 63 78 62 C68 61 60 66 50 66 C40 66 35 60 34 50 Z" fill={FUR} stroke={INK} strokeWidth="3.2" strokeLinejoin="round" />
+      <path d="M88 64 C96 69 106 70 114 63" fill="none" stroke={LIGHT} strokeWidth="5" strokeLinecap="round" />
+      <path d="M58 40 C66 43 74 43 84 39" fill="none" stroke={SHADE} strokeWidth="2.4" strokeLinecap="round" />
+      {/* near legs */}
+      {leg(48, 58, false, 'a', false)}
+      {leg(106, 60, false, 'b', true)}
+      {/* neck and head */}
       <g className={styles.headBob}>
-        <path d="M106 22 L110 0 L122 18 Z" fill={FUR} stroke={INK} strokeWidth="3" strokeLinejoin="round" />
-        <circle cx="114" cy="30" r="17" fill={FUR} stroke={INK} strokeWidth="3.5" />
-        <ellipse cx="128" cy="36" rx="11" ry="8" fill={LIGHT} stroke={INK} strokeWidth="3" />
-        <circle cx="137" cy="33" r="3.5" fill={INK} />
-        <circle cx="117" cy="26" r="3" fill={INK} />
-        <path d="M100 40 Q108 48 120 46" fill="none" stroke="#57d7ff" strokeWidth="4" strokeLinecap="round" />
+        <path d="M104 36 C108 26 116 20 124 20 L128 40 C122 44 112 46 106 46 Z" fill={FUR} stroke={INK} strokeWidth="3" strokeLinejoin="round" />
+        <path d="M110 38 Q118 44 128 38" fill="none" stroke="#57d7ff" strokeWidth="4.5" strokeLinecap="round" />
+        <circle cx="119" cy="44" r="3.2" fill="#c9a227" stroke={INK} strokeWidth="1.6" />
+        <path d="M120 10 L124 -6 L133 9 Z" fill={FUR} stroke={INK} strokeWidth="2.8" strokeLinejoin="round" />
+        <path d="M123 4 L125 -1 L128 6 Z" fill={SHADE} />
+        <path d="M112 20 C112 8 130 4 138 12 C142 16 142 22 140 25 L148 27 C152 28 152 36 147 38 L134 40 C124 42 112 34 112 20 Z" fill={FUR} stroke={INK} strokeWidth="3" strokeLinejoin="round" />
+        <path d="M138 26 C142 30 146 31 150 30" fill="none" stroke={INK} strokeWidth="1.6" strokeLinecap="round" opacity=".5" />
+        <path d="M134 37 C140 40 146 39 148 36" fill={LIGHT} stroke={INK} strokeWidth="2" strokeLinejoin="round" />
+        <ellipse cx="149" cy="29.5" rx="3.6" ry="3" fill={INK} />
+        <circle cx="128" cy="19" r="2.6" fill={INK} /><circle cx="128.8" cy="18.2" r=".8" fill="#fff" />
+        <path d="M124 14 Q128 12 132 14" fill="none" stroke={SHADE} strokeWidth="2" strokeLinecap="round" />
       </g>
     </svg>
   );

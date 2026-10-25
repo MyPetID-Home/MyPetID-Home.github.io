@@ -2,8 +2,9 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { STAGE_LABELS, TOPIC_LABELS, dailyReads, getReadLog, markRead, personalAchievements, personalGoals, profileFor, readStreak, recommendations, type Counters, type DogFacts, type ReadLog, type ReadTopic } from '../lib/dog-guide';
+import { STAGE_LABELS, TOPIC_LABELS, dailyReads, getReadLog, markRead, personalAchievements, personalGoals, profileFor, readStreak, recommendations, type Counters, type DogFacts, type Read, type ReadLog, type ReadTopic } from '../lib/dog-guide';
 import { MascotPeek } from './mascot';
+import { BottomSheet } from './memo-layout';
 import { Check, ChevronRight } from './icons';
 
 /** Adds medicine side effects and status tags from the account so reads match what's going on. */
@@ -47,41 +48,68 @@ export function useReadStats() {
 
 const TOPICS: ReadTopic[] = ['food', 'exercise', 'training', 'grooming', 'health'];
 
+const READ_MIN_S = 15;
+
+/** One read: the summary, the full article link, and "I've read this" once it has really been read. */
+function ReadSheet({ read, done, onClose, onFinish }: { read: Read; done: boolean; onClose: () => void; onFinish: () => void }) {
+  const [seconds, setSeconds] = useState(0);
+  const [openedLink, setOpenedLink] = useState(false);
+  useEffect(() => {
+    if (done) return;
+    const id = window.setInterval(() => setSeconds((n) => n + 1), 1000);
+    return () => window.clearInterval(id);
+  }, [done]);
+  const ready = openedLink || seconds >= READ_MIN_S;
+  return (
+    <BottomSheet title={read.title} onClose={onClose}>
+      <span className={`readTopic ${read.topic}`}>{TOPIC_LABELS[read.topic]}</span>
+      <div className="readArticle">{read.body.split(/(?<=[.!?])\s+(?=[A-Z])/).reduce<string[][]>((paras, sentence, i) => { if (i % 2 === 0) paras.push([sentence]); else paras[paras.length - 1].push(sentence); return paras; }, []).map((p, i) => <p key={i}>{p.join(' ')}</p>)}</div>
+      {read.link && <a className="readSource" href={read.link.url} target="_blank" rel="noopener noreferrer" onClick={() => setOpenedLink(true)}>
+        <strong>Read the full article</strong><small>{read.link.label}</small>
+      </a>}
+      <p className="formHint">General guidance, not veterinary advice. Ask your vet about your dog.</p>
+      <div className="actions">
+        {done ? <button type="button" onClick={onClose}>Close</button>
+          : <button type="button" className="primary" disabled={!ready} onClick={onFinish}>{ready ? 'I’ve read this · +10 XP' : `Keep reading… ${READ_MIN_S - seconds}s`}</button>}
+      </div>
+    </BottomSheet>
+  );
+}
+
 /** Home card: today's three reads and one calm recommendation at a time. */
 export function DailyReader({ facts, onXp }: { facts: DogFacts; onXp?: (xp: number, why: string) => void }) {
   const cloudFlags = useCloudFlags();
   const log = useReadLog();
-  const [open, setOpen] = useState('');
+  const [openId, setOpenId] = useState('');
   const [topic, setTopic] = useState<ReadTopic>('food');
   const [today, setToday] = useState<Date | null>(null);
   useEffect(() => { setToday(new Date()); }, []);
   const merged = useMemo(() => ({ ...facts, flags: [...(facts.flags || []), ...cloudFlags] }), [facts, cloudFlags]);
   const day = today?.toISOString().slice(0, 10) || '';
   const done = log.filter((x) => x.day === day).map((x) => x.id);
-  const reads = useMemo(() => (today ? dailyReads(merged, 3, today, log.map((x) => x.id)) : []), [merged, today, log]);
+  // Today's picks only look at reads from before today, so finishing one never reshuffles the list.
+  const earlier = useMemo(() => log.filter((x) => x.day !== day).map((x) => x.id).join('|'), [log, day]);
+  const reads = useMemo(() => (today ? dailyReads(merged, 3, today, earlier ? earlier.split('|') : []) : []), [merged, today, earlier]);
   const recs = useMemo(() => (today ? recommendations(merged, today) : null), [merged, today]);
   if (!today || !recs) return null;
   const dog = recs.dog;
-
-  function read(id: string) {
-    setOpen(open === id ? '' : id);
-    if (!done.includes(id)) { markRead(id); onXp?.(10, 'Daily read'); }
-  }
+  const opened = reads.find((r) => r.id === openId) || null;
 
   return (
     <section className="memoCard readerCard">
       <header className="memoCardHead"><h3>Daily reads for {facts.name}</h3><span className="readerMeta">{dog.breed?.name || facts.breed || 'Your dog'} · {STAGE_LABELS[dog.stage]}</span></header>
+      <p className="formHint">Open a read and finish it to earn 10 XP.</p>
       <ul className="readList">{reads.map((r) => {
         const isDone = done.includes(r.id);
         return (
           <li key={r.id} className={isDone ? 'done' : ''}>
-            <button type="button" className="readHead" aria-expanded={open === r.id} onClick={() => read(r.id)}>
+            <button type="button" className="readHead" onClick={() => setOpenId(r.id)}>
               <span className={`readTopic ${r.topic}`}>{TOPIC_LABELS[r.topic]}</span><strong>{r.title}</strong>{isDone ? <Check /> : <ChevronRight />}
             </button>
-            {open === r.id && <div className="readBody"><p>{r.body}</p>{r.link && <a href={r.link.url} target="_blank" rel="noopener noreferrer">{r.link.label}</a>}</div>}
           </li>
         );
       })}</ul>
+      {opened && <ReadSheet read={opened} done={done.includes(opened.id)} onClose={() => setOpenId('')} onFinish={() => { markRead(opened.id); onXp?.(10, 'Daily read'); setOpenId(''); }} />}
       {reads.length > 0 && done.length >= reads.length && <div className="readerDone"><MascotPeek size={54} /><p>All read today. Nice work!</p></div>}
       <div className="recBox">
         <div className="recTabs" role="tablist" aria-label="Recommendations">{TOPICS.map((t) => <button key={t} type="button" role="tab" aria-selected={topic === t} className={topic === t ? 'active' : ''} onClick={() => setTopic(t)}>{TOPIC_LABELS[t]}</button>)}</div>

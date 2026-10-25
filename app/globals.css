@@ -1219,7 +1219,7 @@ button.memoRow:hover { border-color: var(--brand); transform: none; }
 .memoEmpty { display: flex; align-items: flex-end; gap: 10px; padding-top: 4px; }
 .memoEmpty p { margin: 0 0 6px; }
 
-.mapDog { width: 54px; height: 36px; pointer-events: none; }
+.mapDog { width: 64px; height: 46px; pointer-events: none; }
 
 /* Daily reads + personal goals */
 .readerCard { position: relative; }
@@ -1294,3 +1294,38 @@ html { background: color-mix(in srgb, var(--bg) 84%, var(--brand) 16%); }
 .panel .panel, .panel .compactItemCard { margin: 12px 0 0 !important; border-image: none !important; border: 1px solid var(--line) !important; max-width: 100%; }
 .cardMiniHead { flex-wrap: wrap; }
 .cardMiniHead strong { white-space: normal; overflow: visible; text-overflow: clip; min-width: 0; }
+
+/* Walk tracker */
+.walkTracker .walkHead { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
+.walkTracker .walkHead h2 { margin: 0; }
+.gpsChip { font-size: .78rem; font-weight: 700; padding: 4px 10px; border-radius: 999px; background: var(--panel-strong); color: var(--muted); }
+.gpsChip.ok { background: var(--leaf-soft); color: var(--leaf); }
+.gpsChip.weak, .gpsChip.denied { background: var(--danger-soft); color: var(--danger); }
+.walkStats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 14px 0; }
+@media (min-width: 640px) { .walkStats { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.walkStats.compact { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.walkStats div { display: grid; gap: 2px; padding: 10px 12px; border-radius: var(--radius-sm); background: var(--panel); border: 1px solid var(--line); min-width: 0; }
+.walkStats small { color: var(--muted); font-size: .74rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
+.walkStats strong { font-size: 1.15rem; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.walkStats .big strong { font-size: 1.7rem; }
+.walkMarks { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+.markBtn { min-height: 56px; font-size: 1.05rem; font-weight: 800; border-radius: var(--radius-sm); display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.markBtn span { font-size: 1.4rem; }
+.markBtn.pee { background: color-mix(in srgb, var(--warn) 22%, transparent); border-color: color-mix(in srgb, var(--warn) 55%, transparent); }
+.markBtn.poop { background: color-mix(in srgb, var(--violet) 22%, transparent); border-color: color-mix(in srgb, var(--violet) 55%, transparent); }
+.markBtn:active { transform: scale(.96); }
+.walkControls button { flex: 1 1 140px; min-height: 52px; }
+.walkStart { min-height: 56px; min-width: 220px; font-size: 1.1rem; }
+.walkDone { display: flex; align-items: flex-end; gap: 12px; padding: 12px 14px; margin: 12px 0; border-radius: var(--radius-sm); background: var(--brand-soft); }
+.walkDone div { display: grid; gap: 4px; min-width: 0; }
+.walkDone small { color: var(--muted); }
+.dangerText { color: var(--danger) !important; }
+
+.readArticle { margin: 12px 0; font-size: 1.02rem; line-height: 1.65; }
+.readArticle p { margin: 0 0 12px; }
+.readSource { display: grid; gap: 2px; padding: 12px 14px; margin: 4px 0 10px; border-radius: var(--radius-sm); border: 1px solid var(--brand2); background: var(--brand2-soft); color: var(--text); text-decoration: none; }
+.readSource strong { color: var(--brand2); }
+.readSource small { color: var(--muted); overflow-wrap: anywhere; }
+
+.tourCard { max-height: calc(100vh - 90px); max-height: calc(100dvh - 90px); overflow-y: auto; overflow-x: visible; }
+.tourCard:has(.tourMascot) { overflow: visible; }

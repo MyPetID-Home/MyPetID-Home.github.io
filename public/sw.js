@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mypetid-shell-v2';
+const CACHE_NAME = 'mypetid-shell-v3';
 const CORE_ASSETS = ['/', '/dashboard/', '/manifest.webmanifest', '/images/logo/MyPetID-Logo_Resized.jpg'];
 
 self.addEventListener('install', (event) => {

@@ -186,7 +186,8 @@ export function WalkMap3D({ start, current, end, walker, pins, height = 420, onM
   const meIsDogRef = useRef(false);
   const dogRootRef = useRef<Root | null>(null);
   const lastHereRef = useRef<{ lat: number; lng: number } | null>(null);
-  const headingRef = useRef(90);
+  const facingRef = useRef<'left' | 'right'>('right');
+  const movedAtRef = useRef(0);
   const pinRefs = useRef<Marker[]>([]);
   const vertexRefs = useRef<Marker[]>([]);
   const onMapClickRef = useRef(onMapClick);
@@ -310,18 +311,26 @@ export function WalkMap3D({ start, current, end, walker, pins, height = 420, onM
         meIsDogRef.current = asDog;
       } else meRef.current.setLngLat([here.lng, here.lat]);
       if (asDog && dogRootRef.current) {
-        // Face the direction of travel (bearing from the last point we drew).
-        const prev = lastHereRef.current;
-        let heading = headingRef.current;
-        if (prev && (prev.lat !== here.lat || prev.lng !== here.lng)) {
-          const y = Math.sin((here.lng - prev.lng) * Math.PI / 180) * Math.cos(here.lat * Math.PI / 180);
-          const x = Math.cos(prev.lat * Math.PI / 180) * Math.sin(here.lat * Math.PI / 180) - Math.sin(prev.lat * Math.PI / 180) * Math.cos(here.lat * Math.PI / 180) * Math.cos((here.lng - prev.lng) * Math.PI / 180);
-          heading = (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
-          headingRef.current = heading;
+        // Face the way we're going, but only after clear travel: GPS wobble while standing
+        // still must not spin the dog around.
+        const anchor = lastHereRef.current;
+        const now = Date.now();
+        if (!anchor) lastHereRef.current = { lat: here.lat, lng: here.lng };
+        else {
+          const dy = (here.lat - anchor.lat) * 111_320;
+          const dx = (here.lng - anchor.lng) * 111_320 * Math.cos(here.lat * Math.PI / 180);
+          if (Math.hypot(dx, dy) >= 5) {
+            if (dx > 2) facingRef.current = 'right';
+            else if (dx < -2) facingRef.current = 'left';
+            lastHereRef.current = { lat: here.lat, lng: here.lng };
+            movedAtRef.current = now;
+          }
         }
-        dogRootRef.current.render(<MascotWalker size={54} walking heading={heading} />);
+        const moving = now - movedAtRef.current < 6000;
+        dogRootRef.current.render(<MascotWalker size={64} walking={moving} facing={facingRef.current} />);
+        if (!moving) window.setTimeout(() => dogRootRef.current?.render(<MascotWalker size={64} walking={Date.now() - movedAtRef.current < 6000} facing={facingRef.current} />), 6500);
       }
-      lastHereRef.current = { lat: here.lat, lng: here.lng };
+      if (!asDog) lastHereRef.current = { lat: here.lat, lng: here.lng };
       map.easeTo({ center: [here.lng, here.lat], duration: 800 });
     }
   }, [ready, start, current, end, walker]);
