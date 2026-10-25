@@ -144,7 +144,7 @@ export function WalkTracker({ dogName, petId, units, hasMap, onFinished }: { dog
     <>
       <section className="panel wide walkTracker">
         <div className="walkHead"><h2>{walk ? (walk.pausedAt ? 'Walk paused' : `Walking ${dogName}`) : `Walk ${dogName}`}</h2>{walk && <span className={`gpsChip ${gps.status}`}>{gpsText}</span>}</div>
-        {hasMap ? <WalkMap3D current={here ? { lat: here.lat, lng: here.lng } : undefined} walker={Boolean(walk && !walk.pausedAt)} route={path.length > 1 ? { path, color: '#57d7ff' } : null} pins={pins} fitTo={null} height={360} />
+        {hasMap ? <WalkMap3D current={here ? { lat: here.lat, lng: here.lng } : undefined} route={path.length > 1 ? { path, color: '#57d7ff' } : null} pins={pins} fitTo={null} height={360} />
           : <p className="formHint">The live map comes with a MyPetID plan. Your walk is still recorded below.</p>}
         {walk && live && <>
           <div className="walkStats">
