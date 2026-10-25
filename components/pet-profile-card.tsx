@@ -27,10 +27,12 @@ export type ProfileCardPet = {
   email?: string | null;
   lost?: boolean;
   lastSeen?: { lat: number; lng: number; at?: string | null } | null;
+  /** Recent shared scans, newest first (shown on the Scans tab). */
+  scans?: { lat: number; lng: number; at: string }[] | null;
   tagCode?: string | null;
 };
 
-type TabKey = 'about' | 'health' | 'vet' | 'contact' | 'seen' | 'app';
+type TabKey = 'about' | 'health' | 'vet' | 'contact' | 'seen' | 'scans' | 'app';
 const LABELS: Record<string, string> = { sex: 'Sex', age: 'Age', birthday: 'Birthday', size: 'Size', weight: 'Weight', coat: 'Coat', colors: 'Colors', pattern: 'Pattern', eyes: 'Eyes', ears: 'Ears', tail: 'Tail', markings: 'Markings', microchip: 'Microchip', status: 'Status', clinic: 'Clinic', doctor: 'Vet', phone: 'Phone', address: 'Address', emergency: 'Emergency clinic', feeding: 'Feeding', allergies: 'Allergies', medications: 'Medications', notes: 'Notes' };
 
 function Rows({ data }: { data?: Record<string, string | undefined> | null }) {
@@ -46,9 +48,10 @@ export function PetProfileCard({ pet, mode, finderHref, ownerTools, onAlert }: {
     if (mode === 'owner' || (pet.vet && Object.values(pet.vet).some(Boolean))) list.push({ key: 'vet', label: 'Vet' });
     list.push({ key: 'contact', label: 'Contact' });
     if (pet.lost && pet.lastSeen) list.push({ key: 'seen', label: 'Last seen' });
+    else if (pet.scans && pet.scans.length) list.push({ key: 'scans', label: 'Scans' });
     if (mode === 'public') list.push({ key: 'app', label: 'Get MyPetID' });
     return list;
-  }, [mode, pet.health, pet.vet, pet.lost, pet.lastSeen]);
+  }, [mode, pet.health, pet.vet, pet.lost, pet.lastSeen, pet.scans]);
   const [tab, setTab] = useState<TabKey>(pet.lost && pet.lastSeen ? 'seen' : 'about');
   const photo = pet.photoUrl || '/images/logo/MyPetID-Logo_Resized.jpg';
 
@@ -101,6 +104,11 @@ export function PetProfileCard({ pet, mode, finderHref, ownerTools, onAlert }: {
           <h3><MapPinned /> Last seen{pet.lastSeen.at ? ` · ${new Date(pet.lastSeen.at).toLocaleString(undefined, { weekday: 'short', hour: 'numeric', minute: '2-digit' })}` : ''}</h3>
           <p className="formHint">The last place someone scanned my tag (rounded to about 100 m).</p>
           <WalkMap3D current={{ lat: pet.lastSeen.lat, lng: pet.lastSeen.lng }} height={300} />
+        </>}
+        {tab === 'scans' && pet.scans && <>
+          <h3><MapPinned /> Where my tag was scanned</h3>
+          <p className="formHint">The most recent scan and the one before it. Only scans the finder agreed to share appear here.</p>
+          <WalkMap3D height={320} pins={pet.scans.slice(0, 2).map((s, i) => ({ lat: s.lat, lng: s.lng, tone: i === 0 ? 'brand' : 'blue', glyph: i === 0 ? '1' : '2', label: `${i === 0 ? 'Most recent' : 'Previous'} · ${new Date(s.at).toLocaleString(undefined, { weekday: 'short', hour: 'numeric', minute: '2-digit' })}` }))} />
         </>}
         {tab === 'app' && <>
           <h3><Sparkles /> Keep your dog safe too</h3>

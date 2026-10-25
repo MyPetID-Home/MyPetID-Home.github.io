@@ -1,0 +1,4 @@
+-- MyPetID: deletes were impossible because the audit trigger logged links to the row
+-- it was deleting (FK violation). Applied live 2026-10-25 via create or replace;
+-- see the live definition of public.audit_row_change(): before inserting the log row
+-- it now nulls target_pet_id / target_profile_id / actor_profile_id that no longer exist.

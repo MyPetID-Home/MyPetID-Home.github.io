@@ -10,6 +10,8 @@ import 'maplibre-gl/dist/maplibre-gl.css';
  * search uses Photon (OSM). No API keys and no Google quota.
  */
 export type MapPoint = { lat: number; lng: number; label?: string };
+/** A labelled pin drawn on the map (scan history, saved places, meetups...). */
+export type MapPin = { lat: number; lng: number; label: string; tone?: 'brand' | 'blue' | 'red' | 'gold' | 'violet'; glyph?: string };
 type SpotKind = 'park' | 'water' | 'vet' | 'shop' | 'bin';
 type Spot = { id: string; kind: SpotKind; lat: number; lng: number; name: string };
 
@@ -45,11 +47,12 @@ function kindOf(tags: Record<string, string>): SpotKind {
   return 'bin';
 }
 
-export function WalkMap3D({ start, current, end, height = 420 }: { start?: MapPoint; current?: MapPoint; end?: MapPoint; height?: number }) {
+export function WalkMap3D({ start, current, end, pins, height = 420 }: { start?: MapPoint; current?: MapPoint; end?: MapPoint; pins?: MapPin[]; height?: number }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const markersRef = useRef<Marker[]>([]);
   const meRef = useRef<Marker | null>(null);
+  const pinRefs = useRef<Marker[]>([]);
   const orbitRef = useRef<number | null>(null);
   const libRef = useRef<typeof import('maplibre-gl') | null>(null);
   const [ready, setReady] = useState(false);
@@ -117,6 +120,25 @@ export function WalkMap3D({ start, current, end, height = 420 }: { start?: MapPo
       map.easeTo({ center: [here.lng, here.lat], duration: 800 });
     }
   }, [ready, start, current, end]);
+
+  // Labelled pins passed in by the page; the map frames them all
+  useEffect(() => {
+    const map = mapRef.current;
+    const lib = libRef.current;
+    if (!ready || !map || !lib) return;
+    pinRefs.current.forEach((m) => m.remove());
+    pinRefs.current = (pins || []).map((pin) => {
+      const el = document.createElement('div');
+      el.className = `mapPin ${pin.tone || 'brand'}`;
+      el.innerHTML = `<span class="mapPinDot">${pin.glyph || ''}</span><span class="mapPinLabel"></span>`;
+      (el.querySelector('.mapPinLabel') as HTMLElement).textContent = pin.label;
+      return new lib.Marker({ element: el, anchor: 'bottom' }).setLngLat([pin.lng, pin.lat]).addTo(map);
+    });
+    if (pins && pins.length > 1) {
+      const lngs = pins.map((p) => p.lng); const lats = pins.map((p) => p.lat);
+      map.fitBounds([[Math.min(...lngs), Math.min(...lats)], [Math.max(...lngs), Math.max(...lats)]], { padding: 70, maxZoom: 16.5, pitch: 55, duration: 1200 });
+    } else if (pins && pins.length === 1) map.easeTo({ center: [pins[0].lng, pins[0].lat], zoom: 16, duration: 900 });
+  }, [ready, pins]);
 
   // Draw dog-friendly spots as markers
   useEffect(() => {

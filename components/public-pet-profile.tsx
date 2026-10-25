@@ -181,11 +181,13 @@ export function PublicPetProfile() {
           name: pet.name, breed: pet.breed, photoUrl: pet.photo_url, coverUrl: pet.cover_url, about: pet.behavior_public, health: pet.medical_public,
           details: pet.public_extra?.details, vet: pet.public_extra?.vet, care: pet.public_extra?.care,
           phone: publicPhone, email: publicEmail, lost: pet.lost_mode, tagCode: finderTag,
+          // The demo dog shows sample scan history so visitors can see how it works.
+          scans: finderTag === DEMO_TAG ? [{ lat: 44.0974, lng: -70.1654, at: new Date(Date.now() - 2 * 3600e3).toISOString() }, { lat: 44.0928, lng: -70.1749, at: new Date(Date.now() - 22 * 3600e3).toISOString() }] : null,
           lastSeen: pet.last_seen_lat != null && pet.last_seen_lng != null ? { lat: pet.last_seen_lat, lng: pet.last_seen_lng, at: pet.last_seen_at } : null,
         }}
         ownerTools={pet.is_owner ? <Link className="button primary" href="/dashboard/pet/">Edit in the app</Link> : undefined}
       />
-      {showDemoExtras && <p className="formHint" style={{ textAlign: 'center', marginTop: 18 }}>This is a demo profile. <Link href="/">Make one for your dog</Link>.</p>}
+      {(showDemoExtras || finderTag === DEMO_TAG) && <p className="formHint" style={{ textAlign: 'center', marginTop: 18 }}>This is a demo profile. <Link href="/">Make one for your dog</Link>.</p>}
     </main>
   );
 }
