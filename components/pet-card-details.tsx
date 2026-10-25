@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { IdCardSvg } from './id-card';
 import { BREED_NAMES, COAT_COLORS, COAT_TYPES, EYE_COLORS } from '../lib/breeds';
-import { STATUS_TAGS, US_STATES, eyeCode, formatDob, formatHeight, mergeLayout, sexCode, type CardLayout } from '../lib/id-card';
+import { SIGNATURE_STYLES, STATUS_TAGS, US_STATES, coatCode, eyeCode, formatDob, formatHeight, licenseNumber, mergeLayout, sexCode, type CardLayout } from '../lib/id-card';
 
 /**
  * The owner's dog profile + ID card details, saved to their MyPetID account (pets.profile
@@ -13,8 +13,8 @@ import { STATUS_TAGS, US_STATES, eyeCode, formatDob, formatHeight, mergeLayout, 
 type CloudPet = { id: string; name: string; breed: string | null; photo_url: string | null; behavior_public: string | null; medical_public: string | null; contact_public: Record<string, string | null> | null; public_fields: string[]; profile: Record<string, any> };
 type Draft = {
   name: string; breed: string; photo_url: string; about: string; health: string;
-  sex: string; birthday: string; height_in: string; weight_lb: string; eyes: string; coat: string; colors: string; microchip: string;
-  status_tags: string[]; state: string; full_name: string; species: string; restrictions: string;
+  sex: string; birthday: string; height_in: string; weight_lb: string; eyes: string; coat: string; colors: string; microchip: string; rabies_tag: string;
+  status_tags: string[]; state: string; full_name: string; species: string; restrictions: string; signature_style: string;
   vet_clinic: string; vet_phone: string; contact_phone: string; contact_email: string;
   show_details: boolean; show_vet: boolean;
   line1: string; line2: string; city: string; addr_state: string; postal_code: string; card_phone: string;
@@ -24,8 +24,8 @@ function toDraft(pet: CloudPet, owner: Record<string, any>): Draft {
   const p = pet.profile || {}; const d = p.details || {}; const c = p.card || {}; const v = p.vet || {}; const a = owner.address || {};
   return {
     name: pet.name || '', breed: pet.breed || '', photo_url: pet.photo_url || '', about: pet.behavior_public || '', health: pet.medical_public || '',
-    sex: d.sex || '', birthday: d.birthday || '', height_in: d.height_in ? String(d.height_in) : '', weight_lb: d.weight_lb ? String(d.weight_lb) : '', eyes: d.eyes || '', coat: d.coat || '', colors: d.colors || '', microchip: d.microchip || '',
-    status_tags: Array.isArray(p.status_tags) ? p.status_tags : [], state: c.state || a.state || '', full_name: c.full_name || '', species: c.species || 'Canine', restrictions: c.restrictions || '',
+    sex: d.sex || '', birthday: d.birthday || '', height_in: d.height_in ? String(d.height_in) : '', weight_lb: d.weight_lb ? String(d.weight_lb) : '', eyes: d.eyes || '', coat: d.coat || '', colors: d.colors || '', microchip: d.microchip || '', rabies_tag: d.rabies_tag || '',
+    status_tags: Array.isArray(p.status_tags) ? p.status_tags : [], state: c.state || a.state || '', full_name: c.full_name || '', species: c.species || 'Canine', restrictions: c.restrictions || '', signature_style: c.signature_style || 'script',
     vet_clinic: v.clinic || '', vet_phone: v.phone || '', contact_phone: pet.contact_public?.phone || '', contact_email: pet.contact_public?.email || '',
     show_details: pet.public_fields?.includes('details') ?? false, show_vet: pet.public_fields?.includes('vet') ?? false,
     line1: a.line1 || '', line2: a.line2 || '', city: a.city || '', addr_state: a.state || '', postal_code: a.postal_code || '', card_phone: owner.card_phone || '',
@@ -41,6 +41,7 @@ export function PetCardDetails({ localPetName }: { localPetName?: string }) {
   const [template, setTemplate] = useState<{ background_url: string | null; layout: Partial<CardLayout> } | null>(null);
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
+  const [tab, setTab] = useState<'about' | 'details' | 'contact' | 'card'>('about');
 
   const load = useCallback(async () => {
     if (!supabase) return;
@@ -92,8 +93,8 @@ export function PetCardDetails({ localPetName }: { localPetName?: string }) {
     const profile = {
       ...(pet.profile || {}),
       status_tags: draft.status_tags,
-      details: { ...(pet.profile?.details || {}), sex: draft.sex, birthday: draft.birthday, height_in: draft.height_in ? Number(draft.height_in) : null, weight_lb: draft.weight_lb ? Number(draft.weight_lb) : null, eyes: draft.eyes, coat: draft.coat, colors: draft.colors, microchip: draft.microchip, age: '', size: '' },
-      card: { ...(pet.profile?.card || {}), state: draft.state, full_name: draft.full_name, species: draft.species, restrictions: draft.restrictions },
+      details: { ...(pet.profile?.details || {}), sex: draft.sex, birthday: draft.birthday, height_in: draft.height_in ? Number(draft.height_in) : null, weight_lb: draft.weight_lb ? Number(draft.weight_lb) : null, eyes: draft.eyes, coat: draft.coat, colors: draft.colors, microchip: draft.microchip, rabies_tag: draft.rabies_tag, age: '', size: '' },
+      card: { ...(pet.profile?.card || {}), state: draft.state, full_name: draft.full_name, species: draft.species, restrictions: draft.restrictions, signature_style: draft.signature_style },
       vet: { ...(pet.profile?.vet || {}), clinic: draft.vet_clinic, phone: draft.vet_phone },
     };
     const { error } = await supabase.from('pets').update({ name: draft.name.trim() || pet.name, breed: draft.breed || null, photo_url: draft.photo_url || null, behavior_public: draft.about || null, medical_public: draft.health || null, contact_public: { phone: draft.contact_phone || null, email: draft.contact_email || null }, public_fields: Array.from(fields), profile }).eq('id', pet.id);
@@ -118,7 +119,7 @@ export function PetCardDetails({ localPetName }: { localPetName?: string }) {
   if (!draft) return null;
   const set = (patch: Partial<Draft>) => setDraft({ ...draft, ...patch });
   const toggleTag = (key: string) => set({ status_tags: draft.status_tags.includes(key) ? draft.status_tags.filter((t) => t !== key) : [...draft.status_tags, key] });
-  const cardData = { state: draft.state || 'ME', petName: draft.name, fullName: draft.full_name || draft.name, species: draft.species, photoUrl: draft.photo_url || '/images/logo/MyPetID-Logo_Resized.jpg', address1: [draft.line1, draft.line2].filter(Boolean).join(' '), address2: [draft.city, [draft.addr_state, draft.postal_code].filter(Boolean).join(' ')].filter(Boolean).join(', '), phone: draft.card_phone, height: formatHeight(draft.height_in), weight: draft.weight_lb ? `${draft.weight_lb}lbs` : '', eyes: eyeCode(draft.eyes), sex: sexCode(draft.sex), dob: formatDob(draft.birthday), restrictions: draft.restrictions, statusTags: draft.status_tags, qrUrl: '', barcode: '' };
+  const cardData = { state: draft.state || 'ME', petName: draft.name, fullName: draft.full_name || draft.name, species: draft.species, photoUrl: draft.photo_url || '/images/logo/MyPetID-Logo_Resized.jpg', address1: [draft.line1, draft.line2].filter(Boolean).join(' '), address2: [draft.city, [draft.addr_state, draft.postal_code].filter(Boolean).join(' ')].filter(Boolean).join(', '), phone: draft.card_phone, height: formatHeight(draft.height_in), weight: draft.weight_lb ? `${draft.weight_lb}lbs` : '', eyes: eyeCode(draft.eyes), sex: sexCode(draft.sex), dob: formatDob(draft.birthday), restrictions: draft.restrictions, license: licenseNumber(draft.rabies_tag, draft.microchip, pet?.id), coat: coatCode(draft.colors || draft.coat), signatureFont: draft.signature_style as never, statusTags: draft.status_tags, qrUrl: '', barcode: '' };
 
   return (
     <form className="panel full petCardDetails" onSubmit={save}>
@@ -126,8 +127,8 @@ export function PetCardDetails({ localPetName }: { localPetName?: string }) {
         {pets.length > 1 && <select value={petId} onChange={(e) => setPetId(e.target.value)} aria-label="Choose dog" style={{ width: 'auto' }}>{pets.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</select>}</div>
       {message && <p className="authMessage" role="status">{message}</p>}
 
-      <div className="cardDetailsGrid">
-        <div>
+      <div className="formTabs" role="tablist" aria-label="Profile sections">{([['about', 'About'], ['details', 'Details'], ['contact', 'Contact & vet'], ['card', 'ID card']] as const).map(([key, label]) => <button key={key} type="button" role="tab" aria-selected={tab === key} className={tab === key ? 'active' : ''} onClick={() => setTab(key)}>{label}</button>)}</div>
+      {tab === 'about' && <div>
           <h3>Status tags</h3>
           <p className="formHint">These show on the card and to anyone who scans the tag, so they know how to help.</p>
           <div className="chipCloud tagPicker">{STATUS_TAGS.map((t) => <button key={t.key} type="button" className={draft.status_tags.includes(t.key) ? 'activeMini' : ''} aria-pressed={draft.status_tags.includes(t.key)} onClick={() => toggleTag(t.key)}>{t.label}</button>)}</div>
@@ -136,6 +137,15 @@ export function PetCardDetails({ localPetName }: { localPetName?: string }) {
           <div className="grid2">
             <label>Name<input value={draft.name} onChange={(e) => set({ name: e.target.value })} maxLength={40} /></label>
             <label>Breed<input list="card-breeds" value={draft.breed} onChange={(e) => set({ breed: e.target.value })} /><datalist id="card-breeds">{BREED_NAMES.map((b) => <option key={b} value={b} />)}</datalist></label>
+            <label>Photo<input type="file" accept="image/*" onChange={(e) => uploadPhoto(e.target.files?.[0])} /></label>
+          </div>
+          <label>Personality (public)<textarea value={draft.about} onChange={(e) => set({ about: e.target.value })} maxLength={1000} /></label>
+          <label>Health notes for finders (public)<textarea value={draft.health} onChange={(e) => set({ health: e.target.value })} maxLength={1000} /></label>
+
+      </div>}
+      {tab === 'details' && <div>
+          <h3>Body & markings</h3>
+          <div className="grid2">
             <label>Sex<select value={draft.sex} onChange={(e) => set({ sex: e.target.value })}><option value="">Select</option><option>Male</option><option>Female</option><option>Male (neutered)</option><option>Female (spayed)</option></select></label>
             <label>Date of birth<input type="date" value={draft.birthday} onChange={(e) => set({ birthday: e.target.value })} /></label>
             <label>Height at shoulder (inches)<input inputMode="decimal" value={draft.height_in} onChange={(e) => set({ height_in: e.target.value.replace(/[^\d.]/g, '') })} placeholder="20" /></label>
@@ -144,11 +154,10 @@ export function PetCardDetails({ localPetName }: { localPetName?: string }) {
             <label>Coat<select value={draft.coat} onChange={(e) => set({ coat: e.target.value })}><option value="">Select</option>{COAT_TYPES.map((c) => <option key={c}>{c}</option>)}</select></label>
             <label>Colors<input list="card-colors" value={draft.colors} onChange={(e) => set({ colors: e.target.value })} /><datalist id="card-colors">{COAT_COLORS.map((c) => <option key={c} value={c} />)}</datalist></label>
             <label>Microchip<input value={draft.microchip} onChange={(e) => set({ microchip: e.target.value })} inputMode="numeric" /></label>
-            <label>Photo<input type="file" accept="image/*" onChange={(e) => uploadPhoto(e.target.files?.[0])} /></label>
+            <label>Rabies tag number<input value={draft.rabies_tag} onChange={(e) => set({ rabies_tag: e.target.value })} placeholder="Used as the card's license number" maxLength={24} /></label>
           </div>
-          <label>Personality (public)<textarea value={draft.about} onChange={(e) => set({ about: e.target.value })} maxLength={1000} /></label>
-          <label>Health notes for finders (public)<textarea value={draft.health} onChange={(e) => set({ health: e.target.value })} maxLength={1000} /></label>
-
+      </div>}
+      {tab === 'contact' && <div>
           <h3>Contact & vet</h3>
           <div className="grid2">
             <label>Phone for finders<input value={draft.contact_phone} onChange={(e) => set({ contact_phone: e.target.value })} inputMode="tel" /></label>
@@ -158,16 +167,16 @@ export function PetCardDetails({ localPetName }: { localPetName?: string }) {
           </div>
           <label className="toggleRow"><input type="checkbox" checked={draft.show_details} onChange={(e) => set({ show_details: e.target.checked })} /> Show sex, size, coat and microchip on the scan page</label>
           <label className="toggleRow"><input type="checkbox" checked={draft.show_vet} onChange={(e) => set({ show_vet: e.target.checked })} /> Show my vet on the scan page</label>
-        </div>
-
+      </div>}
+      {tab === 'card' && <div className="cardDetailsGrid">
         <div>
-          <h3>ID card</h3>
-          <div className="cardMini"><IdCardSvg data={cardData} layout={mergeLayout(template?.layout)} background={template?.background_url} hideCodes /></div>
           <div className="grid2">
             <label>Card state<select value={draft.state} onChange={(e) => set({ state: e.target.value })}><option value="">Select your state</option>{US_STATES.map((s) => <option key={s.code} value={s.code}>{s.name}</option>)}</select></label>
             <label>Species line<select value={draft.species} onChange={(e) => set({ species: e.target.value })}>{['Canine', 'Service Canine', 'Support Canine', 'Therapy Canine', 'K9'].map((s) => <option key={s}>{s}</option>)}</select></label>
             <label>Full name (signature)<input value={draft.full_name} onChange={(e) => set({ full_name: e.target.value })} placeholder={`${draft.name || 'Clyde'} Rio Evensen`} maxLength={40} /></label>
             <label>Restrictions (just for fun)<input value={draft.restrictions} onChange={(e) => set({ restrictions: e.target.value })} placeholder="Not allowed on furniture" maxLength={34} /></label>
+            <label>Signature style<select value={draft.signature_style} onChange={(e) => set({ signature_style: e.target.value })}>{SIGNATURE_STYLES.map((s) => <option key={s.key} value={s.key}>{s.label}</option>)}</select></label>
+            <label>License number<input value={licenseNumber(draft.rabies_tag, draft.microchip, pet?.id)} readOnly title="Your rabies tag number, else your microchip, else a MyPetID number" /></label>
           </div>
           <h3>Address printed on the card</h3>
           <p className="formHint">Only used on your physical card. It’s never shown on the scan page.</p>
@@ -180,7 +189,8 @@ export function PetCardDetails({ localPetName }: { localPetName?: string }) {
           </div>
           <label>Phone printed on the card<input value={draft.card_phone} onChange={(e) => set({ card_phone: e.target.value })} inputMode="tel" autoComplete="tel" /></label>
         </div>
-      </div>
+        <div><div className="cardMini"><IdCardSvg data={cardData} layout={mergeLayout(template?.layout)} background={template?.background_url} hideCodes /></div><p className="formHint">The QR code and barcode are added when MyPetID prints your card.</p></div>
+      </div>}
       <div className="actions"><button className="primary" type="submit" disabled={busy}>{busy ? 'Saving…' : 'Save to my account'}</button></div>
     </form>
   );

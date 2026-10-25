@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { MapPinned, PawPrint } from './icons';
 import { PetProfileCard } from './pet-profile-card';
+import { PublicCareCountdown } from './care-schedule';
 import { savedGuest } from '../lib/guest-pet';
 import { supabase } from '../lib/supabase';
 import { isServiceRestrictionMessage, queueFallbackSync } from '../lib/fallback-local';
@@ -206,6 +207,7 @@ export function ScanLanding() {
       </div>}
       <div className="scanProfileFrame" aria-hidden={!consentDismissed}>
       <section className="publicHero"><Link className="brandLockup" href="/"><img src="/images/logo/MyPetID-Logo_Resized.jpg" alt="" /><span>MyPet<b>ID</b></span></Link></section>
+      {record?.public_extra?.care_schedule && record.public_extra.care_schedule.length > 0 && <PublicCareCountdown schedule={record.public_extra.care_schedule} timeZone={record.public_extra.timezone || 'America/New_York'} petName={pet.name} lost={pet.lost_mode} />}
       {pet.id ? <PetProfileCard mode="public" onAlert={scanMode === 'owner' ? undefined : acceptFinderLocation} pet={{
         name: pet.name, breed: pet.breed, photoUrl: pet.photo_url, coverUrl: record?.cover_url, about: pet.behavior_public, health: pet.medical_public,
         details: record?.public_extra?.details, vet: record?.public_extra?.vet, care: record?.public_extra?.care,

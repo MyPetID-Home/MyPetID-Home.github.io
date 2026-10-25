@@ -11,6 +11,21 @@ export const supabase = hasSupabaseConfig
     })
   : null;
 
+/** True when the cloud database answers. Network errors and 5xx count as down; anything else as up. */
+export async function supabaseHealthCheck(timeoutMs = 8000): Promise<boolean> {
+  if (!hasSupabaseConfig) return true;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(`${supabaseUrl}/auth/v1/health`, { headers: { apikey: supabaseAnonKey! }, signal: controller.signal, cache: 'no-store' });
+    return response.status < 500;
+  } catch {
+    return false;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 export const primaryAdminEmail = 'real_cak3d@yahoo.com';
 export const adminLoginAlias = 'CAK3D_ADMIN';
 

@@ -126,6 +126,7 @@ export function WalkPlanner({ dogName }: { dogName: string }) {
   const [pinKind, setPinKind] = useState<PinKind>('favorite');
   const [pinName, setPinName] = useState('');
   const [pinNote, setPinNote] = useState('');
+  const [sharingPlace, setSharingPlace] = useState(false);
 
   // Saved walks
   const [walks, setWalks] = useState<WalkRow[]>([]);
@@ -214,7 +215,7 @@ export function WalkPlanner({ dogName }: { dogName: string }) {
     setFitTo(null);
     setConfirmDelete(null);
     setRenaming(null);
-    if (next !== 'pins') { setAddingPin(false); setDraft(null); }
+    if (next !== 'pins') { setAddingPin(false); setDraft(null); setSharingPlace(false); }
   }
 
   function flyToPoint(lat: number, lng: number) {
@@ -337,6 +338,8 @@ export function WalkPlanner({ dogName }: { dogName: string }) {
             onRouteChange={mode === 'plan' ? (next) => { setFitTo(null); setWaypoints(next); } : undefined}
             fitTo={fitTo}
             flyTo={flyTo}
+            addPlaceMode={sharingPlace}
+            onAddPlaceDone={() => setSharingPlace(false)}
           />
         </div>
 
@@ -375,7 +378,8 @@ export function WalkPlanner({ dogName }: { dogName: string }) {
             <>
               {!addingPin ? (
                 <div className="actions compact">
-                  <button type="button" className="primary" disabled={!signedIn} onClick={() => { setAddingPin(true); setDraft(null); setMessage(''); }}><MapPinned /> Add pin</button>
+                  <button type="button" className="primary" disabled={!signedIn || sharingPlace} onClick={() => { setAddingPin(true); setDraft(null); setMessage(''); }}><MapPinned /> Add pin</button>
+                  <button type="button" className={sharingPlace ? 'activeMini' : ''} aria-pressed={sharingPlace} disabled={!signedIn} onClick={() => { setMessage(''); setSharingPlace((on) => !on); }}>{sharingPlace ? 'Stop sharing' : 'Share a place with everyone'}</button>
                 </div>
               ) : (
                 <div className={styles.controls}>
@@ -393,6 +397,8 @@ export function WalkPlanner({ dogName }: { dogName: string }) {
                   </div>
                 </div>
               )}
+              <p className={`mutedLine ${styles.note}`}>Private pins are only visible to you. To help other owners, share a place with everyone: it shows on the map for all MyPetID users.</p>
+              {sharingPlace && <p className="formHint" role="status">Tap the map where the place is, then fill in the short form on the map.</p>}
               {signedIn && (pins.length === 0 ? <p className="mutedLine">No pins yet. Save the good parks, water stops and the spots to avoid.</p> : (
                 <ul className={styles.list}>
                   {pins.map((pin) => {

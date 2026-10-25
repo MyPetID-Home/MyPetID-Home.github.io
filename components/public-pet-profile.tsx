@@ -1,11 +1,15 @@
 "use client";
 
+import { BoneLoader } from './bone-loader';
+import { StatusScreen } from './status-screen';
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '../lib/supabase';
 import { fetchPublicPet } from '../lib/public-pet';
 import { PawPrint } from './icons';
 import { PetProfileCard } from './pet-profile-card';
+import { PublicCareCountdown } from './care-schedule';
+import { BirthdayBanner } from './birthday';
 
 type Pet = {
   id: string;
@@ -19,7 +23,7 @@ type Pet = {
   tag_code?: string | null;
   is_owner?: boolean;
   cover_url?: string | null;
-  public_extra?: { details?: Record<string, string>; vet?: Record<string, string>; care?: Record<string, string>; status_tags?: string[]; species?: string } | null;
+  public_extra?: { details?: Record<string, string>; vet?: Record<string, string>; care?: Record<string, string>; status_tags?: string[]; species?: string; care_schedule?: unknown[]; timezone?: string; birthday_md?: string | null } | null;
   last_seen_at?: string | null;
   last_seen_lat?: number | null;
   last_seen_lng?: number | null;
@@ -157,14 +161,7 @@ export function PublicPetProfile() {
         <section className="publicHero">
           {brand}
           <article className="panel" aria-live="polite" style={{ marginTop: 28, maxWidth: 720 }}>
-            {loadStatus === 'loading' ? <><p className="eyebrow">Pet profile</p><h1>Fetching this pet’s profile…</h1><div className="progress"><span style={{ width: '60%' }} /></div></> : <>
-              <span className="iconBubble"><PawPrint /></span>
-              <p className="eyebrow" style={{ marginTop: 16 }}>Pet profile{finderTag ? ` · tag ${finderTag}` : ''}</p>
-              <h1>This profile isn’t available right now.</h1>
-              <p className="lead">The tag may not be linked to a pet yet, or we couldn’t reach MyPetID.</p>
-              <p>If you found this pet, please keep them safe and contact local animal control, a shelter or a vet. They can also scan for a microchip.</p>
-              {finderHref && <div className="actions"><Link className="button primary" href={finderHref}>I found this pet</Link></div>}
-            </>}
+            {loadStatus === 'loading' ? <BoneLoader label="Fetching this pet’s profile…" /> : <StatusScreen kind="tagNotFound" title="This profile isn’t available right now" message={`${finderTag ? `Tag ${finderTag}: ` : ''}the tag may not be linked to a pet yet, or we couldn’t reach MyPetID. If you found this pet, please keep them safe and contact local animal control, a shelter or a vet. They can also scan for a microchip.`} actions={[...(finderHref ? [{ label: 'I found this pet', href: finderHref, primary: true }] : []), { label: 'Try again', onClick: () => window.location.reload() }]} />}
           </article>
         </section>
       </main>
@@ -174,6 +171,8 @@ export function PublicPetProfile() {
   return (
     <main className="publicShell">
       <section className="publicHero">{brand}</section>
+      {pet.public_extra?.birthday_md && <BirthdayBanner petName={pet.name} birthday={pet.public_extra.birthday_md} />}
+      {pet.public_extra?.care_schedule && pet.public_extra.care_schedule.length > 0 && <PublicCareCountdown schedule={pet.public_extra.care_schedule} timeZone={pet.public_extra.timezone || 'America/New_York'} petName={pet.name} lost={pet.lost_mode} />}
       <PetProfileCard
         mode={pet.is_owner || mode === 'owner' ? 'owner' : 'public'}
         finderHref={finderHref}

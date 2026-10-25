@@ -5,9 +5,9 @@ import { supabase } from '../lib/supabase';
 import { Trophy } from './icons';
 
 /** Admin-only editor for achievements (award_rules). RLS lets only admins write these. */
-type Rule = { id: string; title: string; category: string; icon: string; trigger_key: string; target: number; points: number; requirement: string; active: boolean; admin_locked: boolean };
+type Rule = { id: string; title: string; category: string; icon: string; trigger_key: string; target: number; points: number; requirement: string; active: boolean; admin_locked: boolean; period?: string; perk?: string | null };
 const TRIGGERS = ['profile_completion', 'profile_photo', 'tag_claimed', 'contact_public', 'lost_resolved', 'scan_shared', 'walks_completed', 'walk_streak_days', 'miles_walked', 'walks_before_8am', 'walks_after_8pm', 'new_places', 'dog_parks_visited', 'meals_completed', 'meal_streak_days', 'water_logged', 'tricks_mastered', 'training_sessions', 'play_minutes', 'documents_uploaded', 'vaccines_current', 'vet_visits', 'grooming_logged', 'reminders_set', 'pack_friends', 'meetups_joined', 'meetups_hosted', 'birthday', 'days_member', 'custom'];
-const blank: Omit<Rule, 'id'> = { title: '', category: 'Custom', icon: '🏆', trigger_key: 'custom', target: 1, points: 25, requirement: '', active: true, admin_locked: true };
+const blank: Omit<Rule, 'id'> = { title: '', category: 'Custom', icon: '🏆', trigger_key: 'custom', target: 1, points: 25, requirement: '', active: true, admin_locked: true, period: 'once', perk: '' };
 
 function RuleForm({ rule, onSave, onDelete, saving }: { rule: Omit<Rule, 'id'> & { id?: string }; onSave: (r: Omit<Rule, 'id'> & { id?: string }) => void; onDelete?: () => void; saving: boolean }) {
   const [draft, setDraft] = useState(rule);
@@ -21,6 +21,8 @@ function RuleForm({ rule, onSave, onDelete, saving }: { rule: Omit<Rule, 'id'> &
       <label className="achNum">Target<input type="number" step="any" min={0} value={draft.target} onChange={(e) => setDraft({ ...draft, target: Number(e.target.value) })} /></label>
       <label className="achNum">XP<input type="number" min={0} value={draft.points} onChange={(e) => setDraft({ ...draft, points: Number(e.target.value) })} /></label>
       <input className="achReq" value={draft.requirement} onChange={(e) => setDraft({ ...draft, requirement: e.target.value })} placeholder="What the owner has to do" required aria-label="Requirement" />
+      <label className="achNum">Earn<select value={draft.period || 'once'} onChange={(e) => setDraft({ ...draft, period: e.target.value })}><option value="once">Once</option><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="monthly">Monthly</option></select></label>
+      <input className="achPerk" value={draft.perk || ''} onChange={(e) => setDraft({ ...draft, perk: e.target.value })} placeholder="Perk or reward (optional), e.g. 10% off a tag" aria-label="Perk" />
       <label className="toggleRow achActive"><input type="checkbox" checked={draft.active} onChange={(e) => setDraft({ ...draft, active: e.target.checked })} /> Active</label>
       <div className="actions compact">
         <button className="primary" type="submit" disabled={saving || (!changed && Boolean(rule.id))}>{rule.id ? 'Save' : 'Add'}</button>
@@ -51,6 +53,7 @@ export function AchievementAdmin() {
     if (!supabase) return;
     setSaving(true);
     const { id, ...fields } = rule;
+    if (!fields.perk) fields.perk = null;
     const { error } = id ? await supabase.from('award_rules').update({ ...fields, updated_at: new Date().toISOString() }).eq('id', id) : await supabase.from('award_rules').insert(fields);
     setSaving(false);
     if (error) return setMessage(error.message);

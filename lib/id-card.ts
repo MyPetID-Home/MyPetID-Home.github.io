@@ -87,9 +87,9 @@ export const TAG_COLORS: Record<string, string> = { blue: '#1f5fa8', violet: '#6
 export type CardField =
   | 'state' | 'banner' | 'country' | 'scan' | 'species' | 'name' | 'address1' | 'address2' | 'phone'
   | 'labelHeight' | 'labelWeight' | 'labelEyes' | 'labelSex' | 'height' | 'weight' | 'eyes' | 'sex'
-  | 'labelDob' | 'labelRestrictions' | 'dob' | 'restrictions' | 'signature' | 'tags';
+  | 'labelDob' | 'labelRestrictions' | 'dob' | 'restrictions' | 'signature' | 'tags' | 'license' | 'labelCoat' | 'coat';
 export type CardBox = 'photo' | 'qr' | 'barcode' | 'seal';
-export type TextSpec = { x: number; y: number; size: number; color?: string; weight?: 400 | 700; font?: 'serif' | 'sans' | 'script'; anchor?: 'start' | 'middle' | 'end'; hidden?: boolean };
+export type TextSpec = { x: number; y: number; size: number; color?: string; weight?: 400 | 700; font?: 'serif' | 'sans' | 'script' | 'script2' | 'script3' | 'script4'; anchor?: 'start' | 'middle' | 'end'; hidden?: boolean };
 export type BoxSpec = { x: number; y: number; w: number; h: number; hidden?: boolean };
 export type CardLayout = { text: Record<CardField, TextSpec>; boxes: Record<CardBox, BoxSpec>; bannerBox: BoxSpec };
 
@@ -100,21 +100,24 @@ export const DEFAULT_LAYOUT: CardLayout = {
     state: { x: 14, y: 56, size: 62, weight: 700, font: 'serif' },
     banner: { x: 620, y: 51, size: 27, weight: 700, color: '#ffffff', anchor: 'middle' },
     country: { x: 968, y: 24, size: 17, weight: 700, anchor: 'middle' },
-    scan: { x: 372, y: 120, size: 25, weight: 700, color: '#1c2430' },
+    scan: { x: 372, y: 108, size: 25, weight: 700, color: '#1c2430' },
+    license: { x: 380, y: 200, size: 20, weight: 700, color: '#1c2430' },
     species: { x: 833, y: 156, size: 31, weight: 700, color: '#1c2430' },
-    name: { x: 380, y: 232, size: 38, weight: 700, color: '#141414' },
-    address1: { x: 380, y: 287, size: 30, weight: 700, color: '#141414' },
+    name: { x: 380, y: 240, size: 38, weight: 700, color: '#141414' },
+    address1: { x: 380, y: 290, size: 30, weight: 700, color: '#141414' },
     address2: { x: 380, y: 339, size: 30, weight: 700, color: '#141414' },
     phone: { x: 380, y: 398, size: 40, weight: 700, color: '#d23b2b' },
     tags: { x: 380, y: 432, size: 15, weight: 700 },
     labelHeight: { x: 390, y: 470, size: 25, weight: 700, color: '#141414' },
-    labelWeight: { x: 556, y: 470, size: 25, weight: 700, color: '#141414' },
-    labelEyes: { x: 724, y: 470, size: 25, weight: 700, color: '#141414' },
-    labelSex: { x: 898, y: 470, size: 25, weight: 700, color: '#141414' },
+    labelWeight: { x: 530, y: 470, size: 25, weight: 700, color: '#141414' },
+    labelEyes: { x: 670, y: 470, size: 25, weight: 700, color: '#141414' },
+    labelCoat: { x: 770, y: 470, size: 25, weight: 700, color: '#141414' },
+    labelSex: { x: 925, y: 470, size: 25, weight: 700, color: '#141414' },
     height: { x: 390, y: 516, size: 25, weight: 700, color: '#141414' },
-    weight: { x: 556, y: 516, size: 25, weight: 700, color: '#141414' },
-    eyes: { x: 724, y: 516, size: 25, weight: 700, color: '#141414' },
-    sex: { x: 898, y: 516, size: 25, weight: 700, color: '#141414' },
+    weight: { x: 530, y: 516, size: 25, weight: 700, color: '#141414' },
+    eyes: { x: 670, y: 516, size: 25, weight: 700, color: '#141414' },
+    coat: { x: 770, y: 516, size: 20, weight: 700, color: '#141414' },
+    sex: { x: 925, y: 516, size: 25, weight: 700, color: '#141414' },
     labelDob: { x: 390, y: 572, size: 25, weight: 700, color: '#141414' },
     labelRestrictions: { x: 558, y: 572, size: 25, weight: 700, color: '#141414' },
     dob: { x: 390, y: 610, size: 24, weight: 700, color: '#141414' },
@@ -125,7 +128,7 @@ export const DEFAULT_LAYOUT: CardLayout = {
     photo: { x: 0, y: 152, w: 322, h: 364 },
     qr: { x: 642, y: 79, w: 182, h: 182 },
     seal: { x: 846, y: 176, w: 116, h: 116 },
-    barcode: { x: 838, y: 300, w: 160, h: 64 },
+    barcode: { x: 372, y: 120, w: 252, h: 52 },
   },
 };
 
@@ -153,6 +156,9 @@ export type CardData = {
   sex: string;
   dob: string;
   restrictions: string;
+  license: string;
+  coat: string;
+  signatureFont?: 'script' | 'script2' | 'script3' | 'script4';
   statusTags: string[];
   qrUrl: string;
   barcode: string;
@@ -173,4 +179,30 @@ export function formatHeight(inches?: string | number) {
   const n = Number(inches);
   if (!n) return typeof inches === 'string' ? inches : '';
   return `${Math.floor(n / 12)}'${Math.round(n % 12)}"`;
+}
+
+/** Signature styles owners can pick (system script fonts so print files match). */
+export const SIGNATURE_STYLES = [
+  { key: 'script', label: 'Classic script' },
+  { key: 'script2', label: 'Elegant' },
+  { key: 'script3', label: 'Handwritten' },
+  { key: 'script4', label: 'Bold marker' },
+] as const;
+
+/** License number: rabies tag, else microchip, else a stable 9-digit number from the pet id. */
+export function licenseNumber(rabiesTag?: string, microchip?: string, petId?: string) {
+  if (rabiesTag && rabiesTag.trim()) return rabiesTag.trim().toUpperCase();
+  if (microchip && microchip.trim()) return microchip.trim();
+  let h = 2166136261;
+  for (const c of petId || 'mypetid') h = Math.imul(h ^ c.charCodeAt(0), 16777619);
+  return String((h >>> 0) % 1000000000).padStart(9, '0');
+}
+
+/** Short coat color for the card, e.g. "Black and white" -> "BLK/WHT". */
+export function coatCode(value?: string) {
+  if (!value) return '';
+  const short: Record<string, string> = { black: 'BLK', white: 'WHT', brown: 'BRN', tan: 'TAN', red: 'RED', cream: 'CRM', gray: 'GRY', grey: 'GRY', blue: 'BLU', gold: 'GLD', golden: 'GLD', fawn: 'FWN', brindle: 'BRDL', merle: 'MRL', liver: 'LVR', yellow: 'YEL', chocolate: 'CHOC', sable: 'SBL', tricolor: 'TRI', apricot: 'APR', silver: 'SLV' };
+  const parts = value.toLowerCase().split(/[^a-z]+/).filter((w) => w && w !== 'and' && w !== 'with');
+  const codes = parts.map((w) => short[w] || w.slice(0, 3).toUpperCase());
+  return codes.slice(0, 3).join('/');
 }

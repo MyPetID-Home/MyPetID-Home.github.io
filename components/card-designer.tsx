@@ -3,14 +3,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { IdCardSvg, downloadCardPng } from './id-card';
-import { CARD_H, CARD_W, DEFAULT_LAYOUT, US_STATES, eyeCode, formatDob, formatHeight, mergeLayout, sexCode, statusTag, type CardBox, type CardData, type CardField, type CardLayout } from '../lib/id-card';
+import { CARD_H, CARD_W, DEFAULT_LAYOUT, US_STATES, coatCode, eyeCode, licenseNumber, formatDob, formatHeight, mergeLayout, sexCode, statusTag, type CardBox, type CardData, type CardField, type CardLayout } from '../lib/id-card';
 
 /** Admin card desk: pick a dog, pick its state template, adjust the layout, export for print. */
 type QueueRow = { pet_id: string; pet_name: string; breed: string | null; photo_url: string | null; pet_profile: Record<string, any> | null; owner_id: string | null; owner_name: string | null; owner_email: string | null; owner_phone: string | null; owner_details: Record<string, any> | null; tag_code: string | null; created_at: string };
 type Template = { state: string; background_url: string | null; layout: Partial<CardLayout> };
 type Selected = { kind: 'text'; key: CardField } | { kind: 'box'; key: CardBox } | { kind: 'banner' } | null;
 
-const FIELD_LABELS: Record<string, string> = { state: 'State name', banner: 'Banner text', country: 'USA / state', scan: 'Scan if found', species: 'Species', name: 'Dog name', address1: 'Address line 1', address2: 'City, state ZIP', phone: 'Phone', tags: 'Status tags', labelHeight: 'HEIGHT label', labelWeight: 'WEIGHT label', labelEyes: 'EYES label', labelSex: 'SEX label', height: 'Height', weight: 'Weight', eyes: 'Eyes', sex: 'Sex', labelDob: 'DOB label', labelRestrictions: 'RESTRICTIONS label', dob: 'Date of birth', restrictions: 'Restrictions', signature: 'Signature', photo: 'Photo', qr: 'QR code', barcode: 'Barcode', seal: 'Seal' };
+const FIELD_LABELS: Record<string, string> = { state: 'State name', banner: 'Banner text', country: 'USA / state', scan: 'Scan if found', species: 'Species', name: 'Dog name', address1: 'Address line 1', address2: 'City, state ZIP', phone: 'Phone', tags: 'Status tags', labelHeight: 'HEIGHT label', labelWeight: 'WEIGHT label', labelEyes: 'EYES label', labelSex: 'SEX label', height: 'Height', weight: 'Weight', eyes: 'Eyes', sex: 'Sex', labelDob: 'DOB label', labelRestrictions: 'RESTRICTIONS label', dob: 'Date of birth', restrictions: 'Restrictions', signature: 'Signature', license: 'License number', labelCoat: 'COAT label', coat: 'Coat color', photo: 'Photo', qr: 'QR code', barcode: 'Barcode', seal: 'Seal' };
 
 export function cardDataFromRow(row: QueueRow | null, origin: string, state: string): CardData {
   const p = row?.pet_profile || {};
@@ -32,6 +32,9 @@ export function cardDataFromRow(row: QueueRow | null, origin: string, state: str
     sex: sexCode(d.sex),
     dob: formatDob(d.birthday),
     restrictions: card.restrictions || '',
+    license: licenseNumber(d.rabies_tag, d.microchip, row?.pet_id),
+    coat: coatCode(d.colors || d.coat),
+    signatureFont: card.signature_style || undefined,
     statusTags: Array.isArray(p.status_tags) ? p.status_tags : [],
     qrUrl: row?.tag_code ? `${origin}/scan/?tag=${encodeURIComponent(row.tag_code)}` : row ? `${origin}/pet/?pet=${row.pet_id}` : `${origin}/pet/?tag=demo-tag-001`,
     barcode: row?.tag_code || (row ? row.pet_id.slice(0, 12).toUpperCase() : 'DEMO-TAG-001'),
@@ -51,7 +54,8 @@ export function CardDesigner() {
   const [origin, setOrigin] = useState('');
   const [filter, setFilter] = useState('');
   const overlay = useRef<SVGSVGElement>(null);
-  const drag = useRef<{ sel: Selected; dx: number; dy: number } | null>(null);
+  // mode 'move' drags the field; the other modes resize it from the edge or corner grabbed.
+  const drag = useRef<{ sel: Selected; dx: number; dy: number; mode: 'move' | 'w' | 'h' | 'wh'; start: { x: number; y: number; w: number; h: number; size: number } } | null>(null);
 
   useEffect(() => { setOrigin(window.location.origin); }, []);
   const load = useCallback(async () => {
@@ -96,21 +100,44 @@ export function CardDesigner() {
     event.preventDefault();
     (event.target as Element).setPointerCapture?.(event.pointerId);
     const p = point(event); const pos = posOf(sel);
-    drag.current = { sel, dx: p.x - pos.x, dy: p.y - pos.y };
+    drag.current = { sel, dx: p.x - pos.x, dy: p.y - pos.y, mode: 'move', start: { x: p.x, y: p.y, w: 0, h: 0, size: 0 } };
     setSelected(sel);
   }
-  function onMove(event: React.PointerEvent) { if (!drag.current) return; const p = point(event); moveTo(drag.current.sel, p.x - drag.current.dx, p.y - drag.current.dy); }
+  function startResize(sel: Selected, mode: 'w' | 'h' | 'wh', event: React.PointerEvent) {
+    event.preventDefault(); event.stopPropagation();
+    (event.target as Element).setPointerCapture?.(event.pointerId);
+    const p = point(event); const pos = posOf(sel) as { w?: number; h?: number; size?: number };
+    drag.current = { sel, dx: 0, dy: 0, mode, start: { x: p.x, y: p.y, w: pos.w || 0, h: pos.h || 0, size: pos.size || 0 } };
+  }
+  function onMove(event: React.PointerEvent) {
+    const d = drag.current; if (!d) return;
+    const p = point(event);
+    if (d.mode === 'move') return moveTo(d.sel, p.x - d.dx, p.y - d.dy);
+    const dx = p.x - d.start.x; const dy = p.y - d.start.y;
+    if (d.sel?.kind === 'text') {
+      // Text has no box: any resize handle scales the font size.
+      const grow = d.mode === 'w' ? dx / 4 : d.mode === 'h' ? dy : Math.max(dx / 4, dy);
+      return patchSel(d.sel, { size: Math.max(6, Math.round(d.start.size + grow)) });
+    }
+    const patch: Record<string, number> = {};
+    if (d.mode !== 'h') patch.w = Math.max(10, Math.round(d.start.w + dx));
+    if (d.mode !== 'w') patch.h = Math.max(10, Math.round(d.start.h + dy));
+    // QR and seal stay square.
+    if (d.sel?.kind === 'box' && (d.sel.key === 'qr' || d.sel.key === 'seal')) { const side = Math.max(patch.w ?? 0, patch.h ?? 0); patch.w = side; patch.h = side; }
+    patchSel(d.sel, patch);
+  }
 
-  function patchSelected(patch: Record<string, number | boolean | string>) {
-    if (!selected) return;
+  function patchSel(target: Selected, patch: Record<string, number | boolean | string>) {
+    if (!target) return;
     setLayout((l) => {
       const next: CardLayout = { text: { ...l.text }, boxes: { ...l.boxes }, bannerBox: { ...l.bannerBox } };
-      if (selected.kind === 'text') next.text[selected.key] = { ...next.text[selected.key], ...patch };
-      else if (selected.kind === 'box') next.boxes[selected.key] = { ...next.boxes[selected.key], ...patch };
+      if (target.kind === 'text') next.text[target.key] = { ...next.text[target.key], ...patch };
+      else if (target.kind === 'box') next.boxes[target.key] = { ...next.boxes[target.key], ...patch };
       else next.bannerBox = { ...next.bannerBox, ...patch };
       return next;
     });
   }
+  const patchSelected = (patch: Record<string, number | boolean | string>) => patchSel(selected, patch);
 
   async function save() {
     if (!supabase) return;
@@ -134,7 +161,7 @@ export function CardDesigner() {
     catch (error) { setMessage(error instanceof Error ? error.message : 'Export failed.'); }
   }
   function copyInfo() {
-    const lines = [`Dog: ${data.petName}`, `Signature: ${data.fullName}`, `State: ${state}`, `Species: ${data.species}`, `Address: ${data.address1}`, `City: ${data.address2}`, `Phone: ${data.phone}`, `Height: ${data.height}`, `Weight: ${data.weight}`, `Eyes: ${data.eyes}`, `Sex: ${data.sex}`, `DOB: ${data.dob}`, `Restrictions: ${data.restrictions}`, `Tags: ${data.statusTags.map((t) => statusTag(t)?.label || t).join(', ')}`, `QR: ${data.qrUrl}`, `Barcode: ${data.barcode}`];
+    const lines = [`Dog: ${data.petName}`, `Signature: ${data.fullName}`, `State: ${state}`, `Species: ${data.species}`, `Address: ${data.address1}`, `City: ${data.address2}`, `Phone: ${data.phone}`, `Height: ${data.height}`, `Weight: ${data.weight}`, `Eyes: ${data.eyes}`, `Sex: ${data.sex}`, `DOB: ${data.dob}`, `Restrictions: ${data.restrictions}`, `License: ${data.license}`, `Coat: ${data.coat}`, `Tags: ${data.statusTags.map((t) => statusTag(t)?.label || t).join(', ')}`, `QR: ${data.qrUrl}`, `Barcode: ${data.barcode}`];
     navigator.clipboard?.writeText(lines.join('\n')).then(() => setMessage('Card info copied.'));
   }
 
@@ -143,6 +170,7 @@ export function CardDesigner() {
     { sel: { kind: 'banner' }, ...layout.bannerBox },
     ...(Object.keys(layout.text) as CardField[]).filter((k) => k !== 'banner').map((k) => { const t = layout.text[k]; const w = Math.max(60, t.size * 4); return { sel: { kind: 'text', key: k } as Selected, x: t.anchor === 'middle' ? t.x - w / 2 : t.anchor === 'end' ? t.x - w : t.x, y: t.y - t.size, w, h: t.size * 1.15 }; }),
   ];
+  const active = selected ? handles.find((h) => JSON.stringify(h.sel) === JSON.stringify(selected)) : undefined;
   const sel = selected ? posOf(selected) as Record<string, number | boolean | string | undefined> : null;
   const shown = queue.filter((r) => !filter || `${r.pet_name} ${r.owner_name} ${r.owner_email}`.toLowerCase().includes(filter.toLowerCase()));
 
@@ -162,6 +190,11 @@ export function CardDesigner() {
           <IdCardSvg data={data} layout={layout} background={background} />
           <svg ref={overlay} className="cardHandles" viewBox={`0 0 ${CARD_W} ${CARD_H}`} onPointerMove={onMove} onPointerUp={() => { drag.current = null; }} onPointerLeave={() => { drag.current = null; }}>
             {handles.map((h, i) => <rect key={i} x={h.x} y={h.y} width={h.w} height={h.h} className={JSON.stringify(h.sel) === JSON.stringify(selected) ? 'on' : ''} onPointerDown={(e) => startDrag(h.sel, e)}><title>{FIELD_LABELS[h.sel?.kind === 'banner' ? 'banner' : (h.sel as { key: string }).key]}</title></rect>)}
+            {active && <g className="resizeGrips">
+              <rect className="grip ew" x={active.x + active.w - 7} y={active.y + active.h / 2 - 7} width={14} height={14} onPointerDown={(e) => startResize(active.sel, 'w', e)}><title>Drag to change width</title></rect>
+              <rect className="grip ns" x={active.x + active.w / 2 - 7} y={active.y + active.h - 7} width={14} height={14} onPointerDown={(e) => startResize(active.sel, 'h', e)}><title>Drag to change height</title></rect>
+              <rect className="grip nwse" x={active.x + active.w - 9} y={active.y + active.h - 9} width={18} height={18} onPointerDown={(e) => startResize(active.sel, 'wh', e)}><title>Drag to resize</title></rect>
+            </g>}
           </svg>
         </div>
         <div className="cardTools">

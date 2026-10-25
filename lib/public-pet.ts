@@ -23,7 +23,7 @@ export type PublicPet = {
   is_owner: boolean;
   // Added by 2026-10-pet-profiles-guest.sql
   cover_url?: string | null;
-  public_extra?: { details?: Record<string, string>; vet?: Record<string, string>; care?: Record<string, string>; status_tags?: string[]; species?: string } | null;
+  public_extra?: { details?: Record<string, string>; vet?: Record<string, string>; care?: Record<string, string>; status_tags?: string[]; species?: string; care_schedule?: unknown[]; timezone?: string; birthday_md?: string | null } | null;
   last_seen_at?: string | null;
   last_seen_lat?: number | null;
   last_seen_lng?: number | null;

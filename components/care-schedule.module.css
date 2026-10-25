@@ -1,0 +1,71 @@
+.wrap { display: grid; gap: 14px; }
+
+.section { display: grid; gap: 10px; }
+.sectionHead { margin: 0; color: var(--faint); font-size: .74rem; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }
+
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chips button { padding: 7px 11px; font-size: .84rem; }
+
+.list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.item { display: flex; align-items: center; gap: 12px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface-sunken); padding: 10px 12px; }
+.item .icon { width: 38px; height: 38px; border-radius: 12px; }
+.item .icon svg { width: 20px; height: 20px; }
+.itemMain { flex: 1 1 auto; min-width: 0; display: grid; gap: 3px; }
+.itemMain strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.itemMain small { color: var(--muted); font-size: .84rem; font-weight: 500; }
+.itemActions { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
+.itemActions button { padding: 7px 12px; font-size: .84rem; }
+
+.countdown { font-weight: 800; color: var(--brand); white-space: nowrap; }
+.overdue { color: var(--danger); }
+.soon { color: var(--warn); }
+.doneMark { color: var(--leaf); font-weight: 700; font-size: .84rem; }
+
+.form { display: grid; gap: 12px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface-sunken); padding: 14px; }
+.timeRow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.timeRow input { width: auto; min-width: 128px; }
+.timeRow button { padding: 7px 11px; font-size: .84rem; }
+.toggles { display: flex; flex-wrap: wrap; gap: 8px 18px; }
+.toggles label { margin: 0 !important; cursor: pointer; }
+
+.danger { color: var(--danger) !important; }
+
+.toastStack { position: fixed; z-index: 90; left: 50%; bottom: max(18px, env(safe-area-inset-bottom)); transform: translateX(-50%); display: grid; gap: 8px; width: min(92vw, 420px); pointer-events: none; }
+.toast { pointer-events: auto; display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: var(--radius-sm); border: 1px solid color-mix(in srgb, var(--brand) 45%, transparent); background: var(--surface-raised); color: var(--text); box-shadow: var(--shadow-lg); animation: careToastIn .35s cubic-bezier(.2,.9,.3,1.2) both; }
+.toast .icon { width: 38px; height: 38px; border-radius: 12px; }
+.toast .icon svg { width: 20px; height: 20px; }
+.toast div { flex: 1 1 auto; min-width: 0; display: grid; gap: 2px; }
+.toast small { color: var(--muted); }
+.toast button { padding: 7px 12px; font-size: .84rem; }
+@keyframes careToastIn { from { opacity: 0; transform: translateY(14px) scale(.97); } to { opacity: 1; transform: none; } }
+
+/* Public scan page */
+.alert { display: grid; gap: 6px; padding: 14px 16px; border-radius: var(--radius-sm); border: 1px solid color-mix(in srgb, var(--warn) 50%, transparent); background: color-mix(in srgb, var(--warn) 12%, transparent); }
+.alert strong { font-size: 1.08rem; display: flex; align-items: center; gap: 8px; }
+.alert strong svg { width: 20px; height: 20px; flex: 0 0 auto; }
+.alert p { margin: 0; }
+.alertRed { border-color: color-mix(in srgb, var(--danger) 60%, transparent); background: var(--danger-soft); }
+.alertRed strong { color: var(--danger); }
+.alertRed { animation: carePulse 2.4s ease-in-out infinite; }
+@keyframes carePulse { 0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--danger) 0%, transparent); } 50% { box-shadow: 0 0 0 6px color-mix(in srgb, var(--danger) 18%, transparent); } }
+.calm { display: inline-flex; align-items: center; gap: 6px; }
+.calm svg { width: 16px; height: 16px; }
+
+/* Birthday */
+.birthday { position: relative; overflow: hidden; display: grid; gap: 10px; text-align: center; justify-items: center; border-color: color-mix(in srgb, var(--violet) 45%, transparent); background: linear-gradient(140deg, color-mix(in srgb, var(--violet) 16%, transparent), color-mix(in srgb, var(--brand2) 12%, transparent)); }
+.birthday h2 { margin: 0; position: relative; z-index: 1; }
+.birthday p, .birthday .actions, .birthday button { position: relative; z-index: 1; }
+.confetti { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
+.confetti span { position: absolute; top: -14px; width: 8px; height: 13px; border-radius: 2px; opacity: .9; animation: careConfetti 3.4s linear infinite; }
+@keyframes careConfetti {
+  0% { transform: translate3d(0, -10px, 0) rotate(0deg); opacity: 0; }
+  10% { opacity: .95; }
+  100% { transform: translate3d(var(--drift, 20px), 260px, 0) rotate(540deg); opacity: 0; }
+}
+.birthdaySoon { display: inline-flex; align-items: center; gap: 6px; }
+.birthdaySoon svg { width: 16px; height: 16px; color: var(--violet); }
+
+@media (prefers-reduced-motion: reduce) {
+  .confetti span { animation: none; top: var(--y, 20%); opacity: .5; transform: rotate(var(--r, 20deg)); }
+  .alertRed, .toast { animation: none; }
+}

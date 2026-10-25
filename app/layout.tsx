@@ -3,6 +3,8 @@ import { Bricolage_Grotesque, Plus_Jakarta_Sans } from 'next/font/google';
 import './globals.css';
 import { PwaInstallClient } from '../components/pwa-install-client';
 import { AppFooter } from '../components/app-footer';
+import { RouteLoader } from '../components/bone-loader';
+import { ServiceStatusBanner } from '../components/status-screen';
 
 const display = Bricolage_Grotesque({ subsets: ['latin'], variable: '--font-bricolage', display: 'swap' });
 const body = Plus_Jakarta_Sans({ subsets: ['latin'], variable: '--font-jakarta', display: 'swap' });
@@ -29,7 +31,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" className={`${display.variable} ${body.variable}`}>
-      <body>{children}<AppFooter /><PwaInstallClient /></body>
+      <body>{children}<AppFooter /><PwaInstallClient /><RouteLoader /><ServiceStatusBanner /></body>
     </html>
   );
 }

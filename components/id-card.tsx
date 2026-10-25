@@ -13,6 +13,9 @@ const FONTS: Record<string, string> = {
   serif: 'Georgia, "Times New Roman", serif',
   sans: 'Arial, Helvetica, sans-serif',
   script: '"Brush Script MT", "Segoe Script", "Lucida Handwriting", cursive',
+  script2: '"Edwardian Script ITC", "Palace Script MT", "Vladimir Script", "Brush Script MT", cursive',
+  script3: '"Segoe Print", "Bradley Hand", "Ink Free", "Lucida Handwriting", cursive',
+  script4: '"Segoe Script", "Freestyle Script", "Mistral", "Brush Script MT", cursive',
 };
 
 function hash(text: string) { let h = 2166136261; for (const c of text) h = Math.imul(h ^ c.charCodeAt(0), 16777619); return h >>> 0; }
@@ -130,6 +133,9 @@ export function IdCardSvg({ data, layout: savedLayout, background, hideCodes = f
       <T spec={L.text.labelWeight} fallbackColor="#141414">WEIGHT</T>
       <T spec={L.text.labelEyes} fallbackColor="#141414">EYES</T>
       <T spec={L.text.labelSex} fallbackColor="#141414">SEX</T>
+      <T spec={L.text.labelCoat} fallbackColor="#141414">COAT</T>
+      <T spec={L.text.coat} fallbackColor="#141414">{data.coat}</T>
+      {data.license && <T spec={L.text.license} fallbackColor="#1c2430">LIC # {data.license}</T>}
       <T spec={L.text.height} fallbackColor="#141414">{data.height}</T>
       <T spec={L.text.weight} fallbackColor="#141414">{data.weight}</T>
       <T spec={L.text.eyes} fallbackColor="#141414">{data.eyes}</T>
@@ -138,7 +144,7 @@ export function IdCardSvg({ data, layout: savedLayout, background, hideCodes = f
       <T spec={L.text.labelRestrictions} fallbackColor="#141414">RESTRICTIONS:</T>
       <T spec={L.text.dob} fallbackColor="#141414">{data.dob}</T>
       <T spec={L.text.restrictions} fallbackColor="#141414">{data.restrictions}</T>
-      <T spec={L.text.signature} fallbackColor="#1c2430">{data.fullName || data.petName}</T>
+      <T spec={data.signatureFont ? { ...L.text.signature, font: data.signatureFont } : L.text.signature} fallbackColor="#1c2430">{data.fullName || data.petName}</T>
     </svg>
   );
 }

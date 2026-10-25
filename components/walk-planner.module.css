@@ -41,6 +41,8 @@
 
 .danger { color: var(--danger) !important; }
 
+.note { font-size: .86rem; }
+
 @media (min-width: 900px) {
   .stats { max-width: 520px; }
 }
