@@ -832,3 +832,35 @@ textarea { min-height: 96px; resize: vertical; }
 .map3d .maplibregl-ctrl button { box-shadow: none; border-radius: 0; }
 @media (max-width: 620px) { .mapToolbar button { padding: 8px 11px; font-size: .8rem; } }
 .dashboardGrid > .panel:has(.map3d) { grid-column: 1 / -1; }
+
+/* ---------- Dog Pack (friends, chat, meetups, nearby) ---------- */
+.packGrid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); gap: 14px; margin-top: 14px; }
+.packCloud .notice { display: flex; gap: 10px; align-items: flex-start; }
+.packCloud .notice svg { width: 20px; height: 20px; flex: 0 0 auto; color: var(--warn); }
+.friendList { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.friendList button, .nearbyRow { width: 100%; display: flex; align-items: center; gap: 10px; justify-content: flex-start; text-align: left; border-radius: 14px; padding: 8px 10px; background: transparent; border-color: transparent; }
+.friendList button:hover { background: var(--panel-strong); }
+.friendList button > svg { margin-left: auto; color: var(--brand); }
+.friendList strong { display: block; font-size: .95rem; }
+.friendList small { color: var(--muted); font-size: .8rem; font-weight: 600; }
+.avatarDot { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 12px; background: var(--grad); color: #071008; font-weight: 800; font-family: var(--font-display); flex: 0 0 auto; text-transform: uppercase; }
+.inviteBox { display: grid; gap: 8px; justify-items: start; animation: rise .3s var(--ease) both; }
+.inviteBox input { font-size: .82rem; }
+.chatTile { min-height: 320px; }
+.chatLog { display: grid; gap: 6px; align-content: start; max-height: 300px; min-height: 180px; overflow-y: auto; padding: 4px; }
+.chatMsg { margin: 0; justify-self: start; max-width: 80%; display: grid; gap: 2px; padding: 9px 12px; border-radius: 16px 16px 16px 4px; background: var(--panel-strong); color: var(--text); animation: rise .25s var(--ease) both; }
+.chatMsg.mine { justify-self: end; border-radius: 16px 16px 4px 16px; background: var(--grad); color: #071008; }
+.chatMsg small { font-size: .68rem; opacity: .7; }
+.meetupForm { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 14px; margin: 12px 0; padding: 16px; border-radius: var(--radius); border: 1px dashed var(--line-strong); background: var(--surface-sunken); animation: rise .3s var(--ease) both; }
+.meetupForm .span2 { grid-column: 1 / -1; }
+.meetupList { display: grid; gap: 10px; align-content: start; }
+.meetupCard { display: grid; grid-template-columns: 62px minmax(0, 1fr); gap: 14px; padding: 14px; border-radius: var(--radius); border: 1px solid var(--line); background: var(--surface-sunken); transition: transform .25s var(--ease), border-color .25s ease; animation: rise .4s var(--ease) both; }
+.meetupCard:hover { transform: translateY(-2px); border-color: color-mix(in srgb, var(--brand) 45%, var(--line)); }
+.meetupDate { display: grid; place-items: center; align-content: center; height: 62px; border-radius: 16px; background: var(--grad); color: #071008; line-height: 1; }
+.meetupDate strong { font-family: var(--font-display); font-size: 1.6rem; color: #071008; }
+.meetupDate small { font-size: .72rem; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }
+.meetupBody h4 { margin: 0 0 4px; font-size: 1.08rem; }
+.meetupBody p { margin: 2px 0; }
+.meetupBody .actions { margin-top: 8px; }
+.meetupBody .actions button, .meetupBody .actions .button { padding: 7px 13px; font-size: .86rem; }
+@media (max-width: 900px) { .packGrid, .meetupForm { grid-template-columns: 1fr; } }
