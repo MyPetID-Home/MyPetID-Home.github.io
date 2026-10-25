@@ -2,7 +2,7 @@ import { DashboardClient } from '../../../components/dashboard-client';
 
 export const metadata = { title: 'Dashboard | MyPetID' };
 
-type Tab = 'overview' | 'public' | 'account' | 'pets' | 'walks' | 'diet' | 'medical' | 'docs' | 'play' | 'training' | 'lost' | 'pack' | 'goals' | 'settings' | 'admin';
+type Tab = 'overview' | 'public' | 'account' | 'pets' | 'walks' | 'diet' | 'medical' | 'docs' | 'play' | 'training' | 'lost' | 'pack' | 'goals' | 'settings' | 'admin' | 'care';
 
 const routeToTab: Record<string, Tab> = {
   home: 'overview',
@@ -28,11 +28,13 @@ const routeToTab: Record<string, Tab> = {
   'pet/training': 'training',
   'pet/play': 'play',
   'pet/medical': 'medical',
+  appointments: 'care',
+  'pet/appointments': 'care',
 };
 
 const staticRoutes = [
   ['walks'], ['pet'], ['documents'], ['alerts'], ['pack'], ['settings'], ['account'], ['goals'], ['diet'], ['admin'],
-  ['pet', 'public'], ['pet', 'medical'], ['pet', 'training'], ['pet', 'play'],
+  ['pet', 'public'], ['pet', 'medical'], ['pet', 'appointments'], ['pet', 'training'], ['pet', 'play'],
 ];
 
 export function generateStaticParams() {

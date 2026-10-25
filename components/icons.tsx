@@ -35,3 +35,7 @@ export function Lock(props: IconProps) { return <svg viewBox="0 0 24 24" {...com
 export function Bowl(props: IconProps) { return <svg viewBox="0 0 24 24" {...common} {...props}><path d="M3 11h18a9 9 0 0 1-18 0Z"/><path d="M7 8c0-1.5 1.3-2 2.5-2M12 7c0-1.5 1.3-2.5 2.5-2.5"/></svg>; }
 export function Activity(props: IconProps) { return <svg viewBox="0 0 24 24" {...common} {...props}><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>; }
 export function Scissors(props: IconProps) { return <svg viewBox="0 0 24 24" {...common} {...props}><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4 8.1 15.9M14.5 14.5 20 20M8.1 8.1 12 12"/></svg>; }
+export function Plus(props: IconProps) { return <svg viewBox="0 0 24 24" {...common} {...props}><path d="M12 5v14M5 12h14"/></svg>; }
+export function ChevronRight(props: IconProps) { return <svg viewBox="0 0 24 24" {...common} {...props}><path d="m9 6 6 6-6 6"/></svg>; }
+export function Calendar(props: IconProps) { return <svg viewBox="0 0 24 24" {...common} {...props}><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18M8 14l2 2 4-4"/></svg>; }
+export function ContactCard(props: IconProps) { return <svg viewBox="0 0 24 24" {...common} {...props}><rect x="4" y="2" width="16" height="20" rx="2"/><circle cx="12" cy="10" r="3"/><path d="M7.5 18a4.5 4.5 0 0 1 9 0M2 7h2M2 12h2M2 17h2"/></svg>; }

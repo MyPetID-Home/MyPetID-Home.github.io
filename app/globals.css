@@ -1150,3 +1150,67 @@ textarea { min-height: 96px; resize: vertical; }
 .medOutcome.red { background: var(--danger-soft); color: var(--danger); }
 .medEffects { background: var(--danger-soft); border-radius: 10px; padding: 8px 10px; }
 .medVet { font-weight: 700; color: var(--danger); }
+
+/* MemoPet-style layout (MyPetID colors): dog header, round section icons, summary cards, bottom sheets */
+.petStrip { display: flex; align-items: center; gap: 18px; margin: 0 0 14px; padding: 6px 4px; }
+.petStripPhoto { position: relative; flex: 0 0 auto; width: 112px; height: 112px; border-radius: 50%; padding: 5px; background: var(--grad); box-shadow: var(--glow); }
+.petStripPhoto img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 3px solid var(--bg); display: block; }
+.petStripEdit { position: absolute; right: -4px; bottom: 2px; width: 38px; height: 38px; min-height: 0; padding: 0; border-radius: 50%; display: grid; place-items: center; background: var(--brand); color: var(--brand-ink); border: 3px solid var(--bg); }
+.petStripEdit svg { width: 18px; height: 18px; }
+.petStripName { flex: 1; min-width: 0; display: grid; border-bottom: 2px solid var(--line-strong); padding-bottom: 6px; }
+.petStripName small { color: var(--muted); font-weight: 700; }
+.petStripName strong { font-size: clamp(1.6rem, 5vw, 2.2rem); line-height: 1.1; overflow-wrap: anywhere; }
+.iconSectionRail { display: flex; gap: 14px; overflow-x: auto; margin: 0 0 16px; padding: 4px 2px 8px; scrollbar-width: none; scroll-snap-type: x proximity; }
+.iconSectionRail::-webkit-scrollbar { display: none; }
+.iconSectionRail button { flex: 0 0 auto; scroll-snap-align: start; display: grid; justify-items: center; gap: 6px; min-height: 0; padding: 0; border: 0; background: transparent; box-shadow: none; color: var(--muted); font-size: .78rem; font-weight: 700; }
+.iconSectionDot { width: 64px; height: 64px; border-radius: 50%; display: grid; place-items: center; border: 3px solid var(--line-strong); color: var(--text); transition: background .2s var(--ease), transform .2s var(--spring); }
+.iconSectionDot svg { width: 26px; height: 26px; }
+.iconSectionRail button:hover .iconSectionDot { transform: translateY(-2px); border-color: var(--brand); }
+.iconSectionRail button.active { color: var(--text); }
+.iconSectionRail button.active .iconSectionDot { background: var(--grad); border-color: transparent; color: var(--brand-ink); box-shadow: var(--glow); }
+.memoHome { padding: 0 !important; background: none !important; border: 0 !important; box-shadow: none !important; border-image: none !important; }
+.memoStack { display: grid; gap: 14px; }
+@media (min-width: 900px) { .memoStack { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.memoCard { border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 18px; background: var(--surface-raised); box-shadow: var(--shadow-sm); min-width: 0; }
+.memoCard.full { grid-column: 1 / -1; }
+.memoCardHead { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-bottom: 10px; margin-bottom: 12px; border-bottom: 2px solid var(--line-strong); }
+.memoCardHead h3 { margin: 0; font-size: 1.15rem; }
+.memoCardIcon { color: var(--brand); display: grid; } .memoCardIcon svg { width: 22px; height: 22px; }
+.memoCardLink { min-height: 0; padding: 4px 6px; border: 0; background: transparent; box-shadow: none; color: var(--brand); font-weight: 700; display: inline-flex; align-items: center; gap: 2px; }
+.memoCardLink svg { width: 16px; height: 16px; }
+.memoLine { width: 100%; min-height: 0; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 4px 0; border: 0; background: transparent; box-shadow: none; color: var(--muted); text-align: left; font-weight: 500; }
+.memoLine svg { flex: 0 0 auto; width: 20px; height: 20px; }
+.memoData { margin: 0; display: grid; }
+.memoData div { display: flex; justify-content: space-between; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.memoData div:last-child { border-bottom: 0; }
+.memoData dt { color: var(--muted); font-weight: 700; } .memoData dd { margin: 0; text-align: right; overflow-wrap: anywhere; min-width: 0; }
+.memoRows { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.memoRow { width: 100%; min-height: 0; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 12px; padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--panel); box-shadow: none; color: var(--text); text-align: left; font-weight: 500; }
+button.memoRow:hover { border-color: var(--brand); transform: none; }
+.memoRowDate { font-weight: 700; } .memoRowTitle { min-width: 0; overflow-wrap: anywhere; color: var(--muted); } .memoRowTime { font-weight: 700; color: var(--brand); }
+@media (max-width: 520px) { .memoRow { grid-template-columns: 1fr auto; } .memoRowTitle { grid-column: 1 / -1; grid-row: 2; } }
+.memoAdd { width: 100%; margin: 4px 0 14px; display: flex; align-items: center; justify-content: center; gap: 12px; padding: 14px; border-radius: var(--radius-sm); background: var(--grad); color: var(--brand-ink); border: 0; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
+.memoAdd span { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: var(--bg); color: var(--brand); }
+.memoAdd span svg { width: 20px; height: 20px; }
+.memoForm { margin-bottom: 14px; }
+.memoDocs { display: grid; grid-template-columns: repeat(auto-fill, minmax(88px, 1fr)); gap: 10px; }
+.memoDoc { min-height: 0; padding: 6px; display: grid; justify-items: center; gap: 6px; border: 0; background: transparent; box-shadow: none; color: var(--text); font-size: .82rem; font-weight: 600; }
+.memoDoc img, .memoDocIcon { width: 64px; height: 72px; border-radius: 10px; object-fit: cover; display: grid; place-items: center; background: var(--panel-strong); color: var(--brand); }
+.memoDoc span:last-child { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sheetScrim { position: fixed; inset: 0; z-index: 120; background: rgba(0,0,0,.5); backdrop-filter: blur(4px); display: flex; align-items: flex-end; justify-content: center; animation: sheetFade .2s var(--ease); }
+.bottomSheet { width: min(640px, 100%); max-height: 86vh; overflow: auto; border-radius: 24px 24px 0 0; background: var(--surface-raised); border: 1px solid var(--line-strong); border-bottom: 0; box-shadow: var(--shadow-lg); padding: 18px 20px calc(22px + env(safe-area-inset-bottom, 0px)); animation: sheetUp .28s var(--spring); }
+.sheetHead { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-bottom: 12px; margin-bottom: 12px; border-bottom: 2px solid var(--line-strong); }
+.sheetHead h3 { margin: 0; font-size: 1.3rem; }
+.sheetClose { width: 44px; height: 44px; min-height: 0; padding: 0; border-radius: 50%; display: grid; place-items: center; }
+.sheetClose svg { width: 22px; height: 22px; }
+.sheetFields { margin: 0 0 16px; display: grid; gap: 4px; }
+.sheetFields dt { color: var(--faint); font-size: .75rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; margin-top: 10px; }
+.sheetFields dd { margin: 0; padding-bottom: 8px; border-bottom: 1px solid var(--line); overflow-wrap: anywhere; white-space: pre-wrap; }
+.dangerLink { color: var(--danger) !important; border-color: color-mix(in srgb, var(--danger) 45%, transparent) !important; }
+@keyframes sheetUp { from { transform: translateY(40px); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes sheetFade { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .sheetScrim, .bottomSheet { animation: none; } }
+.memoHome { margin: 0 !important; }
+.dashboardGrid > .ownerCardWrap:empty { display: none; }
+.memoCard:has(> .memoCardHead:last-child)::after { content: 'Nothing scheduled for today. Add meals, walks and medicine in Schedule.'; color: var(--muted); }
+.memoCard > .memoCardHead:last-child { margin-bottom: 10px; }
