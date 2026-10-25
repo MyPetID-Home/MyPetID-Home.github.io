@@ -18,6 +18,10 @@ export function normalizeLoginEmail(value: string) {
   return value.trim().toUpperCase() === adminLoginAlias ? primaryAdminEmail : value.trim();
 }
 
+// Full admins: they see the admin/dev dashboard and can switch to a normal-user view to test.
+// Database permissions come from profiles.is_admin (set for both in 2026-10-profiles-self-insert.sql).
+export const adminEmails = [primaryAdminEmail, 'mypetid@yahoo.com'];
+
 export function isAdminEmail(email?: string | null) {
-  return Boolean(email && email.toLowerCase() === primaryAdminEmail);
+  return Boolean(email && adminEmails.includes(email.trim().toLowerCase()));
 }

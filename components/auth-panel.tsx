@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import { isAdminEmail, normalizeLoginEmail, supabase } from '../lib/supabase';
+import { Google } from './icons';
 import { createFallbackAccount, getFallbackQueueStats, getFallbackSession, isServiceRestrictionMessage, signInFallback, signOutFallback, type FallbackSession } from '../lib/fallback-local';
 
 type Profile = {
@@ -27,7 +28,10 @@ export function AuthPanel() {
   const [message, setMessage] = useState('');
   const [acceptedTerms, setAcceptedTerms] = useState(false);
 
+  const [onDashboard, setOnDashboard] = useState(false);
+
   useEffect(() => {
+    setOnDashboard(window.location.pathname.startsWith('/dashboard'));
     setFallbackSession(getFallbackSession());
     setQueueStats(getFallbackQueueStats());
     const refresh = () => { setFallbackSession(getFallbackSession()); setQueueStats(getFallbackQueueStats()); };
@@ -61,9 +65,11 @@ export function AuthPanel() {
         // tier/is_admin are not sent: the database forces new self-created profiles
         // to free/non-admin (2026-10-security-hardening.sql).
       };
-      const { data: inserted, error: insertError } = await supabase.from('profiles').insert(fallback).select('*').single();
-      if (insertError) setMessage(insertError.message);
-      else setProfile(inserted as Profile);
+      // The account workspace may create the same row at the same moment, so ignore a duplicate and re-read.
+      const { error: insertError } = await supabase.from('profiles').upsert(fallback, { onConflict: 'id', ignoreDuplicates: true });
+      if (insertError) return setMessage(insertError.message);
+      const { data: created } = await supabase.from('profiles').select('*').eq('id', user.id).maybeSingle();
+      if (created) setProfile(created as Profile);
     }
     if (session?.user) loadProfile(session.user);
     else setProfile(null);
@@ -82,7 +88,8 @@ export function AuthPanel() {
           ? await supabase.auth.signInWithPassword({ email: loginEmail, password })
           : await supabase.auth.signUp({ email: loginEmail, password, options: { data: { display_name: loginEmail.split('@')[0] } } });
         if (!result.error) {
-          setMessage(mode === 'sign-up' ? 'Signup created. Check email if confirmation is required.' : 'Signed in.');
+          setMessage(mode === 'sign-up' ? 'Account created! Check your email if we asked you to confirm it.' : 'Signed in. Opening your dashboard…');
+          if (mode === 'sign-in' && window.location.pathname === '/') window.location.assign('/dashboard/');
           return;
         }
         if (!isServiceRestrictionMessage(result.error.message)) {
@@ -103,7 +110,7 @@ export function AuthPanel() {
         : await signInFallback(loginEmail, password);
       setFallbackSession(localSession);
       setQueueStats(getFallbackQueueStats());
-      setMessage(`${mode === 'sign-up' ? 'Local fallback account created' : 'Signed in locally'} on this device. Changes will queue here and sync when cloud services recover.`);
+      setMessage(`${mode === 'sign-up' ? 'Account created' : 'Signed in'} on this device. We couldn’t reach the cloud, so your changes are saved here for now.`);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Local fallback sign-in failed.');
     }
@@ -128,10 +135,13 @@ export function AuthPanel() {
       <section className="authPanel signedIn">
         <div>
           <p className="eyebrow">Signed in</p>
-          <strong>{profile?.display_name || session.user.email}</strong>
-          <p>{session.user.email} • {profile?.tier ?? 'free'} {profile?.is_admin ? '• admin bypass' : ''}</p>
+          <h3>{profile?.display_name || session.user.email}</h3>
+          <p className="mutedLine">{session.user.email} · {profile?.is_admin ? 'admin' : `${profile?.tier ?? 'free'} plan`}</p>
         </div>
-        <button type="button" onClick={signOut}>Sign out</button>
+        <div className="actions compact">
+          {!onDashboard && <Link className="button primary" href="/dashboard/">Open app</Link>}
+          <button type="button" onClick={signOut}>Sign out</button>
+        </div>
       </section>
     );
   }
@@ -140,33 +150,37 @@ export function AuthPanel() {
     return (
       <section className="authPanel signedIn">
         <div>
-          <p className="eyebrow">Local fallback mode</p>
-          <strong>{fallbackSession.displayName || fallbackSession.email}</strong>
-          <p>{fallbackSession.email} • this-device sign-in • {queueStats.pending} queued sync item{queueStats.pending === 1 ? '' : 's'}</p>
-          <small>Cloud services are unavailable or restricted. You can keep using MyPetID here; queued changes sync later when provider services recover.</small>
+          <p className="eyebrow">Offline mode</p>
+          <h3>{fallbackSession.displayName || fallbackSession.email}</h3>
+          <p className="mutedLine">{fallbackSession.email} · signed in on this device · {queueStats.pending} change{queueStats.pending === 1 ? '' : 's'} saved here</p>
+          <small className="formHint">We couldn’t reach the cloud, so you’re signed in on this device only.</small>
         </div>
-        <button type="button" onClick={signOut}>Sign out</button>
+        <div className="actions compact">
+          {!onDashboard && <Link className="button primary" href="/dashboard/">Open app</Link>}
+          <button type="button" onClick={signOut}>Sign out</button>
+        </div>
       </section>
     );
   }
 
   return (
-    <section className="authPanel">
+    <form className="authPanel" onSubmit={(event) => { event.preventDefault(); submit(); }}>
       <div>
-        <p className="eyebrow">MyPetID account</p>
-        <h3>{mode === 'sign-in' ? 'Log in to your account' : 'Create your account'}</h3>
-        <small>If cloud login is unavailable, this same form opens a local fallback session on this device and queues changes for later sync.</small>
+        <p className="eyebrow">Your MyPetID account</p>
+        <h3>{mode === 'sign-in' ? 'Welcome back' : 'Create your free account'}</h3>
       </div>
-      <label>Email<input value={email} onChange={(e) => setEmail(e.target.value)} type="email" placeholder="you@example.com" /></label>
-      <label>Password<input value={password} onChange={(e) => setPassword(e.target.value)} type="password" placeholder="••••••••" /></label>
-      {mode === 'sign-up' && <label className="toggleRow termsAgree"><input type="checkbox" checked={acceptedTerms} onChange={(e) => setAcceptedTerms(e.target.checked)} /> I have read and agree to the <Link href="/terms/">Terms of Service</Link> and <Link href="/privacy/">Privacy Policy</Link>.</label>}
-      <div className="actions">
-        <button className="primary" type="button" onClick={submit} disabled={mode === 'sign-up' && !acceptedTerms}>{mode === 'sign-in' ? 'Sign in' : 'Sign up'}</button>
-        <button type="button" onClick={google}>Continue with Google</button>
-        <button type="button" onClick={() => setMode(mode === 'sign-in' ? 'sign-up' : 'sign-in')}>{mode === 'sign-in' ? 'Need account?' : 'Have account?'}</button>
-        <Link className="button" href="/verify/patreon/">Link Patreon</Link>
+      <div className="authTabs" role="tablist" aria-label="Account">
+        <button type="button" role="tab" aria-selected={mode === 'sign-in'} className={mode === 'sign-in' ? 'active' : ''} onClick={() => { setMode('sign-in'); setMessage(''); }}>Sign in</button>
+        <button type="button" role="tab" aria-selected={mode === 'sign-up'} className={mode === 'sign-up' ? 'active' : ''} onClick={() => { setMode('sign-up'); setMessage(''); }}>Create account</button>
       </div>
-      {message && <p className="notice">{message}</p>}
-    </section>
+      <label>Email<input value={email} onChange={(e) => setEmail(e.target.value)} type="email" autoComplete="email" placeholder="you@example.com" required /></label>
+      <label>Password<input value={password} onChange={(e) => setPassword(e.target.value)} type="password" autoComplete={mode === 'sign-in' ? 'current-password' : 'new-password'} placeholder="••••••••" required /></label>
+      {mode === 'sign-up' && <label className="toggleRow termsAgree"><input type="checkbox" checked={acceptedTerms} onChange={(e) => setAcceptedTerms(e.target.checked)} /> <span>I agree to the <Link href="/terms/">Terms</Link> and <Link href="/privacy/">Privacy Policy</Link>.</span></label>}
+      <button className="primary" type="submit" disabled={mode === 'sign-up' && !acceptedTerms}>{mode === 'sign-in' ? 'Sign in' : 'Create account'}</button>
+      <div className="authDivider">or</div>
+      <button className="googleButton" type="button" onClick={google}><Google /> Continue with Google</button>
+      {message && <p className="authMessage" role="status">{message}</p>}
+      <small className="formHint">Have a Patreon membership? <Link href="/verify/patreon/">Link it here</Link>.</small>
+    </form>
   );
 }

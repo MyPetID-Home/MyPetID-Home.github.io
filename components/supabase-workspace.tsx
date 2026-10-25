@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import { hasSupabaseConfig, isAdminEmail, supabase } from '../lib/supabase';
 import { apiFetch, bearer } from '../lib/api-client';
@@ -219,12 +219,12 @@ type PetDraft = {
 };
 
 const emptyPetDraft: PetDraft = {
-  name: 'Clyde',
+  name: '',
   species: 'dog',
-  breed: 'Good boy mix',
-  photoUrl: '/images/dog/Clyde-Nice.jpg',
-  medicalPublic: 'Sensitive stomach. Avoid rich treats unless needed for safety.',
-  behaviorPublic: 'Friendly, loves tug, nervous around loud trucks.',
+  breed: 'Mixed Breed',
+  photoUrl: '',
+  medicalPublic: '',
+  behaviorPublic: '',
   publicPhone: '',
   publicEmail: '',
   lostMode: false,
@@ -303,12 +303,10 @@ async function ensureProfile(user: User) {
     display_name: user.user_metadata?.display_name ?? user.email?.split('@')[0] ?? 'MyPetID User',
   };
 
-  const { data, error } = await supabase
-    .from('profiles')
-    .insert(fallback)
-    .select('*')
-    .single();
+  const { error } = await supabase.from('profiles').upsert(fallback, { onConflict: 'id', ignoreDuplicates: true });
   if (error) throw error;
+  const { data, error: rereadError } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+  if (rereadError) throw rereadError;
   return data as Profile;
 }
 
@@ -348,14 +346,14 @@ export function SupabaseWorkspace() {
   const [adminSearch, setAdminSearch] = useState('');
   const [adminSection, setAdminSection] = useState<AdminSection>('cards');
   const [petDraft, setPetDraft] = useState<PetDraft>(emptyPetDraft);
-  const [tagCode, setTagCode] = useState('demo-tag-001');
+  const [tagCode, setTagCode] = useState('');
   const [claimCode, setClaimCode] = useState('');
   const [newTagCode, setNewTagCode] = useState('');
   const [newClaimCode, setNewClaimCode] = useState('');
   const [newNfcUid, setNewNfcUid] = useState('');
   const [deviceLabel, setDeviceLabel] = useState('This browser');
   const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState('Supabase workspace ready. Sign in to sync real account, pet, tag, scan, trusted-device, and admin data.');
+  const [message, setMessage] = useState('Sign in to sync your account, pets, tags and scans across devices.');
 
   const isAdmin = Boolean(profile?.is_admin || isAdminEmail(session?.user.email));
   const selectedPet = useMemo(() => pets.find((pet) => pet.id === petDraft.id) || pets[0] || null, [petDraft.id, pets]);
@@ -377,8 +375,15 @@ export function SupabaseWorkspace() {
     return activityRows.filter((row) => (row.target_profile_id && ids.has(row.target_profile_id)) || String(row.actor_email || '').toLowerCase().includes(adminSearch.trim().toLowerCase())).slice(0, 12);
   }, [activityRows, filteredAdminDebugRows, adminSearch]);
 
-  const loadWorkspace = useCallback(async (activeSession: Session | null = session) => {
+  const filtersRef = useRef({ fulfillmentFilter, fulfillmentSearch, adminSearch });
+  filtersRef.current = { fulfillmentFilter, fulfillmentSearch, adminSearch };
+  const sessionRef = useRef<Session | null>(null);
+  sessionRef.current = session;
+  const loadedUserRef = useRef('');
+
+  const loadWorkspace = useCallback(async (activeSession: Session | null = sessionRef.current) => {
     if (!supabase || !activeSession?.user) return;
+    const { fulfillmentFilter, fulfillmentSearch, adminSearch } = filtersRef.current;
     setBusy(true);
     try {
       const nextProfile = await ensureProfile(activeSession.user);
@@ -393,7 +398,8 @@ export function SupabaseWorkspace() {
       if (petError) throw petError;
       const nextPets = (petData || []) as PetRow[];
       setPets(nextPets);
-      if (nextPets[0]) setPetDraft(petToDraft(nextPets[0]));
+      // Keep the pet being edited; only pick the first pet when nothing valid is selected.
+      setPetDraft((draft) => (draft.id && nextPets.some((pet) => pet.id === draft.id) ? draft : nextPets[0] ? petToDraft(nextPets[0]) : draft));
 
       const { data: tagData, error: tagError } = await supabase.from('tags').select('*').order('created_at', { ascending: false }).limit(100);
       if (tagError) throw tagError;
@@ -474,24 +480,32 @@ export function SupabaseWorkspace() {
         setAdminCoupons([]);
         setProviderSnapshot(null);
       }
-      setMessage(`Loaded Supabase workspace for ${activeSession.user.email}.`);
+      setMessage(`Synced for ${activeSession.user.email}.`);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Supabase load failed.');
     } finally {
       setBusy(false);
     }
-  }, [session, fulfillmentFilter, fulfillmentSearch]);
+  }, []);
 
+  // Load once per signed-in user. Supabase re-emits the session on startup and on every
+  // token refresh; reloading each time made the workspace refetch in a loop.
   useEffect(() => {
     if (!supabase) return;
+    const loadFor = (nextSession: Session | null) => {
+      if (!nextSession?.user || loadedUserRef.current === nextSession.user.id) return;
+      loadedUserRef.current = nextSession.user.id;
+      loadWorkspace(nextSession);
+    };
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
-      if (data.session) loadWorkspace(data.session);
+      loadFor(data.session);
     });
     const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
       setSession(nextSession);
-      if (nextSession) loadWorkspace(nextSession);
+      if (nextSession) loadFor(nextSession);
       else {
+        loadedUserRef.current = '';
         setProfile(null);
         setMembership(null);
         setPets([]);
@@ -658,7 +672,7 @@ export function SupabaseWorkspace() {
     setBusy(true);
     const payload = {
       ...(petDraft.id ? { id: petDraft.id } : {}),
-      owner_id: session.user.id,
+      owner_id: (petDraft.id && pets.find((pet) => pet.id === petDraft.id)?.owner_id) || session.user.id,
       name: petDraft.name.trim() || 'Unnamed pet',
       species: petDraft.species.trim() || 'dog',
       breed: petDraft.breed || null,
@@ -878,7 +892,7 @@ export function SupabaseWorkspace() {
           <h2>Account, pets, tags, scans, devices, admin</h2>
           <p>{session.user.email} • {tierLine}</p>
         </div>
-        <div className="actions compact"><button type="button" disabled={busy} onClick={() => loadWorkspace()}>{busy ? 'Syncing…' : 'Refresh Supabase'}</button></div>
+        <div className="actions compact"><button type="button" disabled={busy} onClick={() => loadWorkspace()}>{busy ? 'Syncing…' : 'Refresh'}</button></div>
       </div>
       <p className="notice">{message}</p>
 
@@ -938,7 +952,7 @@ export function SupabaseWorkspace() {
           <div className="grid2">
             <label>Name<input value={petDraft.name} onChange={(event) => setPetDraft({ ...petDraft, name: event.target.value })} /></label>
             <label>Species<select value={petDraft.species} onChange={(event) => setPetDraft({ ...petDraft, species: event.target.value })}><option value="dog">Dog</option></select></label>
-            <label>Breed<select value={petDraft.breed} onChange={(event) => setPetDraft({ ...petDraft, breed: event.target.value })}>{dogBreedOptions.map((breed) => <option key={breed}>{breed}</option>)}</select></label>
+            <label>Breed<select value={petDraft.breed} onChange={(event) => setPetDraft({ ...petDraft, breed: event.target.value })}>{(petDraft.breed && !dogBreedOptions.includes(petDraft.breed) ? [petDraft.breed, ...dogBreedOptions] : dogBreedOptions).map((breed) => <option key={breed}>{breed}</option>)}</select></label>
             <label>Photo URL<input value={petDraft.photoUrl} onChange={(event) => setPetDraft({ ...petDraft, photoUrl: event.target.value })} /></label>
             <label>Public phone<input value={petDraft.publicPhone} onChange={(event) => setPetDraft({ ...petDraft, publicPhone: event.target.value })} /></label>
             <label>Public email<input value={petDraft.publicEmail} onChange={(event) => setPetDraft({ ...petDraft, publicEmail: event.target.value })} /></label>
@@ -951,12 +965,12 @@ export function SupabaseWorkspace() {
 
         <article className="panel">
           <h3>Your pets</h3>
-          {pets.length === 0 ? <p>No Supabase pets yet.</p> : pets.map((pet) => <button className={pet.id === petDraft.id ? 'activeMini' : ''} key={pet.id} type="button" onClick={() => setPetDraft(petToDraft(pet))}>{pet.name}<br /><small>{pet.species} • {pet.lost_mode ? 'lost mode' : 'safe'}</small></button>)}
+          {pets.length === 0 ? <p>No pets saved to your account yet.</p> : pets.map((pet) => <button className={pet.id === petDraft.id ? 'activeMini' : ''} key={pet.id} type="button" onClick={() => setPetDraft(petToDraft(pet))}>{pet.name}<br /><small>{pet.species} • {pet.lost_mode ? 'lost mode' : 'safe'}</small></button>)}
         </article>
 
         <article className="panel wide">
           <h3>Uploads, Google sync, and Dog Pack invites</h3>
-          <p>Uploads are temporarily paused while Supabase account sync is restricted. The next upload path will store photo/document originals in Google-backed media first and keep only lightweight app references in the database.</p>
+          <p>Upload a photo or document. It is stored privately in your account and only shown publicly if you choose.</p>
           <div className="grid2">
             <label>Upload type<select value={uploadKind} onChange={(event) => setUploadKind(event.target.value as 'pet_photo' | 'medical_document')}><option value="pet_photo">Pet photo → Google Photos-ready</option><option value="medical_document">Medical document → Google Drive-ready</option></select></label>
             <label>Upload title<input value={uploadTitle} onChange={(event) => setUploadTitle(event.target.value)} /></label>
@@ -1124,7 +1138,7 @@ export function SupabaseWorkspace() {
           </div>
           <div className="actions"><button className="primary" type="button" disabled={busy} onClick={adminCreateStripeCoupon}>Create Stripe coupon/promo</button></div>
           <div className="adminLookupGrid">
-            <div className="adminLookupCard"><strong>Supabase tiers</strong><small>{providerSnapshot?.tiers?.length || 0} rows</small>{providerSnapshot?.tiers?.slice(0, 6).map((tier) => <p key={String(tier.tier)}><small>{String(tier.tier)} • {money(Number(tier.monthly_price || 0), 'usd')}/mo • Stripe {String(tier.stripe_price_id || 'n/a')} • Patreon {String(tier.patreon_tier_id || 'n/a')}</small></p>)}</div>
+            <div className="adminLookupCard"><strong>Supabase tiers</strong><small>{providerSnapshot?.tiers?.length || 0} rows</small>{providerSnapshot?.tiers?.slice(0, 6).map((tier) => <p key={String(tier.tier)}><small>{String(tier.tier)} • {money(Number(tier.monthly_price || 0) * 100, 'usd')}/mo • Stripe {String(tier.stripe_price_id || 'n/a')} • Patreon {String(tier.patreon_tier_id || 'n/a')}</small></p>)}</div>
             <div className="adminLookupCard"><strong>Stripe products/prices</strong><small>{providerSnapshot?.stripe?.products?.length || 0} products • {providerSnapshot?.stripe?.prices?.length || 0} recurring prices</small>{providerSnapshot?.stripe?.errors?.map((error) => <p key={error}><small>Stripe warning: {error}</small></p>)}{providerSnapshot?.stripe?.prices?.slice(0, 6).map((price) => <p key={String(price.id)}><small>{String(price.nickname || price.id)} • {money(Number(price.unit_amount || 0), String(price.currency || 'usd'))}/{String(price.recurring?.interval || 'n/a')} • {String(price.active ? 'active' : 'archived')}</small></p>)}</div>
             <div className="adminLookupCard"><strong>Stripe coupons/promos</strong><small>{providerSnapshot?.stripe?.coupons?.length || 0} coupons • {providerSnapshot?.stripe?.promotion_codes?.length || 0} promo codes</small>{providerSnapshot?.stripe?.promotion_codes?.slice(0, 6).map((promo) => <p key={String(promo.id)}><small>{String(promo.code)} • {String(promo.active ? 'active' : 'disabled')} • redeemed {String(promo.times_redeemed || 0)}/{String(promo.max_redemptions || '∞')}</small></p>)}</div>
             <div className="adminLookupCard"><strong>Patreon campaign/tier sync</strong><small>{providerSnapshot?.patreon?.note || 'Refresh provider snapshot to load Patreon tier metadata.'}</small>{providerSnapshot?.patreon?.error && <p><small>Patreon warning: {providerSnapshot.patreon.error}</small></p>}{providerSnapshot?.patreon?.included?.filter((item) => item.type === 'tier').slice(0, 6).map((tier) => <p key={String(tier.id)}><small>{String(tier.attributes?.title || tier.id)} • {money(Number(tier.attributes?.amount_cents || 0), 'usd')}/mo • {String(tier.attributes?.published ? 'published' : 'not published')}</small></p>)}</div>
@@ -1145,7 +1159,7 @@ export function SupabaseWorkspace() {
         {isAdmin && adminSection === 'lookup' && <article className="panel wide adminLivePanel">
           <h3>Admin dashboard: live lookup + audit trail</h3>
           <p>Admin bypass remains unrestricted for CAK3D testing. Use lookup to connect an account to pets, tags, scans, documents, calendar events, verification requests, and recent edits.</p>
-          <div className="grid2"><label>Search account, email, phone, or profile ID<input placeholder="real_cak3d@yahoo.com" value={adminSearch} onChange={(event) => setAdminSearch(event.target.value)} /></label><label>Admin count<input readOnly value={`${adminProfiles.length} profiles • ${tags.length} tags • ${scans.length} scans • ${activityRows.length} audit events`} /></label></div>
+          <div className="grid2"><label>Search account, email, phone, or profile ID<input placeholder="name@example.com" value={adminSearch} onChange={(event) => setAdminSearch(event.target.value)} /></label><label>Admin count<input readOnly value={`${adminProfiles.length} profiles • ${tags.length} tags • ${scans.length} scans • ${activityRows.length} audit events`} /></label></div>
           <div className="actions"><button type="button" disabled={busy} onClick={() => loadWorkspace()}>Refresh lookup</button></div>
           <div className="adminLookupGrid">
             {filteredAdminDebugRows.length === 0 ? <p>No matching accounts loaded.</p> : filteredAdminDebugRows.map((row) => <button className="adminLookupCard" type="button" key={row.profile_id} onClick={() => setAdminSearch(row.email || row.profile_id)}>
