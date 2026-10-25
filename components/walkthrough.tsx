@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useLayoutEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { Bell, Footprints, Menu, PawPrint, Sparkles, User, Check } from './icons';
+import { MascotPeek } from './mascot';
 
 /**
  * First-visit tour of the dashboard. Each step spotlights an element marked with
@@ -113,8 +114,9 @@ export function Walkthrough() {
       <div className="tourScrim" onClick={finish} />
       <div className={`tourSpot ${rect ? '' : 'center'}`} style={rect ? { top: rect.top, left: rect.left, width: rect.width, height: rect.height } : { top: '50%', left: '50%', width: 0, height: 0 }} />
       <div className="tourCard" key={index} style={{ top: cardPos.top, left: cardPos.left }}>
+        <MascotPeek size={68} className="tourMascot" />
         {!last && <button className="tourSkip" type="button" onClick={finish}>Skip tour</button>}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}><span className="mascot" aria-hidden="true"><img src="/images/logo/MyPetID-Logo_Resized.jpg" alt="" /></span><span className="iconBubble"><Icon /></span></div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}><span className="iconBubble"><Icon /></span></div>
         <h3 id="tour-title">{step.title}</h3>
         <p>{step.body}</p>
         <div className="tourFoot">

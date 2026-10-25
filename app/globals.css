@@ -1214,3 +1214,50 @@ button.memoRow:hover { border-color: var(--brand); transform: none; }
 .dashboardGrid > .ownerCardWrap:empty { display: none; }
 .memoCard:has(> .memoCardHead:last-child)::after { content: 'Nothing scheduled for today. Add meals, walks and medicine in Schedule.'; color: var(--muted); }
 .memoCard > .memoCardHead:last-child { margin-bottom: 10px; }
+
+.tourMascot { position: absolute !important; top: -58px; left: 24px; }
+.memoEmpty { display: flex; align-items: flex-end; gap: 10px; padding-top: 4px; }
+.memoEmpty p { margin: 0 0 6px; }
+
+.mapDog { width: 54px; height: 36px; pointer-events: none; }
+
+/* Daily reads + personal goals */
+.readerCard { position: relative; }
+.readerMascot { position: absolute !important; top: -46px; right: 22px; }
+.readerMeta { color: var(--muted); font-size: .82rem; font-weight: 700; text-align: right; }
+.readList { list-style: none; margin: 0 0 14px; padding: 0; display: grid; gap: 8px; }
+.readList li { border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--panel); overflow: hidden; }
+.readList li.done { opacity: .78; }
+.readHead { width: 100%; min-height: 0; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; padding: 12px 14px; border: 0; background: transparent; box-shadow: none; color: var(--text); text-align: left; }
+.readHead strong { min-width: 0; overflow-wrap: anywhere; }
+.readHead svg { width: 18px; height: 18px; color: var(--brand); }
+.readTopic { font-size: .72rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; padding: 3px 8px; border-radius: 999px; background: var(--brand-soft); color: var(--brand); }
+.readTopic.health, .readTopic.safety { background: var(--danger-soft); color: var(--danger); }
+.readTopic.training, .readTopic.behavior { background: var(--brand2-soft); color: var(--brand2); }
+.readBody { padding: 0 14px 14px; }
+.readBody p { margin: 0 0 8px; line-height: 1.55; }
+.readBody a { font-weight: 700; color: var(--brand2); }
+.recBox { border-top: 1px solid var(--line); padding-top: 12px; }
+.recTabs { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; margin-bottom: 10px; }
+.recTabs button { flex: 0 0 auto; min-height: 0; padding: 7px 12px; border-radius: 999px; font-size: .84rem; }
+.recTabs button.active { background: var(--grad); color: var(--brand-ink); border-color: transparent; }
+.recText { margin: 0 0 6px; line-height: 1.55; }
+.goalList { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.goalList li { display: grid; gap: 6px; }
+.goalList li.done strong::after { content: ' ✓'; color: var(--brand); }
+.goalTop { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px; }
+.goalTop span { color: var(--muted); font-size: .84rem; font-weight: 700; }
+.goalList small { color: var(--muted); }
+.awardGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; }
+.awardChip { display: grid; gap: 4px; padding: 12px; border-radius: var(--radius-sm); border: 1px dashed var(--line-strong); color: var(--muted); }
+.awardChip strong { color: var(--text); }
+.awardChip em { font-style: normal; font-size: .8rem; font-weight: 800; color: var(--brand); }
+.awardChip.earned { border-style: solid; border-color: var(--brand); background: var(--brand-soft); }
+
+.templateGallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; margin-top: 12px; }
+.templateTile { min-height: 0; padding: 8px; display: grid; gap: 8px; text-align: left; border-radius: var(--radius-sm); border: 2px solid var(--line); background: var(--panel); box-shadow: none; color: var(--text); }
+.templateTile svg { width: 100%; height: auto; display: block; border-radius: 8px; }
+.templateTile span { display: grid; gap: 2px; }
+.templateTile em { font-style: normal; font-size: .78rem; color: var(--muted); }
+.templateTile em.custom { color: var(--brand); font-weight: 700; }
+.templateTile.current, .templateTile:hover { border-color: var(--brand); transform: none; }

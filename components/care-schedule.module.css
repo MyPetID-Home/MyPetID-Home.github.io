@@ -69,3 +69,10 @@
   .confetti span { animation: none; top: var(--y, 20%); opacity: .5; transform: rotate(var(--r, 20deg)); }
   .alertRed, .toast { animation: none; }
 }
+
+.alarmScrim { position: fixed; inset: 0; z-index: 130; display: grid; place-items: center; padding: 16px; background: rgba(0,0,0,.6); backdrop-filter: blur(6px); animation: careToastIn .3s ease both; }
+.alarmCard { position: relative; width: min(420px, 100%); display: grid; justify-items: center; gap: 6px; padding: 26px 22px 22px; text-align: center; border-radius: var(--radius-lg); background: var(--surface-raised); border: 2px solid color-mix(in srgb, var(--brand) 55%, transparent); box-shadow: var(--shadow-lg), var(--glow); }
+.alarmCard h2 { margin: 6px 0 0; font-size: 1.5rem; overflow-wrap: anywhere; }
+.alarmCard p { margin: 0 0 8px; color: var(--muted); overflow-wrap: anywhere; }
+.alarmCard :global(.actions) { width: 100%; justify-content: center; }
+.alarmMascot { position: absolute !important; top: -54px; right: 18px; }

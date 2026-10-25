@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ComponentType } from 'react';
 import { supabase } from '../lib/supabase';
+import { CLOCK_EVENT } from '../lib/clock';
 import {
   CARE_KINDS, DAY_LABELS, KIND_META, appendCareLog, dayWord, deviceTimeZone, formatClock, formatCountdown, formatDays,
   formatInstant, isOccurrenceDone, isValidTimeZone, newCareId, nextOccurrence, normalizeTime, parseCareLog, parseSchedule, upcoming,
@@ -9,6 +10,8 @@ import {
 } from '../lib/care-schedule';
 import { Bell, Bowl, Check, Footprints, Heart, Scissors, Sparkles, Stethoscope } from './icons';
 import styles from './care-schedule.module.css';
+import { AlarmArt } from './alarm-art';
+import { MascotPeek } from './mascot';
 
 /**
  * Care schedule: meals, walks, medicine and more with live countdowns and in-app alarms.
@@ -109,7 +112,8 @@ function useNow(interval = TICK_MS) {
     const timer = window.setInterval(tick, interval);
     const onVisible = () => { if (document.visibilityState === 'visible') tick(); };
     document.addEventListener('visibilitychange', onVisible);
-    return () => { window.clearTimeout(first); window.clearInterval(timer); document.removeEventListener('visibilitychange', onVisible); };
+    window.addEventListener(CLOCK_EVENT, tick);
+    return () => { window.clearTimeout(first); window.clearInterval(timer); document.removeEventListener('visibilitychange', onVisible); window.removeEventListener(CLOCK_EVENT, tick); };
   }, [interval]);
   return now;
 }
@@ -251,8 +255,20 @@ function useNotificationPermission() {
 }
 
 function ToastStack({ toasts, onDismiss, onDone }: { toasts: Toast[]; onDismiss: (key: string) => void; onDone: (toast: Toast) => void }) {
+  const [seen, setSeen] = useState<string[]>([]);
   if (!toasts.length) return null;
-  return (
+  // The newest alarm rings full screen with its animation; once handled or put off it waits in the stack.
+  const ringing = [...toasts].reverse().find((t) => !seen.includes(t.key));
+  return (<>
+    {ringing && <div className={styles.alarmScrim} role="alertdialog" aria-modal="true" aria-label={ringing.title}>
+      <div className={styles.alarmCard}>
+        <MascotPeek size={64} className={styles.alarmMascot} />
+        <AlarmArt kind={ringing.kind} />
+        <h2>{ringing.title}</h2>
+        <p>{ringing.body}</p>
+        <div className="actions"><button type="button" onClick={() => setSeen((list) => [...list, ringing.key])}>Remind me later</button><button type="button" className="primary" onClick={() => onDone(ringing)}><Check /> Done</button></div>
+      </div>
+    </div>}
     <div className={styles.toastStack} role="status" aria-live="assertive">
       {toasts.map((t) => (
         <div key={t.key} className={styles.toast}>
@@ -263,7 +279,7 @@ function ToastStack({ toasts, onDismiss, onDone }: { toasts: Toast[]; onDismiss:
         </div>
       ))}
     </div>
-  );
+  </>);
 }
 
 function countdownClass(ms: number) {

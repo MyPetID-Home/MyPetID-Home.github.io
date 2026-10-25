@@ -3,6 +3,8 @@
  * wall-clock 'HH:MM' in the owner's IANA zone (pets.profile.timezone).
  */
 
+import { hourOptions } from './clock';
+
 export type CareKind = 'medicine' | 'meal' | 'walk' | 'play' | 'grooming' | 'vet' | 'other';
 export const CARE_KINDS: CareKind[] = ['medicine', 'meal', 'walk', 'play', 'grooming', 'vet', 'other'];
 
@@ -219,12 +221,12 @@ export function formatClock(time: string, locale?: string) {
   const t = normalizeTime(time);
   if (!t) return time;
   const [h, m] = t.split(':').map(Number);
-  return new Date(Date.UTC(2000, 0, 1, h, m)).toLocaleTimeString(locale, { hour: 'numeric', minute: '2-digit', timeZone: 'UTC' });
+  return new Date(Date.UTC(2000, 0, 1, h, m)).toLocaleTimeString(locale, { hour: 'numeric', minute: '2-digit', timeZone: 'UTC', ...hourOptions() });
 }
 
 /** An instant's time in the viewer's zone (or a given zone), e.g. '6:00 PM'. */
 export function formatInstant(date: Date, timeZone?: string) {
-  return date.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit', ...(timeZone && isValidTimeZone(timeZone) ? { timeZone } : {}) });
+  return date.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit', ...hourOptions(), ...(timeZone && isValidTimeZone(timeZone) ? { timeZone } : {}) });
 }
 
 export function formatDays(days: number[]) {

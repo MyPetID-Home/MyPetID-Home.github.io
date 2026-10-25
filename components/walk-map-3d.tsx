@@ -1,5 +1,7 @@
 "use client";
 
+import { createRoot, type Root } from 'react-dom/client';
+import { MascotWalker } from './mascot';
 import { StatusScreen } from './status-screen';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Map as MapLibreMap, Marker, GeoJSONSource } from 'maplibre-gl';
@@ -124,6 +126,8 @@ export type MapRoute = { path: LngLat[]; loop?: boolean; color?: string; vertice
 export type WalkMap3DProps = {
   start?: MapPoint;
   current?: MapPoint;
+  /** While walking, the "you are here" marker is the little MyPetID dog trotting along. */
+  walker?: boolean;
   end?: MapPoint;
   pins?: MapPin[];
   height?: number;
@@ -174,11 +178,15 @@ function closedPath(path: LngLat[], loop?: boolean): LngLat[] {
   return a[0] === b[0] && a[1] === b[1] ? path : [...path, a];
 }
 
-export function WalkMap3D({ start, current, end, pins, height = 420, onMapClick, route, editableRoute, onRouteChange, fitTo, flyTo, addPlaceMode, onAddPlaceDone }: WalkMap3DProps) {
+export function WalkMap3D({ start, current, end, walker, pins, height = 420, onMapClick, route, editableRoute, onRouteChange, fitTo, flyTo, addPlaceMode, onAddPlaceDone }: WalkMap3DProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const markersRef = useRef<Marker[]>([]);
   const meRef = useRef<Marker | null>(null);
+  const meIsDogRef = useRef(false);
+  const dogRootRef = useRef<Root | null>(null);
+  const lastHereRef = useRef<{ lat: number; lng: number } | null>(null);
+  const headingRef = useRef(90);
   const pinRefs = useRef<Marker[]>([]);
   const vertexRefs = useRef<Marker[]>([]);
   const onMapClickRef = useRef(onMapClick);
@@ -292,14 +300,31 @@ export function WalkMap3D({ start, current, end, pins, height = 420, onMapClick,
     (map.getSource('walk') as GeoJSONSource | undefined)?.setData({ type: 'FeatureCollection', features: coords.length > 1 ? [{ type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: coords } }] : [] });
     const here = current || end || start;
     if (here) {
+      const asDog = Boolean(walker && current);
+      if (meRef.current && meIsDogRef.current !== asDog) { meRef.current.remove(); meRef.current = null; dogRootRef.current?.unmount(); dogRootRef.current = null; }
       if (!meRef.current) {
         const el = document.createElement('div');
-        el.className = 'mapMe';
-        meRef.current = new lib.Marker({ element: el }).setLngLat([here.lng, here.lat]).addTo(map);
+        el.className = asDog ? 'mapDog' : 'mapMe';
+        if (asDog) dogRootRef.current = createRoot(el);
+        meRef.current = new lib.Marker({ element: el, anchor: asDog ? 'bottom' : 'center' }).setLngLat([here.lng, here.lat]).addTo(map);
+        meIsDogRef.current = asDog;
       } else meRef.current.setLngLat([here.lng, here.lat]);
+      if (asDog && dogRootRef.current) {
+        // Face the direction of travel (bearing from the last point we drew).
+        const prev = lastHereRef.current;
+        let heading = headingRef.current;
+        if (prev && (prev.lat !== here.lat || prev.lng !== here.lng)) {
+          const y = Math.sin((here.lng - prev.lng) * Math.PI / 180) * Math.cos(here.lat * Math.PI / 180);
+          const x = Math.cos(prev.lat * Math.PI / 180) * Math.sin(here.lat * Math.PI / 180) - Math.sin(prev.lat * Math.PI / 180) * Math.cos(here.lat * Math.PI / 180) * Math.cos((here.lng - prev.lng) * Math.PI / 180);
+          heading = (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
+          headingRef.current = heading;
+        }
+        dogRootRef.current.render(<MascotWalker size={54} walking heading={heading} />);
+      }
+      lastHereRef.current = { lat: here.lat, lng: here.lng };
       map.easeTo({ center: [here.lng, here.lat], duration: 800 });
     }
-  }, [ready, start, current, end]);
+  }, [ready, start, current, end, walker]);
 
   // Labelled pins passed in by the page; the map frames them all
   useEffect(() => {

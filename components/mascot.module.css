@@ -1,0 +1,26 @@
+.head { display: block; overflow: visible; }
+.blink .eyes { transform-origin: 60px 54px; animation: blink 5s infinite; }
+@keyframes blink { 0%, 92%, 100% { transform: scaleY(1); } 95% { transform: scaleY(.1); } }
+
+.peek { position: relative; display: grid; justify-items: center; animation: peekUp .6s cubic-bezier(.34,1.56,.64,1) both; pointer-events: none; }
+.peek .paws { display: block; margin-top: -8%; }
+.bubble { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); margin-bottom: 6px; width: max-content; max-width: 220px; padding: 8px 12px; border-radius: 14px; background: var(--surface-raised); border: 1px solid var(--line-strong); color: var(--text); font-size: .82rem; font-weight: 700; box-shadow: var(--shadow-sm); text-align: center; }
+.bubble::after { content: ''; position: absolute; top: 100%; left: 50%; margin-left: -7px; border: 7px solid transparent; border-top-color: var(--line-strong); }
+@keyframes peekUp { from { transform: translateY(60%); opacity: 0; } to { transform: none; opacity: 1; } }
+
+.walker { display: block; overflow: visible; filter: drop-shadow(0 2px 2px rgba(0,0,0,.35)); }
+.legFront, .legBack, .tail, .headBob { transform-box: fill-box; }
+.legFront, .legBack { transform-origin: 50% 0; }
+.tail { transform-origin: 100% 100%; }
+.headBob { transform-origin: 50% 100%; }
+.walking .legFront { animation: stride .5s ease-in-out infinite alternate; }
+.walking .legBack { animation: stride .5s ease-in-out infinite alternate-reverse; }
+.walking .tail { animation: wag .35s ease-in-out infinite alternate; }
+.walking .headBob { animation: bob .5s ease-in-out infinite alternate; }
+@keyframes stride { from { transform: rotate(22deg); } to { transform: rotate(-22deg); } }
+@keyframes wag { from { transform: rotate(-12deg); } to { transform: rotate(14deg); } }
+@keyframes bob { from { transform: translateY(0); } to { transform: translateY(2px); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .blink .eyes, .peek, .walking .legFront, .walking .legBack, .walking .tail, .walking .headBob { animation: none; }
+}

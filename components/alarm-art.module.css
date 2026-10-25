@@ -1,0 +1,31 @@
+.art { position: relative; width: 168px; height: 168px; display: grid; place-items: center; color: var(--brand); }
+.medicine, .vet { color: var(--danger); }
+.meal { color: var(--warn); }
+.walk { color: var(--brand); }
+.play { color: var(--violet); }
+.grooming { color: var(--brand2); }
+.icon { position: relative; width: 120px; height: 120px; overflow: visible; }
+.ring { position: absolute; inset: 14px; border-radius: 50%; border: 4px solid currentColor; opacity: 0; animation: ring 1.8s ease-out infinite; }
+.ring2 { animation-delay: .9s; }
+@keyframes ring { 0% { transform: scale(.6); opacity: .8; } 100% { transform: scale(1.35); opacity: 0; } }
+.pill { transform-origin: 60px 60px; animation: pill 1s ease-in-out infinite; }
+@keyframes pill { 0%, 100% { transform: rotate(-18deg) translateY(0); } 50% { transform: rotate(18deg) translateY(-8px); } }
+.steam path { animation: steam 1.6s ease-in-out infinite; }
+.steam path:nth-child(2) { animation-delay: .3s; }
+.steam path:nth-child(3) { animation-delay: .6s; }
+@keyframes steam { 0% { transform: translateY(6px); opacity: 0; } 50% { opacity: 1; } 100% { transform: translateY(-8px); opacity: 0; } }
+.wiggle { transform-origin: 60px 80px; animation: wiggle .5s ease-in-out infinite alternate; }
+@keyframes wiggle { from { transform: rotate(-5deg); } to { transform: rotate(5deg); } }
+.steps path { opacity: 0; animation: step 1.5s ease-in-out infinite; }
+.steps path:nth-child(2) { animation-delay: .5s; }
+.steps path:nth-child(3) { animation-delay: 1s; }
+@keyframes step { 0% { opacity: 0; transform: scale(.7); } 25%, 60% { opacity: 1; transform: none; } 100% { opacity: 0; } }
+.ball { animation: bounce .7s cubic-bezier(.5,0,.5,1) infinite alternate; transform-origin: 60px 80px; }
+@keyframes bounce { from { transform: translateY(-26px) rotate(0deg); } to { transform: translateY(18px) rotate(90deg) scale(1.08, .92); } }
+.sparkle { transform-origin: 60px 52px; animation: sparkle 1.4s ease-in-out infinite; }
+@keyframes sparkle { 0%, 100% { transform: scale(.85) rotate(0deg); } 50% { transform: scale(1.1) rotate(20deg); } }
+.pulse { transform-origin: 60px 60px; animation: beat 1s ease-in-out infinite; }
+@keyframes beat { 0%, 100% { transform: scale(1); } 15% { transform: scale(1.12); } 30% { transform: scale(.98); } 45% { transform: scale(1.08); } }
+.bell { transform-origin: 60px 16px; animation: bellRing .9s ease-in-out infinite; }
+@keyframes bellRing { 0%, 100% { transform: rotate(0); } 15% { transform: rotate(16deg); } 30% { transform: rotate(-14deg); } 45% { transform: rotate(10deg); } 60% { transform: rotate(-6deg); } 75% { transform: rotate(3deg); } }
+@media (prefers-reduced-motion: reduce) { .ring, .pill, .steam path, .wiggle, .steps path, .ball, .sparkle, .pulse, .bell { animation: none; opacity: 1; } }

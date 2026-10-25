@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useState, type ComponentType, type ReactNode } from 'react';
 import { supabase } from '../lib/supabase';
+import { hourOptions } from '../lib/clock';
+import { MascotPeek } from './mascot';
 import { Bell, Calendar, ChevronRight, Close as X, FileText, Footprints, MapPinned, PawPrint, Plus } from './icons';
 
 /**
@@ -73,7 +75,7 @@ const cleanNote = (note: string | null) => (note || '').replace(TAG_RE, '');
 function whenParts(iso: string | null) {
   if (!iso) return { date: 'No date', time: '' };
   const d = new Date(iso);
-  return { date: d.toLocaleDateString(undefined, { month: '2-digit', day: '2-digit', year: 'numeric' }), time: d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }) };
+  return { date: d.toLocaleDateString(undefined, { month: '2-digit', day: '2-digit', year: 'numeric' }), time: d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit', ...hourOptions() }) };
 }
 
 function useCloudPet() {
@@ -106,7 +108,7 @@ export function useAppointments() {
 
 export function AppointmentList({ items, limit, onPick }: { items: Appointment[]; limit?: number; onPick?: (a: Appointment) => void }) {
   const shown = limit ? items.slice(0, limit) : items;
-  if (!shown.length) return <p className="formHint">Nothing scheduled.</p>;
+  if (!shown.length) return <div className="memoEmpty"><MascotPeek size={54} /><p className="formHint">Nothing scheduled yet.</p></div>;
   return (
     <ul className="memoRows">{shown.map((a) => { const w = whenParts(a.scheduled_for); return (
       <li key={a.id}>{onPick

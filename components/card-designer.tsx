@@ -3,16 +3,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { IdCardSvg, downloadCardPng } from './id-card';
-import { CARD_H, CARD_W, DEFAULT_LAYOUT, US_STATES, coatCode, eyeCode, licenseNumber, formatDob, formatHeight, mergeLayout, sexCode, statusTag, type CardBox, type CardData, type CardField, type CardLayout } from '../lib/id-card';
+import { CARD_H, CARD_W, DEFAULT_LAYOUT, US_STATES, coatCode, eyeCode, licenseNumber, todayIso, formatDob, formatHeight, mergeLayout, sexCode, statusTag, type CardBox, type CardData, type CardField, type CardLayout } from '../lib/id-card';
 
 /** Admin card desk: pick a dog, pick its state template, adjust the layout, export for print. */
-type QueueRow = { pet_id: string; pet_name: string; breed: string | null; photo_url: string | null; pet_profile: Record<string, any> | null; owner_id: string | null; owner_name: string | null; owner_email: string | null; owner_phone: string | null; owner_details: Record<string, any> | null; tag_code: string | null; created_at: string };
+type QueueRow = { pet_id: string; pet_name: string; breed: string | null; photo_url: string | null; pet_profile: Record<string, any> | null; owner_id: string | null; owner_name: string | null; owner_email: string | null; owner_phone: string | null; owner_details: Record<string, any> | null; tag_code: string | null; created_at: string; owner_account_number?: number | null };
 type Template = { state: string; background_url: string | null; layout: Partial<CardLayout> };
 type Selected = { kind: 'text'; key: CardField } | { kind: 'box'; key: CardBox } | { kind: 'banner' } | null;
 
-const FIELD_LABELS: Record<string, string> = { state: 'State name', banner: 'Banner text', country: 'USA / state', scan: 'Scan if found', species: 'Species', name: 'Dog name', address1: 'Address line 1', address2: 'City, state ZIP', phone: 'Phone', tags: 'Status tags', labelHeight: 'HEIGHT label', labelWeight: 'WEIGHT label', labelEyes: 'EYES label', labelSex: 'SEX label', height: 'Height', weight: 'Weight', eyes: 'Eyes', sex: 'Sex', labelDob: 'DOB label', labelRestrictions: 'RESTRICTIONS label', dob: 'Date of birth', restrictions: 'Restrictions', signature: 'Signature', license: 'License number', labelCoat: 'COAT label', coat: 'Coat color', photo: 'Photo', qr: 'QR code', barcode: 'Barcode', seal: 'Seal' };
+const FIELD_LABELS: Record<string, string> = { state: 'State name', banner: 'Banner text', country: 'USA / state', scan: 'Scan if found', species: 'Species', name: 'Dog name', address1: 'Address line 1', address2: 'City, state ZIP', phone: 'Phone', tags: 'Status tags', labelHeight: 'HEIGHT label', labelWeight: 'WEIGHT label', labelEyes: 'EYES label', labelSex: 'SEX label', height: 'Height', weight: 'Weight', eyes: 'Eyes', sex: 'Sex', labelDob: 'DOB label', labelRestrictions: 'RESTRICTIONS label', dob: 'Date of birth', restrictions: 'Restrictions', signature: 'Signature', license: 'License number', issued: 'Issued date', labelCoat: 'COAT label', coat: 'Coat color', photo: 'Photo', qr: 'QR code', barcode: 'Barcode', seal: 'Seal' };
 
-export function cardDataFromRow(row: QueueRow | null, origin: string, state: string): CardData {
+export function cardDataFromRow(row: QueueRow | null, origin: string, state: string, issued?: string): CardData {
   const p = row?.pet_profile || {};
   // Owner address lives in profiles.details.address (same shape as the shipping address).
   const card = p.card || {}; const d = p.details || {}; const o = row?.owner_details || {}; const a = o.address || {};
@@ -32,7 +32,8 @@ export function cardDataFromRow(row: QueueRow | null, origin: string, state: str
     sex: sexCode(d.sex),
     dob: formatDob(d.birthday),
     restrictions: card.restrictions || '',
-    license: licenseNumber(d.rabies_tag, d.microchip, row?.pet_id),
+    license: row ? licenseNumber(d.rabies_tag, d.microchip, row.pet_id, row.owner_account_number) : '8397001',
+    issued: formatDob(issued || card.issued_at || todayIso()),
     coat: coatCode(d.colors || d.coat),
     signatureFont: card.signature_style || undefined,
     statusTags: Array.isArray(p.status_tags) ? p.status_tags : [],
@@ -53,6 +54,8 @@ export function CardDesigner() {
   const [message, setMessage] = useState('');
   const [origin, setOrigin] = useState('');
   const [filter, setFilter] = useState('');
+  const [issued, setIssued] = useState('');
+  const [gallery, setGallery] = useState(false);
   const overlay = useRef<SVGSVGElement>(null);
   // mode 'move' drags the field; the other modes resize it from the edge or corner grabbed.
   const drag = useRef<{ sel: Selected; dx: number; dy: number; mode: 'move' | 'w' | 'h' | 'wh'; start: { x: number; y: number; w: number; h: number; size: number } } | null>(null);
@@ -71,7 +74,8 @@ export function CardDesigner() {
   // Switching dog picks the state saved on its profile; switching state loads that template.
   useEffect(() => { const s = row?.pet_profile?.card?.state; if (s) setState(String(s).toUpperCase()); }, [row]);
   useEffect(() => { const t = templates[state]; setLayout(mergeLayout(t?.layout)); setBackground(t?.background_url || null); setSelected(null); }, [state, templates]);
-  const data = useMemo(() => cardDataFromRow(row, origin, state), [row, origin, state]);
+  useEffect(() => { setIssued(String(row?.pet_profile?.card?.issued_at || todayIso())); }, [row]);
+  const data = useMemo(() => cardDataFromRow(row, origin, state, issued), [row, origin, state, issued]);
   const missing = row ? (['address1', 'address2', 'phone', 'height', 'weight', 'eyes', 'sex', 'dob'] as const).filter((k) => !data[k]) : [];
 
   // Drag handles live in an overlay SVG with the same coordinate system as the card.
@@ -158,10 +162,16 @@ export function CardDesigner() {
   }
   async function exportPng() {
     try { await downloadCardPng('card-export', `${(data.petName || 'card').replace(/\W+/g, '-')}-${state}${bleed ? '-bleed' : ''}`); setMessage('Downloaded the print file (300 dpi).'); }
-    catch (error) { setMessage(error instanceof Error ? error.message : 'Export failed.'); }
+    catch (error) { setMessage(error instanceof Error ? error.message : 'Export failed.'); return; }
+    // Remember the issue date on the dog's profile the first time a print file is made.
+    if (row && supabase && row.pet_profile?.card?.issued_at !== issued) {
+      const profile = { ...(row.pet_profile || {}), card: { ...(row.pet_profile?.card || {}), issued_at: issued } };
+      const { error } = await supabase.from('pets').update({ profile }).eq('id', row.pet_id);
+      if (!error) setQueue((q) => q.map((r) => r.pet_id === row.pet_id ? { ...r, pet_profile: profile } : r));
+    }
   }
   function copyInfo() {
-    const lines = [`Dog: ${data.petName}`, `Signature: ${data.fullName}`, `State: ${state}`, `Species: ${data.species}`, `Address: ${data.address1}`, `City: ${data.address2}`, `Phone: ${data.phone}`, `Height: ${data.height}`, `Weight: ${data.weight}`, `Eyes: ${data.eyes}`, `Sex: ${data.sex}`, `DOB: ${data.dob}`, `Restrictions: ${data.restrictions}`, `License: ${data.license}`, `Coat: ${data.coat}`, `Tags: ${data.statusTags.map((t) => statusTag(t)?.label || t).join(', ')}`, `QR: ${data.qrUrl}`, `Barcode: ${data.barcode}`];
+    const lines = [`Dog: ${data.petName}`, `Signature: ${data.fullName}`, `State: ${state}`, `Species: ${data.species}`, `Address: ${data.address1}`, `City: ${data.address2}`, `Phone: ${data.phone}`, `Height: ${data.height}`, `Weight: ${data.weight}`, `Eyes: ${data.eyes}`, `Sex: ${data.sex}`, `DOB: ${data.dob}`, `Restrictions: ${data.restrictions}`, `License: ${data.license}`, `Issued: ${data.issued}`, `Coat: ${data.coat}`, `Tags: ${data.statusTags.map((t) => statusTag(t)?.label || t).join(', ')}`, `QR: ${data.qrUrl}`, `Barcode: ${data.barcode}`];
     navigator.clipboard?.writeText(lines.join('\n')).then(() => setMessage('Card info copied.'));
   }
 
@@ -182,10 +192,18 @@ export function CardDesigner() {
         <label>Dog<input list="card-queue" value={filter} onChange={(e) => { setFilter(e.target.value); const hit = queue.find((r) => r.pet_name === e.target.value); if (hit) setPetId(hit.pet_id); }} placeholder={`${queue.length} dogs · type a name`} /><datalist id="card-queue">{shown.slice(0, 50).map((r) => <option key={r.pet_id} value={r.pet_name}>{r.owner_name || r.owner_email || 'Guest dog'}</option>)}</datalist></label>
         <label>State template<select value={state} onChange={(e) => setState(e.target.value)}>{US_STATES.map((s) => <option key={s.code} value={s.code}>{s.code} · {s.name}{templates[s.code] ? ' (custom)' : ''}</option>)}</select></label>
         <label className="toggleRow"><input type="checkbox" checked={bleed} onChange={(e) => setBleed(e.target.checked)} /> 1/8" bleed</label>
+        <label>Issued<input type="date" value={issued} onChange={(e) => setIssued(e.target.value)} /></label>
+        <button type="button" className={gallery ? 'primary' : ''} onClick={() => setGallery(!gallery)}>{gallery ? 'Back to editor' : `All ${US_STATES.length} templates`}</button>
       </div>
       {row && missing.length > 0 && <p className="notice">Missing on this profile: {missing.join(', ')}. Fill them in the account sheet or ask the owner.</p>}
 
-      <div className="cardStage">
+      {gallery && <div className="templateGallery">{US_STATES.map((st) => { const t = templates[st.code]; return (
+        <button key={st.code} type="button" className={`templateTile ${st.code === state ? 'current' : ''}`} onClick={() => { setState(st.code); setGallery(false); }}>
+          <IdCardSvg data={{ ...data, state: st.code }} layout={mergeLayout(t?.layout)} background={t?.background_url || null} />
+          <span><strong>{st.code} · {st.name}</strong><em className={t ? 'custom' : ''}>{t ? (t.background_url ? 'Custom art + layout' : 'Custom layout') : 'MyPetID default'}</em></span>
+        </button>
+      ); })}</div>}
+      {!gallery && <div className="cardStage">
         <div className="cardCanvas">
           <IdCardSvg data={data} layout={layout} background={background} />
           <svg ref={overlay} className="cardHandles" viewBox={`0 0 ${CARD_W} ${CARD_H}`} onPointerMove={onMove} onPointerUp={() => { drag.current = null; }} onPointerLeave={() => { drag.current = null; }}>
@@ -220,7 +238,7 @@ export function CardDesigner() {
           </div>
           <p className="formHint">Exports at 300 dpi ({bleed ? '3.625 x 2.375 in with bleed' : '3.375 x 2.125 in'}). Templates you save are used for every dog in that state.</p>
         </div>
-      </div>
+      </div>}
       {/* Hidden full-size copy used for export (bleed toggle applies here). */}
       <div className="cardExportHost" aria-hidden="true"><IdCardSvg id="card-export" data={data} layout={layout} background={background} bleed={bleed} /></div>
     </article>

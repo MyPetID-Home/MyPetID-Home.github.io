@@ -136,6 +136,7 @@ export function IdCardSvg({ data, layout: savedLayout, background, hideCodes = f
       <T spec={L.text.labelCoat} fallbackColor="#141414">COAT</T>
       <T spec={L.text.coat} fallbackColor="#141414">{data.coat}</T>
       {data.license && <T spec={L.text.license} fallbackColor="#1c2430">LIC # {data.license}</T>}
+      {data.issued && <T spec={L.text.issued} fallbackColor="#1c2430">ISS {data.issued}</T>}
       <T spec={L.text.height} fallbackColor="#141414">{data.height}</T>
       <T spec={L.text.weight} fallbackColor="#141414">{data.weight}</T>
       <T spec={L.text.eyes} fallbackColor="#141414">{data.eyes}</T>

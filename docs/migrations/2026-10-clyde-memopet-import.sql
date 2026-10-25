@@ -15,7 +15,7 @@ begin
       'details', coalesce(profile->'details', '{}'::jsonb) || jsonb_build_object(
         'sex', 'Male',
         'birthday', '2024-04-13',
-        'weight_lb', 71,
+        'weight_lb', 88,
         'eyes', 'Light Brown',
         'colors', 'Brindle',
         'coat', 'Short',

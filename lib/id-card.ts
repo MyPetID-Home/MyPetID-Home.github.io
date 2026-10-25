@@ -87,7 +87,7 @@ export const TAG_COLORS: Record<string, string> = { blue: '#1f5fa8', violet: '#6
 export type CardField =
   | 'state' | 'banner' | 'country' | 'scan' | 'species' | 'name' | 'address1' | 'address2' | 'phone'
   | 'labelHeight' | 'labelWeight' | 'labelEyes' | 'labelSex' | 'height' | 'weight' | 'eyes' | 'sex'
-  | 'labelDob' | 'labelRestrictions' | 'dob' | 'restrictions' | 'signature' | 'tags' | 'license' | 'labelCoat' | 'coat';
+  | 'labelDob' | 'labelRestrictions' | 'dob' | 'restrictions' | 'signature' | 'tags' | 'license' | 'labelCoat' | 'coat' | 'issued';
 export type CardBox = 'photo' | 'qr' | 'barcode' | 'seal';
 export type TextSpec = { x: number; y: number; size: number; color?: string; weight?: 400 | 700; font?: 'serif' | 'sans' | 'script' | 'script2' | 'script3' | 'script4'; anchor?: 'start' | 'middle' | 'end'; hidden?: boolean };
 export type BoxSpec = { x: number; y: number; w: number; h: number; hidden?: boolean };
@@ -102,6 +102,7 @@ export const DEFAULT_LAYOUT: CardLayout = {
     country: { x: 968, y: 24, size: 17, weight: 700, anchor: 'middle' },
     scan: { x: 372, y: 108, size: 25, weight: 700, color: '#1c2430' },
     license: { x: 380, y: 200, size: 20, weight: 700, color: '#1c2430' },
+    issued: { x: 846, y: 318, size: 18, weight: 700, color: '#1c2430' },
     species: { x: 833, y: 156, size: 31, weight: 700, color: '#1c2430' },
     name: { x: 380, y: 240, size: 38, weight: 700, color: '#141414' },
     address1: { x: 380, y: 290, size: 30, weight: 700, color: '#141414' },
@@ -157,6 +158,8 @@ export type CardData = {
   dob: string;
   restrictions: string;
   license: string;
+  /** MM/DD/YYYY the card was issued. */
+  issued?: string;
   coat: string;
   signatureFont?: 'script' | 'script2' | 'script3' | 'script4';
   statusTags: string[];
@@ -189,13 +192,24 @@ export const SIGNATURE_STYLES = [
   { key: 'script4', label: 'Bold marker' },
 ] as const;
 
-/** License number: rabies tag, else microchip, else a stable 9-digit number from the pet id. */
-export function licenseNumber(rabiesTag?: string, microchip?: string, petId?: string) {
-  if (rabiesTag && rabiesTag.trim()) return rabiesTag.trim().toUpperCase();
-  if (microchip && microchip.trim()) return microchip.trim();
+/**
+ * License number: the dog's rabies tag number followed by the owner's account number padded to
+ * 3 digits (tag 8397 + account 1 -> 8397001; account 1000+ prints in full). Without a rabies tag
+ * the microchip is used, else a stable 9-digit number from the pet id.
+ */
+export function licenseNumber(rabiesTag?: string, microchip?: string, petId?: string, accountNumber?: number | null) {
+  const account = accountNumber && accountNumber > 0 ? String(accountNumber).padStart(3, '0') : '';
+  if (rabiesTag && rabiesTag.trim()) return `${rabiesTag.trim().toUpperCase()}${account}`;
+  if (microchip && microchip.trim()) return `${microchip.trim()}${account}`;
   let h = 2166136261;
   for (const c of petId || 'mypetid') h = Math.imul(h ^ c.charCodeAt(0), 16777619);
-  return String((h >>> 0) % 1000000000).padStart(9, '0');
+  return `${String((h >>> 0) % 1000000000).padStart(9, '0')}${account}`;
+}
+
+/** Today's date as YYYY-MM-DD (local), the default issue date. */
+export function todayIso() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
 /** Short coat color for the card, e.g. "Black and white" -> "BLK/WHT". */
