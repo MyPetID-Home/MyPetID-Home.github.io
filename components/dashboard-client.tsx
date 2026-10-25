@@ -301,6 +301,23 @@ function DashboardApp({ initialTab = 'overview' }: { initialTab?: Tab }) {
         adminMode: profile.is_admin || profile.tier === 'admin' || emailAdmin ? current.adminMode : false,
         subscription: { ...current.subscription, patreonLinked: Boolean(profile.patreon_linked), patreonTier, patreonStatus: profile.patreon_linked ? `Patreon · ${tiers[patreonTier].label}` : 'Not linked' },
       }));
+      // The account's dog (pets + pets.profile) wins over the copy saved on this device.
+      const { data: cloudPet } = await supabase.from('pets').select('name,breed,photo_url,behavior_public,medical_public,profile').eq('owner_id', userId).order('created_at').limit(1).maybeSingle();
+      if (cancelled || !cloudPet) return;
+      const d = (cloudPet.profile?.details || {}) as Record<string, string | number | null>;
+      const vet = (cloudPet.profile?.vet || {}) as Record<string, string>;
+      const pick = (value: unknown, fallback: string) => value === null || value === undefined || value === '' ? fallback : String(value);
+      setState((current) => ({
+        ...current,
+        pet: {
+          ...current.pet,
+          name: pick(cloudPet.name, current.pet.name), breed: pick(cloudPet.breed, current.pet.breed), photoUrl: pick(cloudPet.photo_url, current.pet.photoUrl),
+          behaviorNotes: pick(cloudPet.behavior_public, current.pet.behaviorNotes), medicalNotes: pick(cloudPet.medical_public, current.pet.medicalNotes),
+          birthday: pick(d.birthday, current.pet.birthday), sex: pick(d.sex, current.pet.sex), eyeColor: pick(d.eyes, current.pet.eyeColor), coatColor: pick(d.colors, current.pet.coatColor), coatType: pick(d.coat, current.pet.coatType),
+          weight: pick(d.weight_lb, current.pet.weight), height: pick(d.height_in, current.pet.height), microchip: pick(d.microchip, current.pet.microchip),
+        },
+        vet: { ...current.vet, clinic: pick(vet.clinic, current.vet.clinic), phone: pick(vet.phone, current.vet.phone) },
+      }));
     }).catch(() => undefined);
     return () => { cancelled = true; };
   }, []);
