@@ -13,7 +13,7 @@ import { SIGNATURE_STYLES, STATUS_TAGS, US_STATES, coatCode, eyeCode, formatDob,
 type CloudPet = { id: string; name: string; breed: string | null; photo_url: string | null; behavior_public: string | null; medical_public: string | null; contact_public: Record<string, string | null> | null; public_fields: string[]; profile: Record<string, any> };
 type Draft = {
   name: string; breed: string; photo_url: string; about: string; health: string;
-  sex: string; birthday: string; height_in: string; weight_lb: string; eyes: string; coat: string; colors: string; microchip: string; rabies_tag: string;
+  sex: string; fixed: string; fixed_on: string; birthday: string; height_in: string; weight_lb: string; eyes: string; coat: string; colors: string; microchip: string; rabies_tag: string;
   status_tags: string[]; state: string; full_name: string; species: string; restrictions: string; signature_style: string;
   vet_clinic: string; vet_phone: string; contact_phone: string; contact_email: string;
   show_details: boolean; show_vet: boolean;
@@ -24,7 +24,8 @@ function toDraft(pet: CloudPet, owner: Record<string, any>): Draft {
   const p = pet.profile || {}; const d = p.details || {}; const c = p.card || {}; const v = p.vet || {}; const a = owner.address || {};
   return {
     name: pet.name || '', breed: pet.breed || '', photo_url: pet.photo_url || '', about: pet.behavior_public || '', health: pet.medical_public || '',
-    sex: d.sex || '', birthday: d.birthday || '', height_in: d.height_in ? String(d.height_in) : '', weight_lb: d.weight_lb ? String(d.weight_lb) : '', eyes: d.eyes || '', coat: d.coat || '', colors: d.colors || '', microchip: d.microchip || '', rabies_tag: d.rabies_tag || '',
+    // Older profiles stored "Male (neutered)" / "Female (spayed)" in sex; split that into sex + fixed.
+    sex: String(d.sex || '').replace(/\s*\((neutered|spayed)\)/i, ''), fixed: d.fixed || (/\((neutered|spayed)\)/i.test(String(d.sex || '')) ? 'yes' : ''), fixed_on: d.fixed_on || '', birthday: d.birthday || '', height_in: d.height_in ? String(d.height_in) : '', weight_lb: d.weight_lb ? String(d.weight_lb) : '', eyes: d.eyes || '', coat: d.coat || '', colors: d.colors || '', microchip: d.microchip || '', rabies_tag: d.rabies_tag || '',
     status_tags: Array.isArray(p.status_tags) ? p.status_tags : [], state: c.state || a.state || '', full_name: c.full_name || '', species: c.species || 'Canine', restrictions: c.restrictions || '', signature_style: c.signature_style || 'script',
     vet_clinic: v.clinic || '', vet_phone: v.phone || '', contact_phone: pet.contact_public?.phone || '', contact_email: pet.contact_public?.email || '',
     show_details: pet.public_fields?.includes('details') ?? false, show_vet: pet.public_fields?.includes('vet') ?? false,
@@ -95,7 +96,7 @@ export function PetCardDetails({ localPetName }: { localPetName?: string }) {
     const profile = {
       ...(pet.profile || {}),
       status_tags: draft.status_tags,
-      details: { ...(pet.profile?.details || {}), sex: draft.sex, birthday: draft.birthday, height_in: draft.height_in ? Number(draft.height_in) : null, weight_lb: draft.weight_lb ? Number(draft.weight_lb) : null, eyes: draft.eyes, coat: draft.coat, colors: draft.colors, microchip: draft.microchip, rabies_tag: draft.rabies_tag, age: '', size: '' },
+      details: { ...(pet.profile?.details || {}), sex: draft.sex, fixed: draft.fixed || null, fixed_on: draft.fixed === 'yes' ? draft.fixed_on || null : null, birthday: draft.birthday, height_in: draft.height_in ? Number(draft.height_in) : null, weight_lb: draft.weight_lb ? Number(draft.weight_lb) : null, eyes: draft.eyes, coat: draft.coat, colors: draft.colors, microchip: draft.microchip, rabies_tag: draft.rabies_tag, age: '', size: '' },
       card: { ...(pet.profile?.card || {}), state: draft.state, full_name: draft.full_name, species: draft.species, restrictions: draft.restrictions, signature_style: draft.signature_style },
       vet: { ...(pet.profile?.vet || {}), clinic: draft.vet_clinic, phone: draft.vet_phone },
     };
@@ -148,7 +149,9 @@ export function PetCardDetails({ localPetName }: { localPetName?: string }) {
       {tab === 'details' && <div>
           <h3>Body & markings</h3>
           <div className="grid2">
-            <label>Sex<select value={draft.sex} onChange={(e) => set({ sex: e.target.value })}><option value="">Select</option><option>Male</option><option>Female</option><option>Male (neutered)</option><option>Female (spayed)</option></select></label>
+            <label>Sex<select value={draft.sex} onChange={(e) => set({ sex: e.target.value })}><option value="">Select</option><option>Male</option><option>Female</option></select></label>
+            <label>{draft.sex === 'Female' ? 'Spayed?' : draft.sex === 'Male' ? 'Neutered?' : 'Spayed / neutered?'}<select value={draft.fixed} onChange={(e) => set({ fixed: e.target.value })}><option value="">Select</option><option value="yes">Yes, {draft.sex === 'Female' ? 'spayed' : draft.sex === 'Male' ? 'neutered' : 'fixed'}</option><option value="no">No, not {draft.sex === 'Female' ? 'spayed' : draft.sex === 'Male' ? 'neutered' : 'fixed'}</option><option value="unknown">Not sure</option></select></label>
+            {draft.fixed === 'yes' && <label>{draft.sex === 'Female' ? 'Spay date' : draft.sex === 'Male' ? 'Neuter date' : 'Date'} (optional)<input type="date" value={draft.fixed_on} onChange={(e) => set({ fixed_on: e.target.value })} /></label>}
             <label>Date of birth<input type="date" value={draft.birthday} onChange={(e) => set({ birthday: e.target.value })} /></label>
             <label>Height at shoulder (inches)<input inputMode="decimal" value={draft.height_in} onChange={(e) => set({ height_in: e.target.value.replace(/[^\d.]/g, '') })} placeholder="20" /></label>
             <label>Weight (lb)<input inputMode="decimal" value={draft.weight_lb} onChange={(e) => set({ weight_lb: e.target.value.replace(/[^\d.]/g, '') })} placeholder="53" /></label>

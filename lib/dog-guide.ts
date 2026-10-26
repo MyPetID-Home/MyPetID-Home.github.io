@@ -9,6 +9,8 @@ export const TOPIC_LABELS: Record<ReadTopic, string> = { food: 'Food', health: '
 
 export type DogFacts = {
   name: string; breed: string; birthday?: string; weightLb?: number;
+  /** Spayed / neutered: true, false, or unknown. */
+  fixed?: boolean;
   /** Free-text signals from the profile: medicine side effects, status tags, notes. */
   flags?: string[];
 };
@@ -156,7 +158,7 @@ export function allReadsFor(facts: DogFacts, now = new Date()) {
 /** A short, calm set of recommendations from the breed care guide (one line each). */
 export function recommendations(facts: DogFacts, now = new Date()) {
   const dog = profileFor(facts, now);
-  const g = careGuide(dog.breed, { weightLb: facts.weightLb, ageYears: dog.months !== undefined ? dog.months / 12 : undefined });
+  const g = careGuide(dog.breed, { weightLb: facts.weightLb, ageYears: dog.months !== undefined ? dog.months / 12 : undefined, neutered: facts.fixed });
   const stagePreventive: Record<LifeStage, string> = {
     puppy: 'Puppy vaccine series and boosters; ask about deworming, heartworm, flea and tick prevention.',
     adolescent: 'First-year boosters, plus heartworm, flea and tick prevention your vet recommends.',

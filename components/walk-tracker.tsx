@@ -12,6 +12,7 @@ import { BottomSheet } from './memo-layout';
 import { MascotPeek } from './mascot';
 import { WalkShare } from './walk-share';
 import type { MapPin } from './walk-map-3d';
+import { change, walkStats, type WalkRecord } from '../lib/walk-stats';
 
 const WalkMap3D = dynamic(() => import('./walk-map-3d').then((m) => m.WalkMap3D), { ssr: false });
 
@@ -180,21 +181,116 @@ export function WalkTracker({ dogName, petId, units, hasMap, onFinished }: { dog
   );
 }
 
-// ---------- history ----------
+// ---------- saved walks ----------
 
-export function WalkHistory({ units, hasMap, localWalks }: { units: Units; hasMap: boolean; localWalks: { id: number; start: string; routeName?: string; distance: number; duration: number }[] }) {
+export type LocalWalk = { id: number; start: string; routeName?: string; distance: number; duration: number };
+
+/** Walks saved to the account (newest first). `missing` = the walk history table isn't set up yet. */
+export function useWalkSessions() {
   const [walks, setWalks] = useState<SavedWalk[] | null>(null);
-  const [open, setOpen] = useState<SavedWalk | null>(null);
   const [note, setNote] = useState('');
   const load = useCallback(async () => {
     if (!supabase) return setWalks([]);
     const { data: auth } = await supabase.auth.getSession();
     if (!auth.session) return setWalks([]);
-    const { data, error } = await supabase.from('walk_sessions').select('*').order('started_at', { ascending: false }).limit(60);
+    const since = new Date(Date.now() - 400 * 86_400_000).toISOString();
+    const { data, error } = await supabase.from('walk_sessions').select('*').gte('started_at', since).order('started_at', { ascending: false }).limit(1000);
     if (error) { setNote(/schema cache|does not exist|42P01/i.test(error.message) ? 'Walk history switches on after the latest database update.' : error.message); return setWalks([]); }
     setWalks((data || []) as SavedWalk[]);
   }, []);
   useEffect(() => { void load(); const r = () => void load(); window.addEventListener(WALKS_EVENT, r); return () => window.removeEventListener(WALKS_EVENT, r); }, [load]);
+  return { walks, note, reload: load };
+}
+
+/** Account walks when there are any; otherwise the walks kept on this device (each walk is also kept locally, so never both). */
+export function walkRecords(saved: SavedWalk[] | null, local: LocalWalk[]): WalkRecord[] {
+  if (saved && saved.length) return saved.map((w) => ({
+    start: new Date(w.started_at).getTime(), durationS: w.duration_s, movingS: w.moving_s, distanceM: Number(w.distance_m), steps: w.steps ?? null, stepsEstimated: w.steps_source !== 'motion', stops: w.stops,
+    pee: (w.events || []).filter((e) => e.kind === 'pee').length, poop: (w.events || []).filter((e) => e.kind === 'poop').length, maxSpeed: w.max_speed_mps === null ? null : Number(w.max_speed_mps),
+  }));
+  return local.filter((w) => w.distance > 0).map((w) => ({ start: w.id - w.duration * 60_000, durationS: Math.round(w.duration * 60), movingS: Math.round(w.duration * 60), distanceM: w.distance * 1609.344, steps: null, stops: 0, pee: 0, poop: 0, maxSpeed: null }));
+}
+
+type Metric = 'distance' | 'time' | 'steps' | 'walks';
+const METRICS: { key: Metric; label: string }[] = [{ key: 'distance', label: 'Distance' }, { key: 'time', label: 'Time' }, { key: 'steps', label: 'Steps' }, { key: 'walks', label: 'Walks' }];
+
+function Change({ now, before }: { now: number; before: number }) {
+  const pct = change(now, before);
+  if (pct === null) return <em className="statChange up">new</em>;
+  if (pct === 0) return <em className="statChange">same</em>;
+  return <em className={`statChange ${pct > 0 ? 'up' : 'down'}`}>{pct > 0 ? '▲' : '▼'} {Math.abs(pct)}%</em>;
+}
+
+/** Today, this week vs last week, a 7-day chart, averages and bests. */
+export function WalkStatsPanel({ units, localWalks, dogName, weeklyGoalMi }: { units: Units; localWalks: LocalWalk[]; dogName: string; weeklyGoalMi?: number }) {
+  const { walks } = useWalkSessions();
+  const [metric, setMetric] = useState<Metric>('distance');
+  const [now, setNow] = useState<number | null>(null);
+  useEffect(() => { setNow(Date.now()); }, []);
+  if (walks === null || now === null) return null;
+  const records = walkRecords(walks, localWalks);
+  const st = walkStats(records, now);
+  if (!records.length) return <section className="panel wide"><h2>Walk stats</h2><div className="memoEmpty"><MascotPeek size={54} /><p className="formHint">Your daily and weekly stats show up here after your first recorded walk.</p></div></section>;
+  const value = (t: { distanceM: number; durationS: number; steps: number; walks: number }) => metric === 'distance' ? (units === 'km' ? t.distanceM / 1000 : t.distanceM / 1609.344) : metric === 'time' ? t.durationS / 60 : metric === 'steps' ? t.steps : t.walks;
+  const label = (v: number) => metric === 'distance' ? v.toFixed(v >= 10 ? 0 : 1) : metric === 'time' ? `${Math.round(v)}m` : metric === 'steps' ? (v >= 1000 ? `${(v / 1000).toFixed(1)}k` : String(Math.round(v))) : String(v);
+  const vals = st.days.map(value);
+  const max = Math.max(...vals, 0.0001);
+  const goalWeekM = weeklyGoalMi ? weeklyGoalMi * 1609.344 : 0;
+  const goalPct = goalWeekM ? Math.min(100, Math.round((st.week.distanceM / goalWeekM) * 100)) : 0;
+  return (
+    <section className="panel wide walkStatsPanel">
+      <h2>{dogName}’s walk stats</h2>
+      <div className="statBlocks">
+        <div className="statBlock">
+          <h3>Today</h3>
+          <dl><div><dt>Walks</dt><dd>{st.today.walks}</dd></div><div><dt>Distance</dt><dd>{fmtDistance(st.today.distanceM, units)}</dd></div><div><dt>Time</dt><dd>{fmtDuration(st.today.durationS)}</dd></div><div><dt>{st.today.stepsKnown ? 'Steps' : 'Steps (est.)'}</dt><dd>{st.today.steps.toLocaleString()}</dd></div><div><dt>Pee · Poop</dt><dd>{st.today.pee} · {st.today.poop}</dd></div></dl>
+        </div>
+        <div className="statBlock">
+          <h3>This week <small>vs last week so far</small></h3>
+          <dl>
+            <div><dt>Walks</dt><dd>{st.week.walks} <Change now={st.week.walks} before={st.lastWeekSoFar.walks} /></dd></div>
+            <div><dt>Distance</dt><dd>{fmtDistance(st.week.distanceM, units)} <Change now={st.week.distanceM} before={st.lastWeekSoFar.distanceM} /></dd></div>
+            <div><dt>Time</dt><dd>{fmtDuration(st.week.durationS)} <Change now={st.week.durationS} before={st.lastWeekSoFar.durationS} /></dd></div>
+            <div><dt>{st.week.stepsKnown ? 'Steps' : 'Steps (est.)'}</dt><dd>{st.week.steps.toLocaleString()} <Change now={st.week.steps} before={st.lastWeekSoFar.steps} /></dd></div>
+            <div><dt>Days walked</dt><dd>{st.activeDaysThisWeek} of 7</dd></div>
+          </dl>
+          {goalWeekM > 0 && <div className="weekGoal"><div className="progress"><span style={{ width: `${goalPct}%` }} /></div><small>{goalPct}% of the {fmtDistance(goalWeekM, units)} weekly goal for {dogName}</small></div>}
+        </div>
+      </div>
+      <div className="recTabs" role="tablist" aria-label="Chart">{METRICS.map((m) => <button key={m.key} type="button" role="tab" aria-selected={metric === m.key} className={metric === m.key ? 'active' : ''} onClick={() => setMetric(m.key)}>{m.label}</button>)}</div>
+      <svg className="walkChart" viewBox="0 0 700 220" role="img" aria-label={`Last 7 days, ${metric}`}>
+        {st.days.map((d, i) => {
+          const h = Math.max(vals[i] > 0 ? 4 : 0, (vals[i] / max) * 150);
+          const x = 20 + i * 96;
+          const isToday = i === 6;
+          return <g key={d.day}>
+            <rect x={x} y={180 - h} width={64} height={h} rx={10} className={isToday ? 'bar today' : 'bar'} />
+            {vals[i] > 0 && <text x={x + 32} y={172 - h} textAnchor="middle" className="barValue">{label(vals[i])}</text>}
+            <text x={x + 32} y={205} textAnchor="middle" className="barDay">{isToday ? 'Today' : new Date(d.day).toLocaleDateString(undefined, { weekday: 'short' })}</text>
+          </g>;
+        })}
+        <line x1="10" y1="180.5" x2="690" y2="180.5" className="barBase" />
+      </svg>
+      <div className="walkStats compact">
+        <div><small>Streak</small><strong>{st.streak} day{st.streak === 1 ? '' : 's'}</strong></div>
+        <div><small>Avg walk</small><strong>{st.avg ? fmtDistance(st.avg.distanceM, units) : '—'}</strong></div>
+        <div><small>Avg time</small><strong>{st.avg ? fmtDuration(st.avg.durationS) : '—'}</strong></div>
+        <div><small>Avg speed</small><strong>{st.avg ? fmtSpeed(st.avg.speed, units) : '—'}</strong></div>
+        <div><small>Stops / walk</small><strong>{st.avg ? st.avg.stops.toFixed(1) : '—'}</strong></div>
+        <div><small>Longest walk</small><strong>{st.longest ? fmtDistance(st.longest.distanceM, units) : '—'}</strong></div>
+        <div><small>All walks</small><strong>{st.all.walks}</strong></div>
+        <div><small>All distance</small><strong>{fmtDistance(st.all.distanceM, units)}</strong></div>
+      </div>
+    </section>
+  );
+}
+
+// ---------- history ----------
+
+export function WalkHistory({ units, hasMap, localWalks }: { units: Units; hasMap: boolean; localWalks: LocalWalk[] }) {
+  const { walks, note: loadNote, reload: load } = useWalkSessions();
+  const [open, setOpen] = useState<SavedWalk | null>(null);
+  const [note, setNote] = useState('');
   async function remove(w: SavedWalk) {
     if (!supabase || !window.confirm('Delete this walk from your history?')) return;
     const { error } = await supabase.from('walk_sessions').delete().eq('id', w.id);
@@ -207,7 +303,7 @@ export function WalkHistory({ units, hasMap, localWalks }: { units: Units; hasMa
   return (
     <section className="panel wide">
       <h2>Walk history</h2>
-      {note && <p className="formHint">{note}</p>}
+      {(note || loadNote) && <p className="formHint">{note || loadNote}</p>}
       {walks.length > 0 && <div className="walkStats compact">
         <div><small>This week</small><strong>{fmtDistance(week.reduce((s, w) => s + Number(w.distance_m), 0), units)}</strong></div>
         <div><small>Walks this week</small><strong>{week.length}</strong></div>
@@ -220,7 +316,7 @@ export function WalkHistory({ units, hasMap, localWalks }: { units: Units; hasMa
             <span className="memoRowTitle">{fmtDuration(w.duration_s)} · {w.stops} stops · {(w.events || []).filter((e) => e.kind === 'pee').length}💧 {(w.events || []).filter((e) => e.kind === 'poop').length}💩</span>
             <span className="memoRowTime">{fmtDistance(Number(w.distance_m), units)}</span>
           </button></li>)}
-          {localWalks.map((w) => <li key={`local-${w.id}`}><div className="memoRow"><span className="memoRowDate">{w.start}</span><span className="memoRowTitle">{w.routeName || 'Walk'} · on this device</span><span className="memoRowTime">{w.distance.toFixed(2)} mi · {Math.round(w.duration)} min</span></div></li>)}
+          {walks.length === 0 && localWalks.map((w) => <li key={`local-${w.id}`}><div className="memoRow"><span className="memoRowDate">{w.start}</span><span className="memoRowTitle">{w.routeName || 'Walk'} · on this device</span><span className="memoRowTime">{w.distance.toFixed(2)} mi · {Math.round(w.duration)} min</span></div></li>)}
         </ul>
       )}
       {open && <BottomSheet title={open.name || 'Walk'} onClose={() => setOpen(null)}>

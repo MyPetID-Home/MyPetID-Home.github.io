@@ -39,14 +39,15 @@ type TabKey = 'about' | 'health' | 'vet' | 'contact' | 'seen' | 'scans' | 'app';
 const LABELS: Record<string, string> = { sex: 'Sex', age: 'Age', birthday: 'Birthday', size: 'Size', weight: 'Weight', coat: 'Coat', colors: 'Colors', pattern: 'Pattern', eyes: 'Eyes', ears: 'Ears', tail: 'Tail', markings: 'Markings', microchip: 'Microchip', status: 'Status', clinic: 'Clinic', doctor: 'Vet', phone: 'Phone', address: 'Address', emergency: 'Emergency clinic', feeding: 'Feeding', allergies: 'Allergies', medications: 'Medications', notes: 'Notes' };
 
 // Cloud profile keys (pets.profile.details) with units, shown with friendly labels and formatting.
-const UNIT_LABELS: Record<string, string> = { weight_lb: 'Weight', height_in: 'Height', neck_in: 'Neck', rabies_tag: 'Rabies tag', microchip_registry: 'Microchip registry', vaccines: 'Vaccines', email: 'Email', vaccine_clinic: 'Vaccine clinic' };
+const UNIT_LABELS: Record<string, string> = { fixed: 'Spayed / neutered', fixed_on: 'Fixed on', weight_lb: 'Weight', height_in: 'Height', neck_in: 'Neck', rabies_tag: 'Rabies tag', microchip_registry: 'Microchip registry', vaccines: 'Vaccines', email: 'Email', vaccine_clinic: 'Vaccine clinic' };
 // Never shown to finders even if present in the data.
 const HIDDEN_KEYS = new Set(['issued_at', 'signature_style', 'full_name']);
 function formatValue(key: string, value: string) {
+  if (key === 'fixed') return value === 'yes' ? 'Yes' : value === 'no' ? 'No' : 'Not sure';
   if (key === 'weight_lb') return `${value} lb`;
   if (key === 'neck_in') return `${value} in`;
   if (key === 'height_in') { const n = Number(value); return Number.isFinite(n) && n >= 12 ? `${Math.floor(n / 12)}' ${Math.round(n % 12)}"` : `${value} in`; }
-  if (key === 'birthday' && /^\d{4}-\d{2}-\d{2}/.test(value)) return new Date(`${value.slice(0, 10)}T12:00:00`).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' });
+  if ((key === 'birthday' || key === 'fixed_on') && /^\d{4}-\d{2}-\d{2}/.test(value)) return new Date(`${value.slice(0, 10)}T12:00:00`).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' });
   return value;
 }
 

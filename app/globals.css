@@ -1329,3 +1329,25 @@ html { background: color-mix(in srgb, var(--bg) 84%, var(--brand) 16%); }
 
 .tourCard { max-height: calc(100vh - 90px); max-height: calc(100dvh - 90px); overflow-y: auto; overflow-x: visible; }
 .tourCard:has(.tourMascot) { overflow: visible; }
+
+/* Walk stats */
+.statBlocks { display: grid; gap: 12px; margin: 10px 0 14px; }
+@media (min-width: 760px) { .statBlocks { grid-template-columns: 1fr 1fr; } }
+.statBlock { padding: 14px; border-radius: var(--radius-sm); background: var(--panel); border: 1px solid var(--line); min-width: 0; }
+.statBlock h3 { margin: 0 0 8px; font-size: 1.05rem; }
+.statBlock h3 small { color: var(--muted); font-weight: 600; font-size: .78rem; }
+.statBlock dl { margin: 0; display: grid; gap: 6px; }
+.statBlock dl div { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
+.statBlock dt { color: var(--muted); font-weight: 700; }
+.statBlock dd { margin: 0; font-weight: 800; font-variant-numeric: tabular-nums; text-align: right; }
+.statChange { font-style: normal; font-size: .74rem; font-weight: 800; margin-left: 6px; color: var(--muted); }
+.statChange.up { color: var(--leaf); }
+.statChange.down { color: var(--danger); }
+.weekGoal { margin-top: 10px; display: grid; gap: 4px; }
+.weekGoal small { color: var(--muted); }
+.walkChart { width: 100%; height: auto; margin: 6px 0 12px; }
+.walkChart .bar { fill: color-mix(in srgb, var(--brand) 55%, transparent); }
+.walkChart .bar.today { fill: var(--brand2); }
+.walkChart .barValue { fill: var(--text); font-size: 18px; font-weight: 800; }
+.walkChart .barDay { fill: var(--muted); font-size: 17px; font-weight: 700; }
+.walkChart .barBase { stroke: var(--line-strong); stroke-width: 2; }
