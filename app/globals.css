@@ -1351,3 +1351,31 @@ html { background: color-mix(in srgb, var(--bg) 84%, var(--brand) 16%); }
 .walkChart .barValue { fill: var(--text); font-size: 18px; font-weight: 800; }
 .walkChart .barDay { fill: var(--muted); font-size: 17px; font-weight: 700; }
 .walkChart .barBase { stroke: var(--line-strong); stroke-width: 2; }
+
+/* Card desk: NFC link */
+.nfcPanel { display: grid; gap: 10px; margin: 12px 0; padding: 14px; border-radius: var(--radius-sm); border: 1px solid var(--brand2); background: var(--brand2-soft); }
+.nfcPanel > div:first-child { display: grid; }
+.nfcPanel small { color: var(--muted); }
+.nfcPanel input { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: .9rem; }
+.nfcRow { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; }
+.nfcQr { background: #fff; border-radius: 12px; padding: 4px; line-height: 0; }
+.nfcRow .actions { flex: 1 1 220px; align-items: flex-start; }
+
+.previewBanner { position: sticky; top: 0; z-index: 60; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: center; padding: 10px 16px; background: var(--warn); color: #241a02; font-weight: 600; text-align: center; }
+.previewBanner strong { padding: 2px 8px; border-radius: 999px; background: #241a02; color: var(--warn); font-size: .78rem; letter-spacing: .06em; text-transform: uppercase; }
+/* MyPetID promo under a public tag page */
+.publicPromo { max-width: 980px; margin: 24px auto 40px; padding: 22px; border-radius: var(--radius-lg); border: 1px solid var(--line-strong); background: var(--surface-raised); box-shadow: var(--shadow-sm); }
+.promoHead { display: flex; gap: 16px; align-items: flex-end; }
+.promoHead h2 { margin: 4px 0 8px; font-size: clamp(1.3rem, 4vw, 1.8rem); }
+.promoHead p { margin: 0; color: var(--muted); }
+.promoFeatures { list-style: none; margin: 18px 0; padding: 0; display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+.promoFeatures li { display: flex; gap: 10px; align-items: flex-start; padding: 12px; border-radius: var(--radius-sm); background: var(--panel); border: 1px solid var(--line); }
+.promoFeatures div { display: grid; gap: 2px; }
+.promoFeatures small { color: var(--muted); }
+.promoActions { margin: 4px 0 14px; }
+@media (max-width: 520px) { .promoHead { flex-direction: column; align-items: flex-start; } }
+
+.publicLinkInfo { flex: 1 1 260px; display: grid; gap: 8px; min-width: 0; }
+.publicLinkInfo input { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: .88rem; }
+.phonePreview { margin: 16px auto 0; width: min(390px, 100%); height: 720px; border-radius: 34px; border: 10px solid #0b0f0c; overflow: hidden; box-shadow: var(--shadow-lg); background: var(--bg); }
+.phonePreview iframe { width: 100%; height: 100%; border: 0; display: block; }

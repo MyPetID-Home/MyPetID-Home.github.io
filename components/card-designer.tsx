@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from '../lib/supabase';
+import { PUBLIC_APP_URL, tagScanUrl } from '../lib/public-url';
+import { QRCodeSVG } from 'qrcode.react';
 import { IdCardSvg, downloadCardPng } from './id-card';
 import { ARTWORK_LAYOUT, CARD_H, CARD_W, DEFAULT_LAYOUT, US_STATES, coatCode, eyeCode, licenseNumber, todayIso, formatDob, formatHeight, mergeLayout, sexCode, statusTag, type CardBox, type CardData, type CardField, type CardLayout } from '../lib/id-card';
 
@@ -37,7 +39,8 @@ export function cardDataFromRow(row: QueueRow | null, origin: string, state: str
     coat: coatCode(d.colors || d.coat),
     signatureFont: card.signature_style || undefined,
     statusTags: Array.isArray(p.status_tags) ? p.status_tags : [],
-    qrUrl: row?.tag_code ? `${origin}/scan/?tag=${encodeURIComponent(row.tag_code)}` : row ? `${origin}/pet/?pet=${row.pet_id}` : `${origin}/pet/?tag=demo-tag-001`,
+    // Always the permanent public address, never the admin's current site.
+    qrUrl: row?.tag_code ? tagScanUrl(row.tag_code) : row ? `${PUBLIC_APP_URL}/pet/?pet=${row.pet_id}` : tagScanUrl('demo-tag-001'),
     barcode: row?.tag_code || (row ? row.pet_id.slice(0, 12).toUpperCase() : 'DEMO-TAG-001'),
   };
 }
@@ -143,6 +146,15 @@ export function CardDesigner() {
   }
   const patchSelected = (patch: Record<string, number | boolean | string>) => patchSel(selected, patch);
 
+  async function createTag() {
+    if (!supabase || !row) return;
+    // The database hands out the next number (MPID-000001, MPID-000002, ...) so codes never clash.
+    const { data: code, error } = await supabase.rpc('admin_create_tag', { p_pet: row.pet_id });
+    if (error) { setMessage(/does not exist|schema cache|42883/i.test(error.message) ? 'Numbered tags switch on after the latest database update.' : error.message); return; }
+    setQueue((q) => q.map((r) => r.pet_id === row.pet_id ? { ...r, tag_code: String(code) } : r));
+    setMessage(`Tag ${code} is ready for ${row.pet_name}.`);
+  }
+
   async function save() {
     if (!supabase) return;
     const { data: auth } = await supabase.auth.getUser();
@@ -171,7 +183,7 @@ export function CardDesigner() {
     }
   }
   function copyInfo() {
-    const lines = [`Dog: ${data.petName}`, `Signature: ${data.fullName}`, `State: ${state}`, `Species: ${data.species}`, `Address: ${data.address1}`, `City: ${data.address2}`, `Phone: ${data.phone}`, `Height: ${data.height}`, `Weight: ${data.weight}`, `Eyes: ${data.eyes}`, `Sex: ${data.sex}`, `DOB: ${data.dob}`, `Restrictions: ${data.restrictions}`, `License: ${data.license}`, `Issued: ${data.issued}`, `Coat: ${data.coat}`, `Tags: ${data.statusTags.map((t) => statusTag(t)?.label || t).join(', ')}`, `QR: ${data.qrUrl}`, `Barcode: ${data.barcode}`];
+    const lines = [`Dog: ${data.petName}`, `Signature: ${data.fullName}`, `State: ${state}`, `Species: ${data.species}`, `Address: ${data.address1}`, `City: ${data.address2}`, `Phone: ${data.phone}`, `Height: ${data.height}`, `Weight: ${data.weight}`, `Eyes: ${data.eyes}`, `Sex: ${data.sex}`, `DOB: ${data.dob}`, `Restrictions: ${data.restrictions}`, `License: ${data.license}`, `Issued: ${data.issued}`, `Coat: ${data.coat}`, `Tags: ${data.statusTags.map((t) => statusTag(t)?.label || t).join(', ')}`, `QR / NFC link: ${data.qrUrl}`, `Barcode: ${data.barcode}`];
     navigator.clipboard?.writeText(lines.join('\n')).then(() => setMessage('Card info copied.'));
   }
 
@@ -195,6 +207,23 @@ export function CardDesigner() {
         <label>Issued<input type="date" value={issued} onChange={(e) => setIssued(e.target.value)} /></label>
         <button type="button" className={gallery ? 'primary' : ''} onClick={() => setGallery(!gallery)}>{gallery ? 'Back to editor' : `All ${US_STATES.length} templates`}</button>
       </div>
+      {row && <section className="nfcPanel">
+        <div><strong>NFC tag for {row.pet_name}</strong><small>{row.owner_name || row.owner_email || 'Guest dog'}{row.owner_account_number ? ` · account ${String(row.owner_account_number).padStart(3, '0')}` : ''}</small></div>
+        {row.tag_code && /^MPID-\d+$/.test(row.tag_code) ? <>
+          <label>Write this link to the chip (URL record)<input readOnly value={tagScanUrl(row.tag_code)} onFocus={(e) => e.currentTarget.select()} /></label>
+          <div className="nfcRow">
+            <div className="nfcQr"><QRCodeSVG value={tagScanUrl(row.tag_code)} size={132} level="M" includeMargin /></div>
+            <div className="actions compact">
+              <button className="primary" type="button" onClick={() => navigator.clipboard?.writeText(tagScanUrl(row.tag_code!)).then(() => setMessage('NFC link copied. Paste it as a URL record in your NFC writer app.'))}>Copy NFC link</button>
+              <a className="button" href={tagScanUrl(row.tag_code)} target="_blank" rel="noopener noreferrer">Test the link</a>
+              <small className="formHint">Tag code <b>{row.tag_code}</b>. Scan the QR with your phone to open the link there, then write it with your NFC app.</small>
+            </div>
+          </div>
+        </> : <>
+          <p className="formHint">{row.tag_code ? `This dog has an older tag code (${row.tag_code}). Give it a numbered MPID code for the new card.` : 'This dog doesn’t have a tag code yet. Create one before writing the chip; it stays the same for the life of the tag.'}</p>
+          <div className="actions compact"><button className="primary" type="button" onClick={createTag}>Create MPID tag code</button></div>
+        </>}
+      </section>}
       {row && missing.length > 0 && <p className="notice">Missing on this profile: {missing.join(', ')}. Fill them in the account sheet or ask the owner.</p>}
 
       {gallery && <div className="templateGallery">{US_STATES.map((st) => { const t = templates[st.code]; return (

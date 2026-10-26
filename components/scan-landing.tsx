@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { PublicPromo } from './public-promo';
 import { MapPinned, PawPrint } from './icons';
 import { PetProfileCard } from './pet-profile-card';
 import { PublicCareCountdown } from './care-schedule';
@@ -51,10 +52,16 @@ function scannerInstallId() {
   return next;
 }
 
-export function ScanLanding() {
+/**
+ * `tagCode` comes from the clean public URL (/public/MPID-000001); without it the tag is read from
+ * ?tag= (older /scan/ links). `publicPage` hides the owner/profile links and shows the MyPetID promo.
+ */
+export function ScanLanding({ tagCode, publicPage = false }: { tagCode?: string; publicPage?: boolean } = {}) {
   // Query params are read after mount; reading window.location during render
   // caused React hydration error #418 on the statically exported page.
-  const [query, setQuery] = useState<{ tag: string; scanMode: string } | null>(null);
+  const [query, setQuery] = useState<{ tag: string; scanMode: string; preview: boolean } | null>(null);
+  // ?preview=1: the owner looking at their own public page from the dashboard. No redirect, no reports.
+  const preview = Boolean(query?.preview);
   const tag = query?.tag ?? DEMO_TAG;
   const scanMode = query?.scanMode ?? 'finder';
   const [tagId, setTagId] = useState<string | null>(null);
@@ -74,7 +81,9 @@ export function ScanLanding() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const nextMode = params.get('mode') || 'finder';
-    setQuery({ tag: params.get('tag') || DEMO_TAG, scanMode: nextMode });
+    const isPreview = params.get('preview') === '1';
+    setQuery({ tag: (tagCode || params.get('tag') || DEMO_TAG).trim(), scanMode: publicPage ? 'finder' : nextMode, preview: isPreview });
+    if (isPreview) setConsentDismissed(true);
     if (nextMode === 'owner') {
       setStatus(OWNER_STATUS);
       setReportedLost(false);
@@ -96,7 +105,7 @@ export function ScanLanding() {
         setTagId(record.tag_id);
         // The owner scanning their own dog's card goes to the private profile, not the public one.
         const guest = savedGuest();
-        if (record.is_owner || (guest && guest.petId === record.id)) {
+        if (!query?.preview && (record.is_owner || (guest && guest.petId === record.id))) {
           window.location.replace(`/dashboard/pet/?from=scan&tag=${encodeURIComponent(tag)}`);
           return;
         }
@@ -105,7 +114,9 @@ export function ScanLanding() {
           const loaded = record;
           setPet({ id: loaded.id, name: loaded.name, breed: loaded.breed, photo_url: loaded.photo_url, medical_public: loaded.medical_public, behavior_public: loaded.behavior_public, lost_mode: loaded.lost_mode });
           const { data: auth } = await supabase.auth.getUser();
-          if (auth.user?.id && loaded.is_owner) {
+          if (query?.preview) {
+            setStatus('');
+          } else if (auth.user?.id && loaded.is_owner) {
             const fingerprint = scannerInstallId();
             const { data: device } = await supabase.from('devices').select('trusted,label').eq('profile_id', auth.user.id).eq('device_fingerprint', fingerprint).maybeSingle() as { data: DeviceRecord | null };
             setActor('owner');
@@ -184,6 +195,7 @@ export function ScanLanding() {
 
   function acceptFinderLocation() {
     setConsentDismissed(true);
+    if (preview) { setStatus('Preview: when a finder taps this, you get an alert with their note and location.'); return; }
     requestLocation(reportedLost ? 'Finder reported lost sighting from finder tag URL' : 'Finder consented from finder tag URL');
   }
 
@@ -205,6 +217,7 @@ export function ScanLanding() {
           <small className="formHint">Nothing is shared unless you tap “Share my location” and your browser allows it.</small>
         </div>
       </div>}
+      {preview && <div className="previewBanner" role="status"><strong>Preview</strong> This is exactly what people see when they scan {pet.id ? pet.name : 'your dog'}’s tag. Nothing here is sent or recorded.</div>}
       <div className="scanProfileFrame" aria-hidden={!consentDismissed}>
       <section className="publicHero"><Link className="brandLockup" href="/"><img src="/images/logo/MyPetID-Logo_Resized.jpg" alt="" /><span>MyPet<b>ID</b></span></Link></section>
       {record?.public_extra?.care_schedule && record.public_extra.care_schedule.length > 0 && <PublicCareCountdown schedule={record.public_extra.care_schedule} timeZone={record.public_extra.timezone || 'America/New_York'} petName={pet.name} lost={pet.lost_mode} />}
@@ -227,14 +240,15 @@ export function ScanLanding() {
           </>}
           <div className="actions">
             {scanMode !== 'owner' && <button className="primary" type="button" disabled={saving} onClick={acceptFinderLocation}><MapPinned /> {saving ? 'Requesting…' : 'Send with my location'}</button>}
-            <Link className="button" href={profileUrl}>View full profile</Link>
-            <Link className="button ghost" href={dashboardUrl}>I’m the owner</Link>
+            {!publicPage && <Link className="button" href={profileUrl}>View full profile</Link>}
+            {!publicPage && <Link className="button ghost" href={dashboardUrl}>I’m the owner</Link>}
           </div>
           {status && status !== FINDER_STATUS && <p className="authMessage" role="status">{status}</p>}
         </article>
 
 
       </section>
+      {publicPage && <PublicPromo petName={pet.id ? pet.name : undefined} />}
       </div>
     </main>
   );
