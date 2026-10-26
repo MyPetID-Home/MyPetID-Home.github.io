@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import type { Session } from '@supabase/supabase-js';
 import { QRCodeSVG } from 'qrcode.react';
+import { PUBLIC_APP_URL } from '../lib/public-url';
 import { supabase } from '../lib/supabase';
 import { apiFetch, bearer } from '../lib/api-client';
 import { Chat, MapPinned, ShieldCheck, Users, Check, Sparkles } from './icons';
@@ -247,7 +248,7 @@ export function DogPackCloud({ dogName }: { dogName: string }) {
           {friends.length === 0 ? <p className="formHint">No friends yet. Send an invite to start your pack.</p> : <ul className="friendList">{friends.map((f) => (
             <li key={f.profile_id}><button type="button" className={chatWith?.profile_id === f.profile_id ? 'activeMini' : ''} onClick={() => setChatWith(f)}><span className="avatarDot">{f.name.slice(0, 1)}</span><span><strong>{f.name}</strong><small>{f.dog_name ? `with ${f.dog_name}` : 'Dog Pack friend'}</small></span><Chat /></button></li>
           ))}</ul>}
-          {packCode && <div className="inviteBox myPackQr"><p className="eyebrow">My Dog Pack QR</p><div className="codeBox"><QRCodeSVG value={`${window.location.origin}/dashboard/pack/?join=${packCode}`} size={150} marginSize={2} /></div><p className="formHint">Friends scan this with their phone camera to join your pack. Code <code>{packCode}</code></p></div>}
+          {packCode && <div className="inviteBox myPackQr"><p className="eyebrow">My Dog Pack QR</p><div className="codeBox"><QRCodeSVG value={`${PUBLIC_APP_URL}/dashboard/pack/?join=${packCode}`} size={150} marginSize={2} /></div><p className="formHint">Friends scan this with their phone camera to join your pack. Code <code>{packCode}</code></p></div>}
           <button type="button" onClick={createInvite}>Send an invite link</button>
           {invite && <div className="inviteBox"><div className="codeBox"><QRCodeSVG value={invite} size={132} marginSize={2} /></div><input readOnly value={invite} onFocus={(e) => e.target.select()} aria-label="Invite link" /><button type="button" onClick={() => navigator.clipboard?.writeText(invite).then(() => setNotice('Invite link copied.'))}>Copy link</button></div>}
         </article>
