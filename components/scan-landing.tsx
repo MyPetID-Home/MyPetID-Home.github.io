@@ -10,6 +10,8 @@ import { savedGuest } from '../lib/guest-pet';
 import { supabase } from '../lib/supabase';
 import { isServiceRestrictionMessage, queueFallbackSync } from '../lib/fallback-local';
 import { fetchPublicPet, submitFinderReport, type PublicPet } from '../lib/public-pet';
+import { translate, useT, type TVars } from '../lib/i18n';
+import { LanguagePicker } from './language-picker';
 
 type Pet = {
   id: string;
@@ -39,8 +41,10 @@ const DEMO_TAG = 'demo-tag-001';
 // demo dog in place of the pet they actually found.
 const unknownPet: Pet = { id: '', name: 'this pet', breed: null, photo_url: null, medical_public: null, behavior_public: null, lost_mode: false };
 
-const OWNER_STATUS = '';
-const FINDER_STATUS = 'Finder tag scan: do you want to share this scan location with the owner? Nothing is saved until you tap consent and the browser grants GPS.';
+// Status messages are stored as a dictionary key (plus values) and translated when rendered, so
+// switching language also translates a message that is already on screen.
+type StatusMsg = { key: string; vars?: TVars } | null;
+const NOTE_DEFAULTS = (['en', 'es', 'fr', 'pt'] as const).map((l) => translate(l, 'scan.noteDefault'));
 
 function scannerInstallId() {
   if (typeof window === 'undefined') return 'server';
@@ -68,13 +72,17 @@ export function ScanLanding({ tagCode, publicPage = false }: { tagCode?: string;
   const [pet, setPet] = useState<Pet>(unknownPet);
   const [petLoaded, setPetLoaded] = useState(false);
   const [record, setRecord] = useState<PublicPet | null>(null);
-  const [status, setStatus] = useState(FINDER_STATUS);
+  const [status, setStatusMsg] = useState<StatusMsg>(null);
+  const setStatus = (key: string, vars?: TVars) => setStatusMsg(key ? { key, vars } : null);
+  const { t, lang } = useT();
   const [actor, setActor] = useState<'owner' | 'linked_user' | 'stranger'>('stranger');
   const [saving, setSaving] = useState(false);
   const [reportedLost, setReportedLost] = useState(true);
-  const [finderNote, setFinderNote] = useState('I found this dog here.');
+  const [finderNote, setFinderNote] = useState(NOTE_DEFAULTS[0]);
   const [finderContact, setFinderContact] = useState('');
   const [consentDismissed, setConsentDismissed] = useState(false);
+  // The prefilled note follows the language until the finder edits it.
+  useEffect(() => { setFinderNote((note) => (NOTE_DEFAULTS.includes(note) ? t('scan.noteDefault') : note)); }, [t]);
   const profileUrl = useMemo(() => `/pet/?tag=${encodeURIComponent(tag)}&mode=owner`, [tag]);
   const dashboardUrl = useMemo(() => `/dashboard/?tag=${encodeURIComponent(tag)}`, [tag]);
 
@@ -85,7 +93,7 @@ export function ScanLanding({ tagCode, publicPage = false }: { tagCode?: string;
     setQuery({ tag: (tagCode || params.get('tag') || DEMO_TAG).trim(), scanMode: publicPage ? 'finder' : nextMode, preview: isPreview });
     if (isPreview) setConsentDismissed(true);
     if (nextMode === 'owner') {
-      setStatus(OWNER_STATUS);
+      setStatus('');
       setReportedLost(false);
       setConsentDismissed(true);
     }
@@ -121,14 +129,14 @@ export function ScanLanding({ tagCode, publicPage = false }: { tagCode?: string;
             const { data: device } = await supabase.from('devices').select('trusted,label').eq('profile_id', auth.user.id).eq('device_fingerprint', fingerprint).maybeSingle() as { data: DeviceRecord | null };
             setActor('owner');
             setConsentDismissed(true);
-            setStatus('This is your dog. Scans from your own account are never sent as finder reports.');
+            setStatus('scan.status.ownDog');
           } else if (auth.user?.id) {
             const fingerprint = scannerInstallId();
             const { data: device } = await supabase.from('devices').select('trusted,label').eq('profile_id', auth.user.id).eq('device_fingerprint', fingerprint).maybeSingle() as { data: DeviceRecord | null };
             if (device?.trusted) {
               setActor('linked_user');
               setConsentDismissed(true);
-              setStatus('You’re signed in on a trusted device for this dog, so no finder report was created.');
+              setStatus('scan.status.trusted');
             }
           }
           return;
@@ -156,37 +164,37 @@ export function ScanLanding({ tagCode, publicPage = false }: { tagCode?: string;
     };
     if (!supabase) {
       queueFallbackSync('scan_event', `Finder scan queued for ${pet.name}`, payload);
-      setStatus(`We couldn’t reach MyPetID, so the report wasn’t sent. Please contact local animal control or a nearby shelter. Your location: ${coords.latitude.toFixed(5)}, ${coords.longitude.toFixed(5)}.`);
+      setStatus('scan.status.offlineWithCoords', { lat: coords.latitude.toFixed(5), lng: coords.longitude.toFixed(5) });
       return;
     }
     if (!tagId) {
       queueFallbackSync('scan_event', `Finder scan queued for tag ${tag}`, payload);
-      setStatus(`Location captured: ${coords.latitude.toFixed(5)}, ${coords.longitude.toFixed(5)}. MyPetID could not confirm an owner for this tag, so the report could not be delivered. Please contact local animal control or a nearby shelter.`);
+      setStatus('scan.status.noOwner', { lat: coords.latitude.toFixed(5), lng: coords.longitude.toFixed(5) });
       return;
     }
     const errorMessage = await submitFinderReport(payload, { tagId, petId: pet.id || null });
     const error = errorMessage ? { message: errorMessage } : null;
     if (error && isServiceRestrictionMessage(error.message)) {
       queueFallbackSync('scan_event', `Finder scan queued for ${pet.name}`, payload);
-      setStatus('We couldn’t reach MyPetID, so the report wasn’t sent. Please contact local animal control or a nearby shelter.');
-    } else if (error) setStatus(`The report couldn’t be sent: ${error.message}`);
-    else setStatus(reportedLost ? `Thank you! ${pet.name}’s owner has been alerted with your location.` : `Thanks for checking on ${pet.name}. Your scan was shared with the owner.`);
+      setStatus('scan.status.offline');
+    } else if (error) setStatus('scan.status.failed', { error: error.message });
+    else setStatus(reportedLost ? 'scan.status.sentLost' : 'scan.status.sent', { name: pet.name });
   }
 
   function requestLocation(note: string) {
     if (!navigator.geolocation) {
-      setStatus('This browser can’t share a location, but you can still see the profile and contact the owner.');
+      setStatus('scan.status.noGeo');
       return;
     }
     setSaving(true);
-    setStatus('Waiting for you to allow location on this device…');
+    setStatus('scan.status.waiting');
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         await savePosition(position, note);
         setSaving(false);
       },
       () => {
-        setStatus('Location wasn’t shared, so nothing was sent. You can still contact the owner.');
+        setStatus('scan.status.denied');
         setSaving(false);
       },
       { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
@@ -195,60 +203,70 @@ export function ScanLanding({ tagCode, publicPage = false }: { tagCode?: string;
 
   function acceptFinderLocation() {
     setConsentDismissed(true);
-    if (preview) { setStatus('Preview: when a finder taps this, you get an alert with their note and location.'); return; }
+    if (preview) { setStatus('scan.status.preview'); return; }
     requestLocation(reportedLost ? 'Finder reported lost sighting from finder tag URL' : 'Finder consented from finder tag URL');
   }
 
   function denyFinderLocation() {
     setConsentDismissed(true);
-    setStatus('No problem. Nothing was shared. You can still see the profile below.');
+    setStatus('scan.status.declined');
   }
 
-  const petName = pet.id ? pet.name : petLoaded ? 'this pet' : 'this pet';
+  const petName = pet.id ? pet.name : t('common.thisPet');
+  // Escape closes the consent dialog the same way as "Just view the profile" (nothing is shared).
+  useEffect(() => {
+    if (consentDismissed) return;
+    const onKey = (event: KeyboardEvent) => { if (event.key === 'Escape') { setConsentDismissed(true); setStatus('scan.status.declined'); } };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [consentDismissed]);
   return (
     <main className={`publicShell scanLanding ${!consentDismissed ? 'finderConsentActive' : ''}`}>
-      {!consentDismissed && <div className="finderConsentOverlay" role="dialog" aria-modal="true" aria-labelledby="finder-consent-title">
+      {!consentDismissed && <div className="finderConsentOverlay" role="dialog" aria-modal="true" aria-labelledby="finder-consent-title" aria-describedby="finder-consent-body">
         <div className="finderConsentModal">
           <span className="finderConsentDog" aria-hidden="true"><PawPrint /></span>
-          <p className="eyebrow">You scanned a MyPetID tag</p>
-          <h2 id="finder-consent-title">Help {petName} get home?</h2>
-          <p>Sharing where you are right now lets the owner know their dog was found. It’s optional and only happens if you allow it.</p>
-          <div className="actions consentChoices"><button className="primary" type="button" disabled={saving} onClick={acceptFinderLocation}><MapPinned /> {saving ? 'Requesting…' : 'Share my location'}</button><button type="button" onClick={denyFinderLocation}>Just view the profile</button></div>
-          <small className="formHint">Nothing is shared unless you tap “Share my location” and your browser allows it.</small>
+          <p className="eyebrow">{t('consent.eyebrow')}</p>
+          <h2 id="finder-consent-title">{t('consent.title', { name: petName })}</h2>
+          <p id="finder-consent-body">{t('consent.body')}</p>
+          <div className="actions consentChoices"><button className="primary" type="button" disabled={saving} onClick={acceptFinderLocation}><MapPinned /> {saving ? t('consent.requesting') : t('consent.share')}</button><button type="button" onClick={denyFinderLocation}>{t('consent.justView')}</button></div>
+          <small className="formHint">{t('consent.hint')}</small>
+          <div style={{ marginTop: 14 }}><LanguagePicker className="consentLanguage" /></div>
         </div>
       </div>}
-      {preview && <div className="previewBanner" role="status"><strong>Preview</strong> This is exactly what people see when they scan {pet.id ? pet.name : 'your dog'}’s tag. Nothing here is sent or recorded.</div>}
-      <div className="scanProfileFrame" aria-hidden={!consentDismissed}>
-      <section className="publicHero"><Link className="brandLockup" href="/"><img src="/images/logo/MyPetID-Logo_Resized.jpg" alt="" /><span>MyPet<b>ID</b></span></Link></section>
+      {preview && <div className="previewBanner" role="status"><strong>{t('scan.previewLabel')}</strong> {t('scan.preview', { name: pet.id ? pet.name : t('common.yourDog') })}</div>}
+      {/* inert keeps keyboard focus inside the consent dialog while it is open */}
+      <div className="scanProfileFrame" aria-hidden={!consentDismissed} inert={!consentDismissed}>
+      <section className="publicHero" style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}><Link className="brandLockup" href="/" aria-label="MyPetID home"><img src="/images/logo/MyPetID-Logo_Resized.jpg" alt="" /><span>MyPet<b>ID</b></span></Link><LanguagePicker /></section>
       {record?.public_extra?.care_schedule && record.public_extra.care_schedule.length > 0 && <PublicCareCountdown schedule={record.public_extra.care_schedule} timeZone={record.public_extra.timezone || 'America/New_York'} petName={pet.name} lost={pet.lost_mode} />}
-      {pet.id ? <PetProfileCard mode="public" onAlert={scanMode === 'owner' ? undefined : acceptFinderLocation} pet={{
+      {pet.id ? <PetProfileCard mode="public" i18n onAlert={scanMode === 'owner' ? undefined : acceptFinderLocation} pet={{
         name: pet.name, breed: pet.breed, photoUrl: pet.photo_url, coverUrl: record?.cover_url, about: pet.behavior_public, health: pet.medical_public,
         details: record?.public_extra?.details, vet: record?.public_extra?.vet, care: record?.public_extra?.care,
         phone: typeof record?.contact_public?.phone === 'string' ? record.contact_public.phone : '', email: typeof record?.contact_public?.email === 'string' ? record.contact_public.email : '',
         lost: pet.lost_mode, tagCode: tag, statusTags: record?.public_extra?.status_tags,
         lastSeen: record?.last_seen_lat != null && record?.last_seen_lng != null ? { lat: record.last_seen_lat, lng: record.last_seen_lng, at: record.last_seen_at } : null,
-      }} /> : <article className="panel" style={{ maxWidth: 720 }}><h1>{petLoaded ? 'Pet profile unavailable' : 'Loading…'}</h1>{petLoaded && <p>This tag isn’t linked to a dog yet. If you found a dog, please contact local animal control or a shelter.</p>}</article>}
+      }} /> : <article className="panel" style={{ maxWidth: 720 }} aria-live="polite"><h1>{petLoaded ? t('scan.unavailableTitle') : t('common.loading')}</h1>{petLoaded && <p>{t('scan.unavailableBody')}</p>}</article>}
 
       <section className="publicGrid">
         <article className="panel wide consentPanel">
-          <div className="panelTitleRow"><h2>{scanMode === 'owner' ? 'Your tag page' : 'Send the owner a note'}</h2><span className="iconBubble"><MapPinned /></span></div>
-          <p>{scanMode === 'owner' ? 'This is what people see when they scan your dog’s tag. It never asks you for your location.' : 'Let the owner know where and how you found their dog. Adding your phone or email helps them reach you.'}</p>
+          <div className="panelTitleRow"><h2>{scanMode === 'owner' ? t('scan.ownerPanelTitle') : t('scan.finderPanelTitle')}</h2><span className="iconBubble"><MapPinned /></span></div>
+          <p>{scanMode === 'owner' ? t('scan.ownerPanelBody') : t('scan.finderPanelBody')}</p>
           {scanMode !== 'owner' && <>
-            <label className="toggleRow"><input type="checkbox" checked={reportedLost} onChange={(event) => setReportedLost(event.target.checked)} /> I found this dog</label>
-            <label>Your note<textarea value={finderNote} onChange={(event) => setFinderNote(event.target.value)} /></label>
-            <label>Your phone or email (optional)<input value={finderContact} onChange={(event) => setFinderContact(event.target.value)} placeholder="So the owner can reach you" /></label>
+            <label className="toggleRow"><input type="checkbox" checked={reportedLost} onChange={(event) => setReportedLost(event.target.checked)} /> {t('scan.foundToggle')}</label>
+            <label>{t('scan.noteLabel')}<textarea value={finderNote} onChange={(event) => setFinderNote(event.target.value)} /></label>
+            <label>{t('scan.contactLabel')}<input value={finderContact} onChange={(event) => setFinderContact(event.target.value)} placeholder={t('scan.contactPlaceholder')} /></label>
           </>}
           <div className="actions">
-            {scanMode !== 'owner' && <button className="primary" type="button" disabled={saving} onClick={acceptFinderLocation}><MapPinned /> {saving ? 'Requesting…' : 'Send with my location'}</button>}
-            {!publicPage && <Link className="button" href={profileUrl}>View full profile</Link>}
-            {!publicPage && <Link className="button ghost" href={dashboardUrl}>I’m the owner</Link>}
+            {scanMode !== 'owner' && <button className="primary" type="button" disabled={saving} onClick={acceptFinderLocation}><MapPinned /> {saving ? t('consent.requesting') : t('scan.sendWithLocation')}</button>}
+            {!publicPage && <Link className="button" href={profileUrl}>{t('scan.viewFullProfile')}</Link>}
+            {!publicPage && <Link className="button ghost" href={dashboardUrl}>{t('scan.imOwner')}</Link>}
           </div>
-          {status && status !== FINDER_STATUS && <p className="authMessage" role="status">{status}</p>}
+          {/* Always-present live region so screen readers announce each new status. */}
+          <div role="status" aria-live="polite" lang={lang}>{status && <p className="authMessage">{t(status.key, status.vars)}</p>}</div>
         </article>
 
 
       </section>
-      {publicPage && <PublicPromo petName={pet.id ? pet.name : undefined} />}
+      {publicPage && <PublicPromo petName={pet.id ? pet.name : undefined} i18n />}
       </div>
     </main>
   );

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { GetTheApp } from './pwa-install-client';
 import { MascotPeek } from './mascot';
 import { Bell, FileText, Footprints, MapPinned, Nfc, ShieldCheck } from './icons';
+import { useT } from '../lib/i18n';
 
 /**
  * Shown under a scanned dog's public tag page: what MyPetID is, with links to the landing page,
@@ -18,25 +19,29 @@ const FEATURES = [
   { icon: MapPinned, title: 'Lost mode', text: 'One tap turns the tag page into a lost-dog alert for anyone who scans it.' },
 ];
 
-export function PublicPromo({ petName }: { petName?: string }) {
+/** `i18n` translates the copy (finder-facing pages); without it the promo stays English. */
+export function PublicPromo({ petName, i18n = false }: { petName?: string; i18n?: boolean }) {
+  const { t } = useT(i18n);
+  // Features are matched by position (promo.f1 ... promo.f6); English comes from FEATURES.
+  const L = (key: string, english: string, vars?: Record<string, string>) => (i18n ? t(key, vars) : english);
   return (
-    <section className="publicPromo" aria-label="About MyPetID">
+    <section className="publicPromo" aria-label={L('promo.label', 'About MyPetID')}>
       <div className="promoHead">
         <MascotPeek size={70} />
         <div>
-          <p className="eyebrow">Like what you see?</p>
-          <h2>{petName ? `${petName} wears a MyPetID tag.` : 'This dog wears a MyPetID tag.'} Your dog can too.</h2>
-          <p>MyPetID is a smart dog tag and an app for everything else: your dog’s profile, health records, walks, reminders and an instant alert if they ever get lost.</p>
+          <p className="eyebrow">{L('promo.eyebrow', 'Like what you see?')}</p>
+          <h2>{petName ? L('promo.titleNamed', `${petName} wears a MyPetID tag. Your dog can too.`, { name: petName }) : L('promo.title', 'This dog wears a MyPetID tag. Your dog can too.')}</h2>
+          <p>{L('promo.body', 'MyPetID is a smart dog tag and an app for everything else: your dog’s profile, health records, walks, reminders and an instant alert if they ever get lost.')}</p>
         </div>
       </div>
-      <ul className="promoFeatures">{FEATURES.map(({ icon: Icon, title, text }) => <li key={title}><span className="iconBubble"><Icon /></span><div><strong>{title}</strong><small>{text}</small></div></li>)}</ul>
+      <ul className="promoFeatures">{FEATURES.map(({ icon: Icon, title, text }, i) => <li key={title}><span className="iconBubble"><Icon /></span><div><strong>{L(`promo.f${i + 1}.title`, title)}</strong><small>{L(`promo.f${i + 1}.text`, text)}</small></div></li>)}</ul>
       <div className="actions promoActions">
-        <Link className="button primary" href="/">Learn about MyPetID</Link>
-        <Link className="button" href="/subscribe/">See plans</Link>
-        <Link className="button" href="/shop/">Shop tags &amp; cards</Link>
+        <Link className="button primary" href="/">{L('common.learnAbout', 'Learn about MyPetID')}</Link>
+        <Link className="button" href="/subscribe/">{L('promo.plans', 'See plans')}</Link>
+        <Link className="button" href="/shop/">{L('promo.shop', 'Shop tags & cards')}</Link>
       </div>
-      <GetTheApp compact />
-      <p className="formHint">Start free with one dog profile. No account details of this dog’s owner are shown here.</p>
+      <GetTheApp compact i18n={i18n} />
+      <p className="formHint">{L('promo.hint', 'Start free with one dog profile. No account details of this dog’s owner are shown here.')}</p>
     </section>
   );
 }

@@ -10,6 +10,8 @@ import { PawPrint } from './icons';
 import { PetProfileCard } from './pet-profile-card';
 import { PublicCareCountdown } from './care-schedule';
 import { BirthdayBanner } from './birthday';
+import { useT } from '../lib/i18n';
+import { LanguagePicker } from './language-picker';
 
 type Pet = {
   id: string;
@@ -103,6 +105,7 @@ export function PublicPetProfile() {
   // made the static HTML (built without a query string) differ from the first
   // client render, which threw React hydration error #418 on every visit.
   const [query, setQuery] = useState<{ tag: string; petId: string; mode: string } | null>(null);
+  const { t } = useT();
   const tag = query?.tag ?? DEMO_TAG;
   const mode = query?.mode ?? 'public';
   const [pet, setPet] = useState<Pet>(fallbackPet);
@@ -153,7 +156,7 @@ export function PublicPetProfile() {
   const finderHref = finderTag ? `/scan/?tag=${encodeURIComponent(finderTag)}&mode=finder` : '';
   const coat = [pet.coat_color, pet.coat_type].filter(Boolean).join(' ');
   const chips = [pet.breed || '', pet.birthday ? ageFromBirthday(pet.birthday) : '', pet.weight || '', pet.eye_color ? `${pet.eye_color} eyes` : '', coat ? `${coat} coat` : ''].filter(Boolean);
-  const brand = <Link className="brandLockup" href="/"><img src="/images/logo/MyPetID-Logo_Resized.jpg" alt="" /><span>MyPet<b>ID</b></span></Link>;
+  const brand = <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}><Link className="brandLockup" href="/" aria-label="MyPetID home"><img src="/images/logo/MyPetID-Logo_Resized.jpg" alt="" /><span>MyPet<b>ID</b></span></Link><LanguagePicker /></div>;
 
   if (loadStatus === 'loading' || loadStatus === 'missing') {
     return (
@@ -161,7 +164,7 @@ export function PublicPetProfile() {
         <section className="publicHero">
           {brand}
           <article className="panel" aria-live="polite" style={{ marginTop: 28, maxWidth: 720 }}>
-            {loadStatus === 'loading' ? <BoneLoader label="Fetching this pet’s profile…" /> : <StatusScreen kind="tagNotFound" title="This profile isn’t available right now" message={`${finderTag ? `Tag ${finderTag}: ` : ''}the tag may not be linked to a pet yet, or we couldn’t reach MyPetID. If you found this pet, please keep them safe and contact local animal control, a shelter or a vet. They can also scan for a microchip.`} actions={[...(finderHref ? [{ label: 'I found this pet', href: finderHref, primary: true }] : []), { label: 'Try again', onClick: () => window.location.reload() }]} />}
+            {loadStatus === 'loading' ? <BoneLoader label={t('profile.fetching')} /> : <StatusScreen kind="tagNotFound" eyebrow={t('profile.notFoundEyebrow')} title={t('profile.notFoundTitle')} message={`${finderTag ? t('profile.notFoundTag', { tag: finderTag }) : ''}${t('profile.notFoundBody')}`} actions={[...(finderHref ? [{ label: t('profile.foundPet'), href: finderHref, primary: true }] : []), { label: t('common.tryAgain'), onClick: () => window.location.reload() }]} />}
           </article>
         </section>
       </main>
@@ -174,6 +177,7 @@ export function PublicPetProfile() {
       {pet.public_extra?.birthday_md && <BirthdayBanner petName={pet.name} birthday={pet.public_extra.birthday_md} />}
       {pet.public_extra?.care_schedule && pet.public_extra.care_schedule.length > 0 && <PublicCareCountdown schedule={pet.public_extra.care_schedule} timeZone={pet.public_extra.timezone || 'America/New_York'} petName={pet.name} lost={pet.lost_mode} />}
       <PetProfileCard
+        i18n
         mode={pet.is_owner || mode === 'owner' ? 'owner' : 'public'}
         finderHref={finderHref}
         pet={{
@@ -184,9 +188,9 @@ export function PublicPetProfile() {
           scans: finderTag === DEMO_TAG ? [{ lat: 44.0974, lng: -70.1654, at: new Date(Date.now() - 2 * 3600e3).toISOString() }, { lat: 44.0928, lng: -70.1749, at: new Date(Date.now() - 22 * 3600e3).toISOString() }] : null,
           lastSeen: pet.last_seen_lat != null && pet.last_seen_lng != null ? { lat: pet.last_seen_lat, lng: pet.last_seen_lng, at: pet.last_seen_at } : null,
         }}
-        ownerTools={pet.is_owner ? <Link className="button primary" href="/dashboard/pet/">Edit in the app</Link> : undefined}
+        ownerTools={pet.is_owner ? <Link className="button primary" href="/dashboard/pet/">{t('profile.editInApp')}</Link> : undefined}
       />
-      {(showDemoExtras || finderTag === DEMO_TAG) && <p className="formHint" style={{ textAlign: 'center', marginTop: 18 }}>This is a demo profile. <Link href="/">Make one for your dog</Link>.</p>}
+      {(showDemoExtras || finderTag === DEMO_TAG) && <p className="formHint" style={{ textAlign: 'center', marginTop: 18 }}>{t('profile.demo')} <Link href="/">{t('profile.makeOne')}</Link>.</p>}
     </main>
   );
 }

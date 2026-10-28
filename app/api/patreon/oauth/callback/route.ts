@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { appBaseUrl, serverSupabase } from '../../../../../lib/server-integrations';
-import { applyPatreonMembership, patreonGet, patreonToken, tierSlugFromPatreon, verifyPatreonState } from '../../../../../lib/patreon';
+import { applyPatreonMembership, patreonGet, patreonPaidThrough, patreonToken, tierSlugFromPatreon, verifyPatreonState } from '../../../../../lib/patreon';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
     const parsedState = verifyPatreonState(state);
     const redirectUri = `${appBaseUrl}/api/patreon/oauth/callback/`;
     const token = await patreonToken({ grant_type: 'authorization_code', code, redirect_uri: redirectUri });
-    const identity = await patreonGet('/identity?fields%5Buser%5D=full_name,email&include=memberships,memberships.currently_entitled_tiers&fields%5Bmember%5D=patron_status,last_charge_status,currently_entitled_amount_cents&fields%5Btier%5D=title,amount_cents,description,published', token.access_token);
+    const identity = await patreonGet('/identity?fields%5Buser%5D=full_name,email&include=memberships,memberships.currently_entitled_tiers&fields%5Bmember%5D=patron_status,last_charge_status,last_charge_date,next_charge_date,currently_entitled_amount_cents&fields%5Btier%5D=title,amount_cents,description,published', token.access_token);
     const userId = identity?.data?.id as string;
     const included = Array.isArray(identity?.included) ? identity.included : [];
     const member = included.find((item: any) => item.type === 'member');
@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
       metadata: { patreon_user: identity.data?.attributes || {}, member_id: member?.id || null, patron_status: patronStatus, tier_ids: tierIds },
       updated_at: new Date().toISOString(),
     }, { onConflict: 'profile_id,provider' });
-    await applyPatreonMembership(parsedState.profile_id, userId, active ? tier : 'free', active ? 'active' : patronStatus, { source: 'oauth_callback', patreon_user_id: userId, member_id: member?.id || null, tier_ids: tierIds, patron_status: patronStatus });
+    await applyPatreonMembership(parsedState.profile_id, userId, active ? tier : 'free', active ? 'active' : patronStatus, { source: 'oauth_callback', patreon_user_id: userId, member_id: member?.id || null, tier_ids: tierIds, patron_status: patronStatus, current_period_end: patreonPaidThrough(member?.attributes), next_charge_date: member?.attributes?.next_charge_date || null, last_charge_date: member?.attributes?.last_charge_date || null });
     return NextResponse.redirect(`${appBaseUrl}/verify/patreon/?status=connected&tier=${encodeURIComponent(active ? tier : 'free')}`);
   } catch (error) {
     return NextResponse.redirect(`${appBaseUrl}/verify/patreon/?status=error&message=${encodeURIComponent(error instanceof Error ? error.message : 'Patreon callback failed')}`);

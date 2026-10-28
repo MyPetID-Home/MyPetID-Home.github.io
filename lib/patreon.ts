@@ -1,5 +1,6 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import { serverSupabase } from './server-integrations';
+import { syncProfileTier } from './membership';
 
 function ah(token: string) { return [String.fromCharCode(66, 101, 97, 114, 101, 114), token].join(' '); }
 
@@ -72,12 +73,26 @@ export function tierSlugFromPatreon(tierIds: string[], amountCents?: number, tit
   return 'free';
 }
 
+/**
+ * Paid-through time for a Patreon member: next_charge_date when Patreon sends it, else
+ * last_charge_date + 35 days. Stored as membership_events.metadata.current_period_end,
+ * which mypetid_plan_limits() reads (plus a 3 day grace).
+ */
+export function patreonPaidThrough(attrs: Record<string, any> | null | undefined) {
+  const next = attrs?.next_charge_date ? new Date(attrs.next_charge_date) : null;
+  if (next && !Number.isNaN(next.getTime())) return next.toISOString();
+  const last = attrs?.last_charge_date ? new Date(attrs.last_charge_date) : null;
+  if (last && !Number.isNaN(last.getTime())) return new Date(last.getTime() + 35 * 24 * 60 * 60 * 1000).toISOString();
+  return null;
+}
+
 export async function applyPatreonMembership(profileId: string | null, providerSubject: string | null, tier: string, status: string, metadata: Record<string, unknown>) {
   const supabase = serverSupabase();
   const targetProfile = profileId || (providerSubject ? (await supabase.from('provider_credentials').select('profile_id').eq('provider', 'patreon').eq('provider_subject', providerSubject).maybeSingle()).data?.profile_id : null);
   await supabase.from('membership_events').insert({ profile_id: targetProfile || null, provider: 'patreon', provider_customer_id: providerSubject, tier, status, metadata });
   if (targetProfile) {
-    await supabase.from('profiles').update({ tier: status === 'active' ? tier : 'free', patreon_linked: true, patreon_tier: tier }).eq('id', targetProfile).neq('tier', 'admin');
+    await supabase.from('profiles').update({ patreon_linked: true, patreon_tier: tier }).eq('id', targetProfile);
+    await syncProfileTier(supabase, targetProfile, status === 'active' ? tier : 'free');
   }
   return { profileId: targetProfile, tier, status };
 }

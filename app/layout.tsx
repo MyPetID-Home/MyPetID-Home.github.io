@@ -1,10 +1,12 @@
 import type { Metadata, Viewport } from 'next';
+import Script from 'next/script';
 import { Bricolage_Grotesque, Plus_Jakarta_Sans } from 'next/font/google';
 import './globals.css';
 import { PwaInstallClient } from '../components/pwa-install-client';
 import { AppFooter } from '../components/app-footer';
 import { RouteLoader } from '../components/bone-loader';
 import { ServiceStatusBanner } from '../components/status-screen';
+import { SkipLink } from '../components/skip-link';
 
 const display = Bricolage_Grotesque({ subsets: ['latin'], variable: '--font-bricolage', display: 'swap' });
 const body = Plus_Jakarta_Sans({ subsets: ['latin'], variable: '--font-jakarta', display: 'swap' });
@@ -28,10 +30,16 @@ export const viewport: Viewport = {
   viewportFit: 'cover',
 };
 
+// The light/dark theme and palette are chosen in App settings and saved in this browser
+// ('mypetid.dashboard'). Apply them before first paint on every page, including the public
+// tag/profile pages, so they match the app and don't flash dark first. <html> gets
+// suppressHydrationWarning because this sets data-theme/data-palette before React hydrates.
+const THEME_SCRIPT = `(function(){try{var s=JSON.parse(localStorage.getItem('mypetid.dashboard')||'{}');var d=document.documentElement;if(s.theme==='light'||s.theme==='dark')d.setAttribute('data-theme',s.theme);if(typeof s.palette==='string'&&/^[a-z]{1,20}$/.test(s.palette))d.setAttribute('data-palette',s.palette);}catch(e){}})();`;
+
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${display.variable} ${body.variable}`}>
-      <body>{children}<AppFooter /><PwaInstallClient /><RouteLoader /><ServiceStatusBanner /></body>
+    <html lang="en" className={`${display.variable} ${body.variable}`} suppressHydrationWarning>
+      <body><Script id="mypetid-theme" strategy="beforeInteractive">{THEME_SCRIPT}</Script><SkipLink />{children}<AppFooter /><PwaInstallClient /><RouteLoader /><ServiceStatusBanner /></body>
     </html>
   );
 }

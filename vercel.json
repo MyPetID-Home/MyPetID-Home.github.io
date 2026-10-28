@@ -1,0 +1,5 @@
+{
+  "crons": [
+    { "path": "/api/cron/validate-memberships", "schedule": "23 5 * * *" }
+  ]
+}

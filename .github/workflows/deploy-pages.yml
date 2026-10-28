@@ -42,6 +42,8 @@ jobs:
           NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${{ vars.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY }}
           NEXT_PUBLIC_STRIPE_BASIC_NFC_PRICE_ID: ${{ vars.NEXT_PUBLIC_STRIPE_BASIC_NFC_PRICE_ID }}
           NEXT_PUBLIC_STRIPE_ID_NFC_PRICE_ID: ${{ vars.NEXT_PUBLIC_STRIPE_ID_NFC_PRICE_ID }}
+          # Web push public key (safe to publish). The private key lives only in Vercel env.
+          NEXT_PUBLIC_VAPID_PUBLIC_KEY: ${{ vars.NEXT_PUBLIC_VAPID_PUBLIC_KEY }}
           # Server routes (checkout, Patreon, Google, uploads, email codes, tag activation)
           # run on the Vercel app, which allows this origin via CORS (next.config.mjs).
           NEXT_PUBLIC_API_BASE_URL: ${{ vars.NEXT_PUBLIC_API_BASE_URL || 'https://mypetid.vercel.app' }}

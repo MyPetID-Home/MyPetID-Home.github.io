@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { apiFetch, bearer } from '../lib/api-client';
 import { Bell } from './icons';
+import { PUSH_AVAILABLE, PushOptIn } from './push-optin';
 
 /** In-app notifications (bell + panel) and the admin announcement composer. */
 type Note = { id: string; kind: string; title: string; body: string | null; link: string | null; read_at: string | null; created_at: string };
@@ -74,7 +75,7 @@ export function NotificationBell() {
       {open && <div className="notePanel" role="dialog" aria-label="Notifications">
         <div className="notePanelHead"><strong>Notifications</strong>{unread > 0 && <button type="button" onClick={markAll}>Mark all read</button>}</div>
         {notes.length === 0 ? <p className="formHint">You’re all caught up.</p> : <ul>{notes.map((n) => <li key={n.id}><button type="button" className={n.read_at ? '' : 'unread'} onClick={() => openNote(n)}><span className={`noteDot ${n.kind}`} /><span><strong>{n.title}</strong>{n.body && <small>{n.body}</small>}<em>{ago(n.created_at)}</em></span></button></li>)}</ul>}
-        {typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'default' && <button className="noteEnable" type="button" onClick={enablePhone}>Also alert me on this device</button>}
+        {PUSH_AVAILABLE ? <div className="noteEnable"><PushOptIn compact /></div> : typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'default' && <button className="noteEnable" type="button" onClick={enablePhone}>Also alert me on this device</button>}
       </div>}
     </div>
   );

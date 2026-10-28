@@ -1,0 +1,17 @@
+.layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 20px; align-items: start; }
+.form { display: grid; gap: 12px; }
+.form label { margin: 0; }
+.preview { position: sticky; top: 96px; display: grid; gap: 10px; }
+.preview svg.poster { width: 100%; height: auto; border-radius: 12px; border: 1px solid var(--line); box-shadow: var(--shadow-sm); background: #fff; }
+.facts { display: grid; gap: 6px; margin: 0; padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface-sunken); font-size: .9rem; }
+.facts div { display: flex; gap: 10px; justify-content: space-between; }
+.facts dt { color: var(--faint); font-weight: 700; }
+.facts dd { margin: 0; text-align: right; color: var(--text); overflow-wrap: anywhere; }
+.inline { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.inline button { padding: 7px 12px; font-size: .84rem; }
+.lostOn { color: var(--danger); font-weight: 800; }
+
+@media (max-width: 760px) {
+  .layout { grid-template-columns: 1fr; }
+  .preview { position: static; }
+}

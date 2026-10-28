@@ -1,0 +1,8 @@
+.wrap { display: grid; gap: 14px; }
+.head { margin: 0 0 6px; font-size: .78rem; text-transform: uppercase; letter-spacing: .08em; color: var(--faint); }
+.list { margin: 0; padding-left: 18px; display: grid; gap: 4px; color: var(--muted); font-size: .9rem; }
+.exportBox { display: grid; gap: 10px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface-sunken); padding: 14px; }
+.exportBox p { margin: 0; }
+.confirm { display: grid; gap: 10px; border: 1px solid color-mix(in srgb, var(--danger) 45%, transparent); border-radius: var(--radius-sm); padding: 14px; }
+.dangerButton { color: var(--danger) !important; border-color: color-mix(in srgb, var(--danger) 55%, transparent) !important; font-weight: 800; }
+.dangerButton:disabled { opacity: .5; cursor: not-allowed; }

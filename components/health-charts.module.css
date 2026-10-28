@@ -1,0 +1,45 @@
+.wrap { display: grid; gap: 14px; }
+.sectionHead { margin: 0; color: var(--faint); font-size: .74rem; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }
+
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; }
+.stats div { display: grid; gap: 2px; padding: 10px 12px; border-radius: var(--radius-sm); border: 1px solid var(--line); background: var(--surface-sunken); }
+.stats small { color: var(--faint); font-size: .76rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; }
+.stats strong { font-size: 1.2rem; }
+.up { color: var(--warn); }
+.down { color: var(--brand2, var(--brand)); }
+.flat { color: var(--muted); }
+
+.tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+.tabs button { padding: 6px 12px; font-size: .84rem; border-radius: 999px; }
+.tabs button.active { background: var(--grad); color: #071008; border-color: transparent; }
+
+.chart { width: 100%; height: auto; display: block; }
+.grid { stroke: var(--line); stroke-width: 1; }
+.axis { fill: var(--muted); font-size: 13px; font-weight: 600; }
+.line { fill: none; stroke: var(--brand); stroke-width: 3; stroke-linejoin: round; stroke-linecap: round; }
+.area { fill: color-mix(in srgb, var(--brand) 16%, transparent); stroke: none; }
+.dot { fill: var(--surface-raised, #fff); stroke: var(--brand); stroke-width: 2.5; }
+.dotLast { fill: var(--brand); stroke: var(--brand); }
+.bar { fill: color-mix(in srgb, var(--brand2, var(--brand)) 60%, transparent); }
+.barValue { fill: var(--text); font-size: 14px; font-weight: 800; }
+
+.condition { margin: 0; padding: 10px 12px; border-radius: var(--radius-sm); border: 1px solid var(--line); background: var(--surface-sunken); font-size: .92rem; }
+
+.form { display: grid; grid-template-columns: 150px 120px minmax(0, 1fr) auto; gap: 10px; align-items: end; }
+.form label { margin: 0; }
+.form button { white-space: nowrap; }
+
+.table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+.table th, .table td { text-align: left; padding: 7px 8px; border-bottom: 1px solid var(--line); }
+.table th { color: var(--faint); font-size: .76rem; text-transform: uppercase; letter-spacing: .06em; }
+.table td button { padding: 4px 10px; font-size: .8rem; }
+.danger { color: var(--danger) !important; }
+.details summary { cursor: pointer; color: var(--muted); font-weight: 700; font-size: .9rem; }
+.details[open] summary { margin-bottom: 8px; }
+.scroll { max-height: 320px; overflow: auto; }
+
+@media (max-width: 640px) {
+  .form { grid-template-columns: 1fr 1fr; }
+  .form .noteField { grid-column: 1 / -1; }
+}
+.srOnly { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }

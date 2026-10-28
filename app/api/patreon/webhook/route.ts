@@ -1,6 +1,6 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import { NextRequest, NextResponse } from 'next/server';
-import { applyPatreonMembership, tierSlugFromPatreon } from '../../../../lib/patreon';
+import { applyPatreonMembership, patreonPaidThrough, tierSlugFromPatreon } from '../../../../lib/patreon';
 
 export const dynamic = 'force-dynamic';
 
@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
     const eventType = request.headers.get('x-patreon-event') || 'patreon.webhook';
     const parsed = JSON.parse(payload);
     const member = extractMember(parsed);
-    await applyPatreonMembership(null, member.userId, member.tier, member.status, { source: 'patreon_webhook', event_type: eventType, member_id: member.memberId, tier_ids: member.tierIds, patron_status: member.attrs?.patron_status || null });
+    await applyPatreonMembership(null, member.userId, member.tier, member.status, { source: 'patreon_webhook', event_type: eventType, member_id: member.memberId, tier_ids: member.tierIds, patron_status: member.attrs?.patron_status || null, current_period_end: patreonPaidThrough(member.attrs), next_charge_date: member.attrs?.next_charge_date || null, last_charge_date: member.attrs?.last_charge_date || null });
     return NextResponse.json({ received: true });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : 'Patreon webhook failed' }, { status: 400 });

@@ -1,0 +1,30 @@
+.wrap { display: grid; gap: 14px; }
+
+.seats { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; color: var(--muted); font-size: .9rem; }
+.seatDot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--brand); }
+.seatDot.filled { background: var(--brand); }
+
+.list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.item { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface-sunken); padding: 10px 12px; }
+.avatar { flex: 0 0 auto; width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; background: color-mix(in srgb, var(--brand) 22%, transparent); color: var(--text); }
+.itemMain { flex: 1 1 160px; min-width: 0; display: grid; gap: 2px; }
+.itemMain strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.itemMain small { color: var(--muted); font-size: .84rem; }
+.itemActions { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; justify-content: flex-end; }
+.itemActions select { width: auto; min-width: 120px; padding: 6px 10px; font-size: .84rem; }
+.itemActions button { padding: 7px 12px; font-size: .84rem; }
+
+.badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: .74rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; border: 1px solid var(--line); color: var(--muted); }
+.badge.pending { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 50%, transparent); }
+.badge.off { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 50%, transparent); }
+
+.inviteForm { display: grid; gap: 12px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface-sunken); padding: 14px; }
+.inviteResult { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; }
+.qr { background: #fff; border-radius: 12px; padding: 8px; line-height: 0; }
+.inviteLink { flex: 1 1 220px; display: grid; gap: 8px; min-width: 0; }
+
+.can { margin: 0; padding-left: 18px; color: var(--muted); font-size: .9rem; display: grid; gap: 4px; }
+
+.locked { display: grid; gap: 10px; justify-items: start; }
+
+.danger { color: var(--danger) !important; }

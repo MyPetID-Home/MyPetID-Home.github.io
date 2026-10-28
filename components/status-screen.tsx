@@ -56,14 +56,14 @@ function Scene({ kind }: { kind: StatusKind }) {
 
 type Action = { label: string; href?: string; onClick?: () => void; primary?: boolean };
 
-export function StatusScreen({ kind, title, message, actions, compact = false, detail }: { kind: StatusKind; title?: string; message?: string; actions?: Action[]; compact?: boolean; detail?: string }) {
+export function StatusScreen({ kind, title, message, actions, compact = false, detail, eyebrow }: { kind: StatusKind; title?: string; message?: string; actions?: Action[]; compact?: boolean; detail?: string; eyebrow?: string }) {
   const copy = COPY[kind];
   const list = actions ?? [{ label: 'Try again', onClick: () => window.location.reload(), primary: true }, { label: 'Go home', href: '/' }];
   return (
     <section className={`statusScreen${compact ? ' compact' : ''}`} role={kind === 'error' || kind === 'database' ? 'alert' : 'status'}>
       <Scene kind={kind} />
       <div>
-        <p className="eyebrow">{copy.eyebrow}</p>
+        <p className="eyebrow">{eyebrow || copy.eyebrow}</p>
         <h2>{title || copy.title}</h2>
         <p>{message || copy.message}</p>
         {detail && <p className="formHint"><code>{detail}</code></p>}

@@ -1,6 +1,8 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { serverSupabase } from '../../../../lib/server-integrations';
+import { syncProfileTier } from '../../../../lib/membership';
+import { applyStripeSubscription, invoicePeriodEnd, invoiceSubscriptionId, refreshStripeSubscription } from '../../../../lib/stripe-membership';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,51 +26,33 @@ function verifyStripeSignature(payload: string, signatureHeader: string | null) 
   if (a.length !== b.length || !timingSafeEqual(a, b)) throw new Error('Stripe signature verification failed.');
 }
 
-function statusFromSubscription(stripeStatus?: string) {
-  if (stripeStatus === 'active' || stripeStatus === 'trialing') return 'active';
-  if (stripeStatus === 'past_due' || stripeStatus === 'unpaid') return 'payment_attention';
-  if (stripeStatus === 'canceled' || stripeStatus === 'incomplete_expired') return 'cancelled';
-  return stripeStatus || 'pending';
+// Subscription state always comes from the subscription object itself (fetched from
+// Stripe when the event carries a checkout session or invoice), so membership_events
+// gets the real status and current_period_end, never a session/invoice status.
+async function applySubscriptionReference(subscriptionId: string | null, eventType: string, fallback?: () => Promise<void>) {
+  if (!subscriptionId) return;
+  try {
+    await refreshStripeSubscription(subscriptionId, eventType);
+  } catch (error) {
+    if (!fallback) throw error;
+    await fallback();
+  }
 }
 
-async function upsertMembershipFromStripe(object: Record<string, any>, eventType: string) {
+// Used only when the subscription cannot be fetched: records the invoice's paid period.
+async function recordInvoicePayment(invoice: Record<string, any>, eventType: string) {
+  const subscriptionId = invoiceSubscriptionId(invoice);
+  if (!subscriptionId || eventType !== 'invoice.payment_succeeded') return;
   const supabase = serverSupabase();
-  const metadata = object.metadata || {};
-  const profileId = metadata.profile_id || null;
-  const tier = metadata.tier || null;
-  const subscriptionId = typeof object.subscription === 'string' ? object.subscription : object.id?.startsWith?.('sub_') ? object.id : null;
-  const customerId = typeof object.customer === 'string' ? object.customer : null;
-  const status = statusFromSubscription(object.status || object.payment_status);
-  const eventId = metadata.membership_event_id;
-
-  if (eventId) {
-    await supabase.from('membership_events').update({
-      profile_id: profileId,
-      provider_customer_id: customerId,
-      provider_subscription_id: subscriptionId,
-      tier,
-      status,
-      metadata: { stripe_event_type: eventType, stripe_object_id: object.id, stripe_status: object.status || null, stripe_payment_status: object.payment_status || null },
-      updated_at: new Date().toISOString(),
-    }).eq('id', eventId);
-  } else if (profileId || subscriptionId || customerId) {
-    await supabase.from('membership_events').insert({
-      profile_id: profileId,
-      provider: 'stripe',
-      provider_customer_id: customerId,
-      provider_subscription_id: subscriptionId,
-      tier,
-      status,
-      metadata: { stripe_event_type: eventType, stripe_object_id: object.id, stripe_status: object.status || null, stripe_payment_status: object.payment_status || null },
-    });
-  }
-
-  if (profileId && tier && (status === 'active' || status === 'trialing')) {
-    await supabase.from('profiles').update({ tier }).eq('id', profileId).neq('tier', 'admin');
-  }
-  if (profileId && ['cancelled', 'payment_attention'].includes(status)) {
-    await supabase.from('profiles').update({ tier: 'free' }).eq('id', profileId).neq('tier', 'admin');
-  }
+  const { data: rows } = await supabase.from('membership_events').select('id,profile_id,tier,metadata').eq('provider', 'stripe').eq('provider_subscription_id', subscriptionId).order('updated_at', { ascending: false }).limit(1);
+  const row = rows?.[0];
+  if (!row) return;
+  await supabase.from('membership_events').update({
+    status: 'active',
+    metadata: { ...(row.metadata || {}), stripe_event_type: eventType, stripe_invoice_id: invoice.id, current_period_end: invoicePeriodEnd(invoice) },
+    updated_at: new Date().toISOString(),
+  }).eq('id', row.id);
+  await syncProfileTier(supabase, row.profile_id, row.tier || undefined);
 }
 
 async function reconcileCheckoutSession(object: Record<string, any>) {
@@ -91,7 +75,13 @@ async function reconcileCheckoutSession(object: Record<string, any>) {
     }).eq('id', orderId);
     return;
   }
-  if (mode === 'subscription') await upsertMembershipFromStripe(object, 'checkout.session');
+  if (mode === 'subscription') {
+    const subscriptionId = typeof object.subscription === 'string' ? object.subscription : object.subscription?.id || null;
+    if (subscriptionId) await applySubscriptionReference(subscriptionId, 'checkout.session');
+    else if (object.status === 'expired' && metadata.membership_event_id) {
+      await supabase.from('membership_events').update({ status: 'expired', updated_at: new Date().toISOString() }).eq('id', metadata.membership_event_id).eq('status', 'checkout_started');
+    }
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -103,9 +93,9 @@ export async function POST(request: NextRequest) {
     if (event.type === 'checkout.session.completed' || event.type === 'checkout.session.async_payment_succeeded' || event.type === 'checkout.session.expired') {
       await reconcileCheckoutSession(object);
     } else if (event.type.startsWith('customer.subscription.')) {
-      await upsertMembershipFromStripe(object, event.type);
-    } else if (event.type === 'invoice.payment_succeeded' || event.type === 'invoice.payment_failed') {
-      await upsertMembershipFromStripe(object, event.type);
+      await applyStripeSubscription(object, event.type);
+    } else if (event.type === 'invoice.payment_succeeded' || event.type === 'invoice.paid' || event.type === 'invoice.payment_failed') {
+      await applySubscriptionReference(invoiceSubscriptionId(object), event.type, () => recordInvoicePayment(object, event.type === 'invoice.paid' ? 'invoice.payment_succeeded' : event.type));
     } else if (event.type === 'charge.refunded') {
       const paymentIntent = object.payment_intent;
       if (paymentIntent) await serverSupabase().from('tag_orders').update({ status: 'refunded', updated_at: new Date().toISOString() }).eq('provider_payment_id', paymentIntent);
